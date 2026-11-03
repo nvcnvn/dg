@@ -106,9 +106,11 @@ Layout files are YAML, because they are machine-owned and rarely edited by hand.
 | Purpose | Library |
 |---|---|
 | Canvas and interaction | `@joint/core` (JointJS 4.3 or newer, MPL-2.0) |
-| Obstacle-avoiding orthogonal routing | `@joint/router-avoid` (libavoid compiled to WebAssembly via `libavoid-js`, MPL-2.0) |
-| First layout of a view with nothing pinned | `elkjs` (Eclipse Layout Kernel), in a Web Worker |
-| Build | Vite |
+| Obstacle-avoiding orthogonal routing | `@joint/router-avoid` (MPL-2.0), running libavoid compiled to WebAssembly by `libavoid-js` (LGPL-2.1-or-later; `libavoid.wasm` stays a separate file) |
+| First layout of a view with nothing pinned | `elkjs` (Eclipse Layout Kernel, EPL-2.0), in a Web Worker |
+| Bundled font | Inter (OFL-1.1) from `@fontsource/inter` |
+| Build | Vite, with `tsc` for type checking |
+| Unit tests | Vitest |
 
 **TypeScript (VS Code extension)**
 
@@ -119,7 +121,7 @@ Layout files are YAML, because they are machine-owned and rarely edited by hand.
 
 ### 3.4 Fonts
 
-One bundled font, loaded by the browser renderer. System fonts are never used. Only the browser measures text.
+One bundled font, Inter at weight 400 with all its Unicode subsets, loaded by the browser renderer. System fonts are never used. Only the browser measures text. An exported SVG names the font (`Inter, sans-serif`) but does not embed it.
 
 ---
 
@@ -193,7 +195,7 @@ edge_kind "default" {}
 edge_kind "rdma" {}
 ```
 
-A kind inherits `container`, `rows`, `ports`, `default_port_side` and properties from the kind it `extends`, and may add ports and properties; redeclaring an inherited port or property is an error. Property types are `string`, `number` and `bool`.
+A kind without `extends` extends `node`, and every edge kind other than `default` extends `default`. A kind inherits `container`, `rows`, `ports`, `default_port_side` and properties from the kind it `extends`, and may add ports and properties; redeclaring an inherited port or property is an error. Property types are `string`, `number` and `bool`.
 
 ### 4.3 Style
 
@@ -314,7 +316,7 @@ edge "dns" {
 ```
 
 - `node` and `edge` blocks must have exactly one label: the ID.
-- Defaults: node `kind = "node"`, edge `kind = "default"`, `label` = ID.
+- Defaults: node `kind = "node"` and `label` = ID; edge `kind = "default"` and no label.
 - `from` / `to`: `node.<id>`, `node.<id>.port.<port>`, or `node.<id>.row.<row>`; index form for IDs that are not simple (`node["a/b"]`, `node.t.row["save()"]`).
 - `label` is shorthand for `labels = { mid = "..." }`. Full form: `labels = { start = "1", mid = "places", end = "0..*" }`.
 
@@ -615,11 +617,12 @@ A node is in a view if it matches `include` and not `exclude`, and is not inside
 ### 8.4 Style cascade
 
 For each element, property by property, later wins:
-1. built-in defaults;
-2. styles of ancestor kinds, starting from the root;
-3. style of its own kind;
-4. tag styles, in the order the tags are listed on the element;
-5. view rules in this order: kind rules, tag rules, `node.<id>` / `edge.<id>` rules.
+1. styles of ancestor kinds, starting from the root (`node` for nodes, `default` for edges);
+2. style of its own kind;
+3. tag styles, in the order the tags are listed on the element;
+4. view rules in this order: kind rules, tag rules, `node.<id>` / `edge.<id>` rules.
+
+There are no defaults outside the cascade: the built-in `generic` pack's `style "node"` and `edge_style "default"` set every property that has a default, and a pack or project overrides them like any other style.
 
 ---
 
@@ -787,7 +790,9 @@ Warnings:
 **FR-14 Export (`dg export --view <id> | --all --format svg|png|gif|json [--out path]`).** Go starts headless Chromium via `chromedp`, loads the embedded app in export mode, waits for geometry and routing, and reads back SVG, a PNG screenshot, a GIF, or JSON geometry (every node's box, port positions and edge routes in canvas coordinates). With `--all`, `--out` is a directory.
 - SVG keeps edge animation as CSS. PNG shows the animation at time 0. GIF holds one half-second animation period as 10 frames of 50 milliseconds, looping forever; each frame is captured with the animation clock set to that frame's time, never the wall clock, and encoded with Go's `image/gif`.
 - AC: output matches the editor (no selection, unpinned nodes not faded).
+- The app writes the SVG and JSON from its computed geometry, not by copying a DOM, so the output holds no editor state.
 - AC: JSON geometry lets an agent pin nodes relative to the drawn layout without opening the editor.
+- AC: export works with no network: Chromium resolves no host name, and the app's content security policy allows only its embedded files.
 
 **FR-15 Operations (`dg op <operation> [flags] [--json]`).** Direct mapping of FR-12.
 - AC: an agent can build a full model and views using only `dg op`, `dg check`, and `dg export`.
@@ -836,11 +841,11 @@ Warnings:
 /internal/mcp/            # MCP tools (FR-16)
 /internal/lsp/            # language server (FR-17)
 /packs/generic/           # built-in pack (embedded)
-/web/
+/web/                     # embed.go embeds web/dist, the Vite build output (not committed; `make web` builds it)
   /src/geometry/          # sizes, container policies, frames
   /src/place/             # elkjs first layout, spiral placer
-  /src/route/             # router-avoid, ports, hints
-  /src/canvas/            # JointJS shapes and interactions
+  /src/route/             # ports, hints, route clipping and labels
+  /src/canvas/            # JointJS shapes and interactions, the router-avoid adapter, text measurement, SVG and JSON output
   /src/protocol/          # WebSocket client
 /vscode/                  # VS Code extension (FR-18)
 /testdata/                # golden files: hclwrite round-trips, layout output, resolved views

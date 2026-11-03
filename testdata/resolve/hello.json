@@ -1,0 +1,126 @@
+{
+  "view": "main",
+  "grid": 10,
+  "nodes": [
+    {
+      "id": "api",
+      "kind": "service",
+      "label": "API",
+      "frame": "backend",
+      "style": {
+        "shape": "rounded",
+        "fill": "#E8F0FE",
+        "stroke": "#1A73E8"
+      }
+    },
+    {
+      "id": "backend",
+      "kind": "group",
+      "label": "Backend",
+      "container": true,
+      "style": {
+        "shape": "rect",
+        "fill": "#F8F9FA",
+        "stroke": "#9AA0A6"
+      }
+    },
+    {
+      "id": "orders-db",
+      "kind": "database",
+      "label": "Orders DB",
+      "frame": "backend",
+      "style": {
+        "shape": "rect",
+        "fill": "#FEF7E0",
+        "stroke": "#E37400"
+      }
+    },
+    {
+      "id": "user",
+      "kind": "node",
+      "label": "User",
+      "style": {
+        "shape": "rect",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043"
+      }
+    },
+    {
+      "id": "worker",
+      "kind": "service",
+      "label": "Worker",
+      "frame": "backend",
+      "style": {
+        "shape": "rounded",
+        "fill": "#E8F0FE",
+        "stroke": "#1A73E8"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "api-db",
+      "kind": "default",
+      "from": {
+        "node": "api"
+      },
+      "to": {
+        "node": "orders-db"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "arrow_end": "arrow"
+      }
+    },
+    {
+      "id": "api-worker",
+      "kind": "async",
+      "from": {
+        "node": "api"
+      },
+      "to": {
+        "node": "worker"
+      },
+      "labels": {
+        "mid": "jobs"
+      },
+      "style": {
+        "stroke": "#9334E6",
+        "arrow_end": "arrow"
+      }
+    },
+    {
+      "id": "user-api",
+      "kind": "default",
+      "from": {
+        "node": "user"
+      },
+      "to": {
+        "node": "api"
+      },
+      "labels": {
+        "mid": "HTTPS"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "arrow_end": "arrow"
+      }
+    },
+    {
+      "id": "worker-db",
+      "kind": "default",
+      "from": {
+        "node": "worker"
+      },
+      "to": {
+        "node": "orders-db"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "arrow_end": "arrow"
+      }
+    }
+  ]
+}

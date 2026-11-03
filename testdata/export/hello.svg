@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 200 450" width="200" height="450" font-family="Inter, sans-serif" font-size="14">
+<g data-node="backend">
+<rect x="10" y="120" width="160" height="300" fill="#F8F9FA" stroke="#9AA0A6"/>
+<text x="30" y="146" fill="#202124">Backend</text>
+</g>
+<g data-node="api">
+<rect x="50" y="160" width="100" height="40" rx="8" fill="#E8F0FE" stroke="#1A73E8"/>
+<text x="100" y="186" text-anchor="middle" fill="#202124">API</text>
+</g>
+<g data-node="orders-db">
+<rect x="50" y="360" width="100" height="40" fill="#FEF7E0" stroke="#E37400"/>
+<text x="100" y="386" text-anchor="middle" fill="#202124">Orders DB</text>
+</g>
+<g data-node="user">
+<rect x="50" y="10" width="100" height="40" fill="#FFFFFF" stroke="#3C4043"/>
+<text x="100" y="36" text-anchor="middle" fill="#202124">User</text>
+</g>
+<g data-node="worker">
+<rect x="30" y="260" width="100" height="40" rx="8" fill="#E8F0FE" stroke="#1A73E8"/>
+<text x="80" y="286" text-anchor="middle" fill="#202124">Worker</text>
+</g>
+<g data-edge="api-db">
+<path d="M110 200 L110 230 L140 230 L140 330 L110 330 L110 360" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M105 350 L110 360 L115 350" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="api-worker">
+<path d="M90 200 L90 230 L80 230 L80 260" fill="none" stroke="#9334E6" stroke-width="1.5"/>
+<path d="M75 250 L80 260 L85 250" fill="none" stroke="#9334E6" stroke-width="1.5"/>
+<rect x="65" y="220" width="40" height="20" fill="#FFFFFF"/>
+<text x="85" y="236" text-anchor="middle" fill="#202124">jobs</text>
+</g>
+<g data-edge="user-api">
+<path d="M100 50 L100 160" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M95 150 L100 160 L105 150" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="70" y="95" width="60" height="20" fill="#FFFFFF"/>
+<text x="100" y="111" text-anchor="middle" fill="#202124">HTTPS</text>
+</g>
+<g data-edge="worker-db">
+<path d="M80 300 L80 330 L90 330 L90 360" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M85 350 L90 360 L95 350" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+</svg>
