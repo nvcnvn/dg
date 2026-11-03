@@ -55,6 +55,8 @@ type Op struct {
 	Styles       []StyleArgs        `json:"styles,omitzero"`
 	Decoration   *DecorationArgs    `json:"decoration,omitempty"`
 	Unset        []string           `json:"unset,omitzero"`
+	Container    string             `json:"container,omitempty"`
+	Order        []string           `json:"order,omitzero"`
 	Ops          []Op               `json:"ops,omitzero"`
 }
 
@@ -145,11 +147,14 @@ var Defs = []Def{
 		fEdge.help("ID of the new edge (<from>-<to> when omitted)"), fKind.help("edge kind"), fLabels, fTags, fView.help("view to show the edge in")}},
 	{"disconnect", "Remove an edge with its hints and view references.", []Field{fEdge.req()}},
 	{"set_edge_labels", "Replace an edge's labels; none removes them.", []Field{fEdge.req(), fLabels}},
-	{"move", "Pin a node in a view at x, y relative to its frame. Only this node is pinned: dg op computes no geometry; dg export --format json gives every node's frame and rel, the coordinates move takes.", []Field{fView.req(), fNode.req(), fX.req(), fY.req()}},
-	{"resize", "Set the size of a node pinned in a view.", []Field{fView.req(), fNode.req(),
+	{"move", "Pin a node in a view at x, y relative to its frame. Only this node is pinned: dg op computes no geometry; dg export --format json gives every node's frame and rel, the coordinates move takes. Refused for a node a stack or grid container places (ordered_in in the export); reorder it instead.", []Field{fView.req(), fNode.req(), fX.req(), fY.req()}},
+	{"resize", "Set the size of a node pinned in a view, or of a child of a stack or grid container.", []Field{fView.req(), fNode.req(),
 		{Name: "w", Schema: `{"type":"integer","minimum":0}`, Help: "width, rounded to the project grid", Example: `160`, Required: true},
 		{Name: "h", Schema: `{"type":"integer","minimum":0}`, Help: "height, rounded to the project grid", Example: `80`, Required: true}}},
-	{"unpin", "Remove a node's position, size and pinned ports from a view.", []Field{fView.req(), fNode.req()}},
+	{"reorder", "Set the order in which a stack or grid container places its children in a view; children the order leaves out follow in sorted ID order.", []Field{fView.req(),
+		{Name: "container", Schema: strSchema, Help: "ID of the stack or grid container, drawn expanded in the view or the view's of", Example: `"lanes"`, Required: true},
+		{Name: "order", Schema: stringList, Help: "IDs of the container's children the view draws, in order; empty or omitted removes the order of any node, even one that no longer places its children in order", Example: `["intake", "review"]`}}},
+	{"unpin", "Remove a node's position, size and pinned ports from a view; a container keeps its order.", []Field{fView.req(), fNode.req()}},
 	{"pin_port", "Pin a port of a node pinned in a view to a side, at an offset along it.", []Field{fView.req(), fNode.req(),
 		{Name: "port", Schema: strSchema, Help: "port name", Example: `"grpc"`, Required: true},
 		{Name: "side", Schema: sideSchema, Help: "side: top, right, bottom or left", Example: `"right"`, Required: true},

@@ -104,13 +104,14 @@ style "group" {
 }
 
 style "lane-set" {
-  fill      = "#FFFFFF"
-  stroke    = "#9AA0A6"
-  padding   = 0
-  layout    = "stack"
-  direction = "vertical"
-  gap       = 0
-  stretch   = true
+  fill       = "#FFFFFF"
+  stroke     = "#9AA0A6"
+  padding    = 10
+  layout     = "stack"
+  direction  = "vertical"
+  gap        = 0
+  stretch    = true
+  label_side = "left"
 }
 
 style "lane" {
@@ -133,6 +134,12 @@ style "state" {
   fill    = "#FFFFFF"
   stroke  = "#3C4043"
   padding = 20
+}
+
+style "simple-state" {
+  shape  = "rounded"
+  fill   = "#FFFFFF"
+  stroke = "#3C4043"
 }
 
 style "table" {

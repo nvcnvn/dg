@@ -12,11 +12,9 @@ import (
 	"github.com/nvcnvn/dg/internal/spec"
 )
 
-// Prop is a style property: its value check and the milestone from which the renderer draws a
-// given value (0 when it is drawn now).
+// Prop is a style property and its value check.
 type Prop struct {
-	check     func(cty.Value) string
-	drawnFrom func(cty.Value) int
+	check func(cty.Value) string
 }
 
 // BuiltinShapes are the shapes a style may name without a shape block (spec 4.3).
@@ -24,76 +22,57 @@ var BuiltinShapes = []string{"rect", "rounded", "stadium", "ellipse", "diamond",
 
 var markers = []string{"none", "arrow", "triangle", "triangle-open", "diamond", "diamond-open", "circle", "circle-open", "crow-one", "crow-zero-one", "crow-many", "crow-one-many", "crow-zero-many"}
 
-// NodeProps are the properties of style blocks: node properties and container properties. The
-// stack and grid policies are drawn from M8, so the properties that only they read are drawn
-// now in the sense that a free container ignores them.
+// NodeProps are the properties of style blocks: node properties and container properties.
 var NodeProps = map[string]Prop{
-	"shape":         {isString, now},
-	"fill":          {color, now},
-	"stroke":        {color, now},
-	"stroke_width":  {number(0, inf), now},
-	"stroke_dash":   {dash, now},
-	"corner_radius": {number(0, inf), now},
-	"opacity":       {number(0, 1), now},
-	"text_color":    {color, now},
-	"font_size":     {number(1, inf), now},
-	"font_weight":   {weight, now},
-	"icon":          {picture, now},
-	"image":         {picture, now},
-	"padding":       {number(0, inf), now},
-	"min_w":         {number(0, inf), now},
-	"min_h":         {number(0, inf), now},
-	"max_w":         {number(0, inf), now},
-	"z":             {integer(-inf, inf), now},
-	"layout":        {enum("free", "stack", "grid"), except(8, "free")},
-	"direction":     {enum("horizontal", "vertical"), now},
-	"gap":           {number(0, inf), now},
-	"stretch":       {isBool, now},
-	"columns":       {integer(1, inf), now},
-	"align":         {enum("start", "center", "end"), now},
-	"label_side":    {enum("top", "left"), except(8, "top")},
+	"shape":         {isString},
+	"fill":          {color},
+	"stroke":        {color},
+	"stroke_width":  {number(0, inf)},
+	"stroke_dash":   {dash},
+	"corner_radius": {number(0, inf)},
+	"opacity":       {number(0, 1)},
+	"text_color":    {color},
+	"font_size":     {number(1, inf)},
+	"font_weight":   {weight},
+	"icon":          {picture},
+	"image":         {picture},
+	"padding":       {number(0, inf)},
+	"min_w":         {number(0, inf)},
+	"min_h":         {number(0, inf)},
+	"max_w":         {number(0, inf)},
+	"z":             {integer(-inf, inf)},
+	"layout":        {enum("free", "stack", "grid")},
+	"direction":     {enum("horizontal", "vertical")},
+	"gap":           {number(0, inf)},
+	"stretch":       {isBool},
+	"columns":       {integer(1, inf)},
+	"align":         {enum("start", "center", "end")},
+	"label_side":    {enum("top", "left")},
 }
 
 // EdgeProps are the properties of edge_style blocks.
 var EdgeProps = map[string]Prop{
-	"stroke":       {color, now},
-	"stroke_width": {number(0, inf), now},
-	"stroke_dash":  {dash, now},
-	"arrow_start":  {enum(markers...), now},
-	"arrow_end":    {enum(markers...), now},
-	"routing":      {enum("orthogonal", "polyline", "straight"), now},
-	"font_size":    {number(1, inf), now},
-	"animate":      {enum("none", "flow"), now},
+	"stroke":       {color},
+	"stroke_width": {number(0, inf)},
+	"stroke_dash":  {dash},
+	"arrow_start":  {enum(markers...)},
+	"arrow_end":    {enum(markers...)},
+	"routing":      {enum("orthogonal", "polyline", "straight")},
+	"font_size":    {number(1, inf)},
+	"animate":      {enum("none", "flow")},
 }
 
 // OverlayProps are the properties of overlay_style blocks.
 var OverlayProps = map[string]Prop{
-	"fill":         {color, now},
-	"stroke":       {color, now},
-	"stroke_width": {number(0, inf), now},
-	"stroke_dash":  {dash, now},
-	"opacity":      {number(0, 1), now},
-	"padding":      {number(0, inf), now},
-}
-
-// DrawnFrom returns the milestone from which the renderer draws value v of property name in
-// props, or 0 when it is drawn now.
-func DrawnFrom(props map[string]Prop, name string, v cty.Value) int {
-	return props[name].drawnFrom(v)
+	"fill":         {color},
+	"stroke":       {color},
+	"stroke_width": {number(0, inf)},
+	"stroke_dash":  {dash},
+	"opacity":      {number(0, 1)},
+	"padding":      {number(0, inf)},
 }
 
 const inf = 1e18
-
-func now(cty.Value) int { return 0 }
-
-func except(m int, drawn ...string) func(cty.Value) int {
-	return func(v cty.Value) int {
-		if slices.Contains(drawn, v.AsString()) {
-			return 0
-		}
-		return m
-	}
-}
 
 func known(v cty.Value) bool { return v.IsWhollyKnown() && !v.IsNull() }
 

@@ -18,7 +18,6 @@ import (
 
 	"github.com/chromedp/chromedp"
 
-	"github.com/nvcnvn/dg/internal/diag"
 	"github.com/nvcnvn/dg/internal/project"
 	"github.com/nvcnvn/dg/internal/view"
 )
@@ -70,8 +69,8 @@ func exampleViews(t *testing.T) map[string]*view.Resolved {
 		}
 		for id := range p.Views {
 			v, diags := p.Resolve(id)
-			if notYet(t, dir, id, diags) {
-				continue
+			if diags.HasErrors() {
+				t.Fatalf("resolve %s view %s: %v", dir, id, diags)
 			}
 			name := filepath.Base(dir)
 			if id != view.DefaultView {
@@ -81,18 +80,6 @@ func exampleViews(t *testing.T) map[string]*view.Resolved {
 		}
 	}
 	return views
-}
-
-// notYet reports whether a view is refused only for features later milestones draw, and fails
-// the test for any other error.
-func notYet(t *testing.T, dir, id string, diags diag.Diagnostics) bool {
-	t.Helper()
-	for _, d := range diags {
-		if d.Severity == diag.Error && d.Summary != "Not supported yet" {
-			t.Fatalf("resolve %s view %s: %v", dir, id, diags)
-		}
-	}
-	return diags.HasErrors()
 }
 
 // TestAnimation exports the animated view of examples/c4-container as a GIF: byte-identical
@@ -525,4 +512,61 @@ func abs(v int) int {
 		return -v
 	}
 	return v
+}
+
+// TestOfPolicy exports a view whose of is a stack and which includes a node from elsewhere: the
+// stack's children are stacked in one box, marked ordered_in it, and the other node is placed
+// beside the box, free.
+func TestOfPolicy(t *testing.T) {
+	if testing.Short() {
+		t.Skip("starts Chromium")
+	}
+	dir := t.TempDir()
+	files := map[string]string{
+		"model.hcl": "node \"vs\" {\n  kind = \"lane-set\"\n}\n\nnode \"v1\" {\n  kind   = \"lane\"\n  parent = node.vs\n}\n\nnode \"v2\" {\n  kind   = \"lane\"\n  parent = node.vs\n}\n\nnode \"h1\" {}\n\nedge \"v1-h1\" {\n  from = node.v1\n  to   = node.h1\n}\n",
+		"views.hcl": "view \"extra\" {\n  of      = node.vs\n  include = [descendants.vs, node.h1]\n}\n",
+	}
+	for name, src := range files {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(src), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	p, diags, err := project.Load(dir)
+	if err != nil || diags.HasErrors() {
+		t.Fatal(err, diags)
+	}
+	v, diags := p.Resolve("extra")
+	if diags.HasErrors() {
+		t.Fatal(diags)
+	}
+	res, err := Render(context.Background(), v, "svg")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var geo struct {
+		Nodes []struct {
+			ID         string
+			X, Y, W, H int
+			OrderedIn  string `json:"ordered_in"`
+		}
+	}
+	if err := json.Unmarshal(res.JSON, &geo); err != nil {
+		t.Fatal(err)
+	}
+	n := map[string]int{}
+	for i, g := range geo.Nodes {
+		n[g.ID] = i
+	}
+	v1, v2, h1 := geo.Nodes[n["v1"]], geo.Nodes[n["v2"]], geo.Nodes[n["h1"]]
+	if v1.OrderedIn != "vs" || v2.OrderedIn != "vs" || h1.OrderedIn != "" {
+		t.Errorf("ordered_in v1 %q, v2 %q, h1 %q; want vs, vs and none", v1.OrderedIn, v2.OrderedIn, h1.OrderedIn)
+	}
+	if v2.X != v1.X || v2.Y != v1.Y+v1.H || v2.W != v1.W {
+		t.Errorf("v1 %+v and v2 %+v are not stacked", v1, v2)
+	}
+	for _, l := range []struct{ X, Y, W, H int }{{v1.X, v1.Y, v1.W, v1.H}, {v2.X, v2.Y, v2.W, v2.H}} {
+		if h1.X < l.X+l.W && l.X < h1.X+h1.W && h1.Y < l.Y+l.H && l.Y < h1.Y+h1.H {
+			t.Errorf("h1 %+v overlaps a lane %+v", h1, l)
+		}
+	}
 }

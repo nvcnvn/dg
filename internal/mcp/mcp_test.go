@@ -115,6 +115,7 @@ func FuzzTools(f *testing.F) {
 		{0, `{}`}, {1, `null`}, {2, `{"op": "create_node", "kind": "service", "view": "calls", "x": 1, "y": 2}`},
 		{2, `{"op": "batch", "ops": [{"op": "delete_node", "id": "rack", "recursive": true}]}`},
 		{2, `{"op": "rename_id", "type": "view", "old": "calls", "new": "main"}`}, {2, `[]`}, {0, `{"x": 1}`},
+		{2, `{"op": "batch", "ops": [{"op": "set_kind", "id": "pool", "kind": "lane-set"}, {"op": "reorder", "view": "pool", "container": "pool", "order": ["worker-2"]}]}`},
 	} {
 		f.Add(seed.tool, []byte(seed.args))
 	}

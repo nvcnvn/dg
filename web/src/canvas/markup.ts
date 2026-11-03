@@ -17,6 +17,8 @@ export interface DrawnNode {
   rel?: Point;
   container: boolean;
   pinned: boolean;
+  // orderedIn is the stack or grid container that places the node, which a move cannot.
+  orderedIn?: string;
   tooSmall: boolean;
   style: NodeStyle;
   custom?: string;
@@ -31,6 +33,10 @@ export interface DrawnNode {
   badge?: Box;
   // drill is the drill-down badge of a node other views show the inside of.
   drill?: Box;
+  // rotate turns the label and icon a quarter counterclockwise around it; divider is the x of
+  // the line between a left label and the content.
+  rotate?: Point;
+  divider?: number;
 }
 
 // DrawnOverlay is an overlay's outline (SVG path data) and its label, left-aligned above it.
@@ -272,9 +278,12 @@ export function defsMarkup(nodes: DrawnNode[], s: Shapes): string[] {
 export function nodeMarkup(n: DrawnNode, m: FontMetrics, s: Shapes): string[] {
   const st = n.style;
   const out = [`<g${attrs({ 'data-node': n.id, opacity: st.opacity < 1 ? dec(st.opacity) : undefined })}>`, ...outlineMarkup(n, s)];
+  if (n.divider !== undefined) out.push(`<path${attrs({ d: path([{ x: n.divider, y: n.box.y }, { x: n.divider, y: n.box.y + n.box.h }]), stroke: st.stroke, 'stroke-width': dec(st.stroke_width) })}/>`);
   if (n.picture && st.image) out.push(picture(st.image, n.picture, 'meet'));
+  if (n.rotate) out.push(`<g transform="rotate(-90 ${num(n.rotate.x)} ${num(n.rotate.y)})">`);
   if (n.icon && st.icon) out.push(picture(st.icon, n.icon, 'meet'));
   if (n.text) out.push(...textLines(n.text, n.textBox, n.align, st.text_color, m));
+  if (n.rotate) out.push('</g>');
   if (n.table) out.push(...tableMarkup(n, n.table, m));
   if (n.badge) out.push(...collapseBadge(n.badge));
   if (n.drill) out.push(...drillBadge(n.id, n.drill));
@@ -410,6 +419,8 @@ export function shiftNode(n: DrawnNode, dx: number, dy: number): DrawnNode {
     ports: n.ports.map(mv),
     badge: n.badge && mv(n.badge),
     drill: n.drill && mv(n.drill),
+    rotate: n.rotate && mv(n.rotate),
+    divider: n.divider === undefined ? undefined : n.divider + dx,
     table: n.table && {
       ...n.table,
       lines: n.table.lines.map((y) => y + dy),

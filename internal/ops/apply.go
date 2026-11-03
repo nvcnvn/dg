@@ -366,11 +366,15 @@ func (s *state) layout(id string) (*view.Layout, error) {
 	return &view.Layout{Place: map[string]*view.Place{}, EdgeHints: map[string]*view.Hint{}, LiftHints: map[[2]string]*view.Hint{}}, nil
 }
 
-// putLayout regenerates the layout file of view id, removing it when l is empty.
+// putLayout regenerates the layout file of view id, without entries that hold nothing,
+// removing the file when l is empty.
 func (s *state) putLayout(id string, l *view.Layout) {
 	if s.p != nil {
 		s.p.Layouts[id] = l
 	}
+	maps.DeleteFunc(l.Place, func(_ string, pl *view.Place) bool {
+		return !pins(pl) && len(pl.Ports) == 0 && len(pl.Order) == 0
+	})
 	if len(l.Place) == 0 && len(l.EdgeHints) == 0 && len(l.LiftHints) == 0 && len(l.Decorations) == 0 {
 		s.f.remove(s.layoutPath(id))
 		return

@@ -498,10 +498,20 @@ func (s *Sources) ValidateLayouts() hcl.Diagnostics {
 			if p.In != "" && m.Nodes[p.In] == nil {
 				orphan(p.Range, "Frame node", p.In)
 			}
+			if len(p.Order) > 0 && s.NodeStyle(v, n)["layout"].Value.AsString() == "free" {
+				diags = append(diags, spec.Warnf(p.Range, "Ignored order", "Node %q is not a stack or grid container, so its order is ignored.", nid))
+			}
+			seen := map[string]bool{}
 			for _, o := range p.Order {
-				if m.Nodes[o] == nil {
+				switch on := m.Nodes[o]; {
+				case on == nil:
 					orphan(p.Range, "Ordered node", o)
+				case seen[o]:
+					diags = append(diags, spec.Warnf(p.Range, "Ignored order entry", "Node %q is in the order of %q twice.", o, nid))
+				case on.Parent == nil || on.Parent.Node != nid:
+					diags = append(diags, spec.Warnf(p.Range, "Ignored order entry", "Node %q in the order of %q is not its child.", o, nid))
 				}
+				seen[o] = true
 			}
 			ports := m.Ports(sp, n)
 			for _, name := range slices.Sorted(maps.Keys(p.Ports)) {
@@ -513,13 +523,14 @@ func (s *Sources) ValidateLayouts() hcl.Diagnostics {
 				continue
 			}
 			frame := Frame(m, visible, nid)
-			if p.In != frame {
+			c := s.PlacedBy(v, visible, nid)
+			switch {
+			case p.X == nil && p.Y == nil:
+			case c != "":
+				layout := s.NodeStyle(v, m.Nodes[c])["layout"].Value.AsString()
+				diags = append(diags, spec.Warnf(p.Range, "Ignored position", "Node %q is placed in order by %q, a %s container, so its x and y are ignored.", nid, c, layout))
+			case p.In != frame:
 				diags = append(diags, spec.Warnf(p.Range, "Stale frame", "Node %q is stored relative to %s, but its frame in this view is %s.", nid, frameName(p.In), frameName(frame)))
-			}
-			if frame != "" && (p.X != nil || p.Y != nil) {
-				if set, ok := s.NodeStyle(v, m.Nodes[frame])["layout"]; ok && set.Value.AsString() != "free" {
-					diags = append(diags, spec.Warnf(p.Range, "Ignored position", "Node %q is in %q, a %s container, so its x and y are ignored.", nid, frame, set.Value.AsString()))
-				}
 			}
 		}
 		for _, eid := range slices.Sorted(maps.Keys(l.EdgeHints)) {

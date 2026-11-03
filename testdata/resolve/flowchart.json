@@ -1,0 +1,484 @@
+{
+  "view": "main",
+  "grid": 10,
+  "nodes": [
+    {
+      "id": "approved",
+      "kind": "decision",
+      "label": "Approved?",
+      "style": {
+        "shape": "diamond",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "checks",
+      "kind": "grid-group",
+      "label": "Checks",
+      "container": true,
+      "policy": {
+        "layout": "grid",
+        "direction": "vertical",
+        "gap": 20,
+        "columns": 2,
+        "align": "center",
+        "order": [
+          "lint",
+          "unit",
+          "scan",
+          "integration"
+        ]
+      },
+      "style": {
+        "shape": "rect",
+        "fill": "#F8F9FA",
+        "stroke": "#9AA0A6",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 20,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "deployed",
+      "kind": "terminal",
+      "label": "Deployed",
+      "style": {
+        "shape": "stadium",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "fix",
+      "kind": "node",
+      "label": "Push a fix",
+      "style": {
+        "shape": "rect",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "green",
+      "kind": "decision",
+      "label": "All green?",
+      "style": {
+        "shape": "diamond",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "integration",
+      "kind": "node",
+      "label": "Integration tests",
+      "frame": "checks",
+      "style": {
+        "shape": "rect",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "lint",
+      "kind": "node",
+      "label": "Lint",
+      "frame": "checks",
+      "style": {
+        "shape": "rect",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "merge",
+      "kind": "node",
+      "label": "Merge",
+      "style": {
+        "shape": "rect",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "opened",
+      "kind": "terminal",
+      "label": "Pull request opened",
+      "style": {
+        "shape": "stadium",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "review",
+      "kind": "node",
+      "label": "Code review",
+      "style": {
+        "shape": "rect",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "scan",
+      "kind": "node",
+      "label": "Security scan",
+      "frame": "checks",
+      "style": {
+        "shape": "rect",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "unit",
+      "kind": "node",
+      "label": "Unit tests",
+      "frame": "checks",
+      "style": {
+        "shape": "rect",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "approved-fix",
+      "kind": "default",
+      "from": {
+        "node": "approved"
+      },
+      "to": {
+        "node": "fix"
+      },
+      "labels": {
+        "mid": "changes"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "approved-merge",
+      "kind": "default",
+      "from": {
+        "node": "approved"
+      },
+      "to": {
+        "node": "merge"
+      },
+      "labels": {
+        "mid": "yes"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "checks-green",
+      "kind": "default",
+      "from": {
+        "node": "checks"
+      },
+      "to": {
+        "node": "green"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "fix-checks",
+      "kind": "default",
+      "from": {
+        "node": "fix"
+      },
+      "to": {
+        "node": "checks"
+      },
+      "labels": {
+        "mid": "push"
+      },
+      "hint": {
+        "from_side": "bottom",
+        "to_side": "left"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "green-fix",
+      "kind": "default",
+      "from": {
+        "node": "green"
+      },
+      "to": {
+        "node": "fix"
+      },
+      "labels": {
+        "mid": "no"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "green-review",
+      "kind": "default",
+      "from": {
+        "node": "green"
+      },
+      "to": {
+        "node": "review"
+      },
+      "labels": {
+        "mid": "yes"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "merge-deployed",
+      "kind": "default",
+      "from": {
+        "node": "merge"
+      },
+      "to": {
+        "node": "deployed"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "opened-checks",
+      "kind": "default",
+      "from": {
+        "node": "opened"
+      },
+      "to": {
+        "node": "checks"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "review-approved",
+      "kind": "default",
+      "from": {
+        "node": "review"
+      },
+      "to": {
+        "node": "approved"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    }
+  ]
+}

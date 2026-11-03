@@ -1,0 +1,256 @@
+{
+  "view": "main",
+  "nodes": [
+    {
+      "id": "authorizing",
+      "x": 120,
+      "y": 275,
+      "w": 100,
+      "h": 40,
+      "frame": "payment",
+      "rel": [80, 0]
+    },
+    {
+      "id": "cancelled",
+      "x": 460,
+      "y": 520,
+      "w": 100,
+      "h": 40,
+      "rel": [460, 520]
+    },
+    {
+      "id": "created",
+      "x": 220,
+      "y": 90,
+      "w": 100,
+      "h": 40,
+      "rel": [220, 90]
+    },
+    {
+      "id": "delivered",
+      "x": 130,
+      "y": 520,
+      "w": 100,
+      "h": 40,
+      "rel": [130, 520]
+    },
+    {
+      "id": "end",
+      "x": 170,
+      "y": 620,
+      "w": 30,
+      "h": 30,
+      "rel": [170, 620]
+    },
+    {
+      "id": "packed",
+      "x": 280,
+      "y": 385,
+      "w": 100,
+      "h": 40,
+      "frame": "shipping",
+      "rel": [240, 0]
+    },
+    {
+      "id": "paid",
+      "x": 280,
+      "y": 275,
+      "w": 100,
+      "h": 40,
+      "frame": "payment",
+      "rel": [240, 0]
+    },
+    {
+      "id": "pay-end",
+      "x": 440,
+      "y": 285,
+      "w": 30,
+      "h": 30,
+      "frame": "payment",
+      "rel": [400, 10]
+    },
+    {
+      "id": "pay-start",
+      "x": 40,
+      "y": 285,
+      "w": 20,
+      "h": 20,
+      "frame": "payment",
+      "rel": [0, 10]
+    },
+    {
+      "id": "payment",
+      "x": 20,
+      "y": 225,
+      "w": 470,
+      "h": 110,
+      "frame": "processing",
+      "rel": [0, 0],
+      "ordered_in": "processing"
+    },
+    {
+      "id": "picking",
+      "x": 120,
+      "y": 385,
+      "w": 100,
+      "h": 40,
+      "frame": "shipping",
+      "rel": [80, 0]
+    },
+    {
+      "id": "processing",
+      "x": 10,
+      "y": 190,
+      "w": 490,
+      "h": 270,
+      "rel": [10, 190]
+    },
+    {
+      "id": "ship-end",
+      "x": 440,
+      "y": 395,
+      "w": 30,
+      "h": 30,
+      "frame": "shipping",
+      "rel": [400, 10]
+    },
+    {
+      "id": "ship-start",
+      "x": 40,
+      "y": 395,
+      "w": 20,
+      "h": 20,
+      "frame": "shipping",
+      "rel": [0, 10]
+    },
+    {
+      "id": "shipping",
+      "x": 20,
+      "y": 335,
+      "w": 470,
+      "h": 110,
+      "frame": "processing",
+      "rel": [0, 110],
+      "ordered_in": "processing"
+    },
+    {
+      "id": "start",
+      "x": 260,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "rel": [260, 10]
+    }
+  ],
+  "edges": [
+    {
+      "id": "authorizing-paid",
+      "points": [
+        [220, 295],
+        [280, 295]
+      ]
+    },
+    {
+      "id": "cancelled-end",
+      "points": [
+        [510, 560],
+        [510, 635],
+        [200, 635]
+      ]
+    },
+    {
+      "id": "created-cancelled",
+      "points": [
+        [320, 110],
+        [540, 110],
+        [540, 508],
+        [527, 508],
+        [527, 520]
+      ]
+    },
+    {
+      "id": "created-edit",
+      "points": [
+        [220, 110],
+        [200, 110],
+        [200, 150],
+        [253, 150],
+        [253, 130]
+      ]
+    },
+    {
+      "id": "created-processing",
+      "points": [
+        [287, 130],
+        [287, 178],
+        [270, 178],
+        [270, 190]
+      ]
+    },
+    {
+      "id": "delivered-end",
+      "points": [
+        [183, 560],
+        [183, 620]
+      ]
+    },
+    {
+      "id": "packed-ship-end",
+      "points": [
+        [380, 408],
+        [440, 408]
+      ]
+    },
+    {
+      "id": "paid-pay-end",
+      "points": [
+        [380, 298],
+        [440, 298]
+      ]
+    },
+    {
+      "id": "pay-start-authorizing",
+      "points": [
+        [60, 295],
+        [120, 295]
+      ]
+    },
+    {
+      "id": "picking-packed",
+      "points": [
+        [220, 405],
+        [280, 405]
+      ]
+    },
+    {
+      "id": "processing-cancelled",
+      "points": [
+        [484, 460],
+        [484, 472],
+        [493, 472],
+        [493, 520]
+      ]
+    },
+    {
+      "id": "processing-delivered",
+      "points": [
+        [180, 460],
+        [180, 520]
+      ]
+    },
+    {
+      "id": "ship-start-picking",
+      "points": [
+        [60, 405],
+        [120, 405]
+      ]
+    },
+    {
+      "id": "start-created",
+      "points": [
+        [270, 30],
+        [270, 90]
+      ]
+    }
+  ]
+}

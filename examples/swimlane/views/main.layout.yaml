@@ -1,0 +1,3 @@
+version: 1
+place:
+  fulfilment: {order: [customer, sales, warehouse, billing]}

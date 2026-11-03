@@ -60,7 +60,7 @@ Go never measures text and never computes absolute coordinates. This keeps the b
 
 ### 2.4 Pinned and unpinned
 
-- A node **listed** in its view's layout file is **pinned**: drawn where stored.
+- A node **listed** in its view's layout file with a position or size is **pinned**: drawn where stored. An entry holding only a container's `order` pins nothing; a child of a `stack` or `grid` container is placed by its container and is drawn pinned when the container is, and a child of the `of` of a view whose policy places it on the canvas (section 7.3) when the view has pinned nodes.
 - A node **not listed** is **unpinned**: placed by the engine at render time, drawn faded in the editor when the view has pinned nodes. In a view with nothing pinned nothing is faded; the editor says instead that the layout is not saved.
 - Dragging an unpinned node pins it. In a view with nothing pinned, the first drag pins every visible node where it is drawn, so accepting the first layout and adjusting it is one gesture (section 7.4).
 - The layout file therefore records only positions a human or agent placed or accepted, never engine output nobody saw.
@@ -268,7 +268,7 @@ shape "gpu-node" {
 ```
 
 **Node style properties:** `shape`, `fill`, `stroke`, `stroke_width`, `stroke_dash`, `corner_radius`, `opacity`, `text_color`, `font_size`, `font_weight`, `icon`, `image`, `padding`, `min_w`, `min_h`, `max_w`, `z`. `icon` and `image` (the picture for the `image` shape) take `file("…")`, an SVG resolved relative to the file that calls it; other picture formats are not supported. A picture (also a custom shape's `svg`) must be well-formed XML whose root element is `svg` in the SVG namespace, which a browser needs to draw it; otherwise `dg check` reports an error at the `file` call. The app draws pictures from `data:` URIs of that text.
-**Container properties:** `layout`, `direction` (`horizontal` | `vertical`), `gap`, `stretch`, `columns`, `align` (`start` | `center` | `end`), `label_side` (`top` | `left`; `left` draws the label rotated along the left edge, as on a swimlane).
+**Container properties:** `layout`, `direction` (`horizontal` | `vertical`), `gap`, `stretch`, `columns`, `align` (`start` | `center` | `end`) (section 7.3), `label_side` (`top` | `left`). `left` draws the label and icon a quarter turn counterclockwise, centered along the left edge, as on a swimlane: the label sits half a padding from the edge, a line in the stroke color runs the full height half a padding past it, and the content origin is a full padding past the label; the container is at least as tall as the label is long plus a padding above and below.
 **Overlay style properties:** `fill`, `stroke`, `stroke_width`, `stroke_dash`, `opacity`, `padding`. An overlay is styled by `overlay_style "hull"` with the properties of the overlay style it names set over it, so `hull` holds every default.
 **Values:** colors are `#RGB`, `#RRGGBB` or `none`; sizes, widths, gaps and padding are numbers of at least 0, `font_size` at least 1; `opacity` is 0–1; `font_weight` is 100–900 in steps of 100; `z` and `columns` are whole numbers; `stroke_dash` is a list of numbers.
 **Custom shapes:** a shape's name may not be a built-in shape. Each of its `anchors` must name a port of every kind whose style (by kind, section 8.4 step 1–2) uses the shape; ports without an anchor are placed by section 7.5. `text_box` defaults to `[0, 0, 1, 1]` and `stretch` to `nine-slice`. The picture's natural size is its `viewBox`, else its `width` and `height`, else 100 by 100. `nine-slice` cuts the picture a quarter of its width and height in from each edge: corners keep their natural size (scaled down only when the box is smaller than half the picture), edges stretch along their side, the center both ways. `uniform` scales the picture to fit and keeps the box at its aspect ratio; `none` draws it at its natural size, centered, in a box at least that large. A custom shape's `fill` and `stroke` are not drawn; the picture has its own.
@@ -406,6 +406,7 @@ place:                                   # pinned nodes; keys sorted
     ports:                               # pinned port positions
       p12: {side: bottom, offset: 0.40}
   lanes:    {x: 0, y: 600, order: [ingest, train, serve]}   # stack/grid container
+  ingest:   {h: 200}                         # a stack child: size only
 edge_hints:                              # keys sorted
   w1-tor:              {from_side: bottom, to_side: top, via: [[300, 420]], label_pos: 0.50}
   "lift:router:pool":  {to_side: left}   # hint for a lifted edge
@@ -417,6 +418,7 @@ decorations:
 
 - `x`, `y`, `w`, `h` are integers on the project grid. Port `offset` and `label_pos` are written with two decimal places.
 - `in` names the frame the coordinates are relative to (section 7.1). No `in` means the canvas.
+- `order` lists the children of a `stack` or `grid` container in the order it places them (section 7.3). An entry with only `order` does not pin its node.
 - Wherever an ID appears in a layout file, as a key or a value, the characters `%`, `:` and `#` inside it are percent-encoded (`%25`, `%3A`, `%23`), so `lift:` keys stay unambiguous for quoted IDs such as `system:controller`.
 - The file is fully regenerated on every write: sorted keys, one entry per line where possible.
 
@@ -563,9 +565,9 @@ All geometry is computed in the browser (section 2.3).
 ### 7.1 Frames and relative coordinates
 
 - A node's **frame** in a view is its nearest ancestor that is visible and not collapsed in that view; if none, the canvas.
-- Stored coordinates are relative to the frame's **content origin**: for a container, the top-left of its inside, past its label and padding (the label sits half a padding below the top, and a full padding separates it from the content); for the canvas, (0, 0). `in:` names the frame; omitted means the canvas. A negative coordinate inside a container is drawn as 0.
+- Stored coordinates are relative to the frame's **content origin**: for a container, the top-left of its inside, past its label and padding (the label sits half a padding below the top, or from the left edge with `label_side = "left"`, and a full padding separates it from the content); for the canvas, (0, 0). `in:` names the frame; omitted means the canvas. A negative coordinate inside a container is drawn as 0.
 - Moving a container therefore changes one layout line; its descendants move with it. Changing a container's label or padding moves its content with it instead of under the label.
-- **Stale frame:** if the stored `in:` differs from the node's current frame (the model's `parent` changed, or the view's `include` or `collapse` changed):
+- **Stale frame:** if the stored `in:` of an entry with `x` or `y` differs from the node's current frame (the model's `parent` changed, or the view's `include` or `collapse` changed):
   - if the stored frame is still drawn in this view, the browser converts the coordinates to the current frame for display: it places the view with the node unpinned, takes the absolute position the stored coordinates give in the stored frame, and places the view again with the node pinned there in its current frame. The entry keeps its stored values until the node is next moved or unpinned (Go has no geometry to convert them);
   - otherwise, or when the stored frame is the node itself or inside it, the node is treated as unpinned.
   In both cases `dg check` reports a warning.
@@ -590,17 +592,28 @@ Set in style (`layout = ...`), applying to a container's **direct** children onl
 | `stack` | the container: one after another along `direction`, separated by `gap`; with `stretch = true` children fill the cross axis | `order: [...]` on the container |
 | `grid` | the container: row-major fill with `columns`, aligned per `align` | `order: [...]` on the container |
 
-- In `stack` and `grid` containers, dragging a child **reorders** it; children never get `x`/`y`. Stored `x`/`y` on such a child is ignored with a warning.
-- Children missing from `order` are appended in sorted ID order.
-- In `stack`, `stretch` sets each child's cross-axis size to the container's; a child's pinned size along the main axis still applies. In `grid`, a column is as wide as its widest child and a row as tall as its tallest.
+- The container places its children in the order of its `order` list in the view's layout file; children missing from `order` are appended in sorted ID order, and entries naming no child it draws are skipped.
+- In `stack` and `grid` containers, dragging a child **reorders** it; children never get `x`/`y`. Stored `x`/`y` on such a child is ignored with a warning; its `w`, `h` and pinned ports apply.
+- Positions are relative to the container's content origin. A `stack` puts its first child at the origin and each next one `gap` past the one before along `direction`. Across the stack its children have the room of the widest child (of the tallest, for `horizontal`) or the container's own inside, whichever is more, or exactly the container's inside when its size is pinned that way: `stretch` sets each child's cross-axis size to that, otherwise each is aligned in it by `align`. A child's size along the main axis is its own, pinned or measured.
+- In `grid`, children fill `columns` columns row by row; a column is as wide as its widest child and a row as tall as its tallest, cells `gap` apart both ways, and each child is aligned in its cell both ways by `align`.
+- The container is then sized by section 7.2 around its children. A child with a policy that a `stretch` resizes places its own children again in its new size.
+- In a stretched `stack`, the container children whose labels run along the stack's cross axis (`label_side = "left"` in a `vertical` stack, `top` in a `horizontal` one) all take the widest of their label strips, so their content origins line up as lanes; the label is centered in the strip.
 - A child of a `stack` container can itself be a `free` container (a swimlane holding freely placed steps).
+- In a view whose `of` is a `stack` or `grid` container it does not draw, that container's policy places its children the view draws, with its `order` from the view's layout file, as one undrawn box on the canvas at the origin of the box; other nodes on the canvas (included from elsewhere, or descendants whose parent the view leaves out) are placed around that box as around any node (section 7.4), and the box as a node that is never pinned.
 
 ### 7.4 Placement of unpinned nodes
 
-- If a view has **no** pinned nodes at all: run `elkjs` (layered algorithm) once, with nodes and edges given in sorted ID order, and `stack`/`grid` containers laid out by their policy first and passed as fixed-size boxes. Each edge carries the sizes of its start, middle and end labels, so the layers leave room for them, and self-loops of leaf nodes are passed too. Layers run the way the view's `direction` says (section 4.5); without one, top to bottom, except in a view where some edge ends at a row: rows attach at their left and right ends, so its layers run left to right. Layers of a view with an edge at a row are further apart, to hold the markers at both ends of an edge. An edge with `triangle-open` at one end only (inheritance, realization) is given to elk from that end, so the general element is in an earlier layer than the specific ones (above them when the layers run down). The result is not saved.
+- If a view has **no** pinned nodes at all: run `elkjs` (layered algorithm) once, with nodes and edges given in sorted ID order. The result is not saved.
+  - `stack`/`grid` containers are laid out by their policy first, innermost first, and passed as fixed-size boxes; an edge end inside one is given at that box.
+  - The children of a `free` container that a `stack` places (lanes) are laid out first by elk too: those of all the lanes of the stack together, in one run whose layers run across the stack (right for a `vertical` stack, unless the view's direction is `left`; down for a `horizontal` one, unless it is `up`), so steps line up across lanes in the order edges run through them. Across the stack the steps of every lane then start at the lane's content origin together. Along it each lane's steps fill rows from the origin in elk's order, each in the first row where it keeps elk's node spacing from the others across the stack, centered in its row on the grid, rows that spacing apart.
+  - The children of a `free` container a `grid` places are laid out by elk alone, moved to start at its content origin.
+  - Each edge carries the sizes of its start, middle and end labels, so the layers leave room for them, and self-loops of leaf nodes are passed too.
+  - Layers run the way the view's `direction` says (section 4.5); without one, top to bottom, except in a view where some edge ends at a row: rows attach at their left and right ends, so its layers run left to right. Layers of a view with an edge at a row are further apart, to hold the markers at both ends of an edge.
+  - An edge with `triangle-open` at one end only (inheritance, realization) is given to elk from that end, so the general element is in an earlier layer than the specific ones (above them when the layers run down).
+  - dg breaks cycles before elk does: a depth-first search from the nodes no edge enters, in ID order, following edges in ID order, gives every edge back to a node it is still inside to elk reversed, so a flow runs from its start and a loop back to an earlier step stays a loop back. Cycles no such node leads to are left to elk's own cycle breaking.
 - Otherwise the spiral placer fills frames innermost first, so a container's size is known before it is placed. Within a frame, for each unpinned node in **sorted ID order**: start from the centroid of its already-placed neighbors in that frame (a neighbor in another frame counts as its ancestor in this frame, if any; fallback: the center of a container's pinned content area, else of what is already placed in the frame, else the frame's content origin), then search outward in a spiral on the grid until it keeps four grid units of clearance from everything placed in its frame, the room an edge and its label need between two boxes. Inside a container coordinates stay at least 0.
-- In a view with nothing pinned, the editor sends the first drag as one batch (FR-12) that pins every visible node where it is drawn, plus the drag itself. Otherwise pinning one node would hand every other node from the elk layout to the spiral placer and the picture would jump.
-- `dg op` has no geometry: a `move` from the command line pins only the node it names. Agents read drawn positions with `dg export --format json`, which gives every node's frame and its drawn position relative to that frame's content origin (`frame`, `rel`), the coordinates `move` takes. An agent that wants the elk layout kept pins every node at its `rel` in one batch, as the editor's first drag does.
+- In a view with nothing pinned, the editor sends the first drag as one batch (FR-12) that pins every visible node where it is drawn, except the children of `stack` and `grid` containers, plus the drag itself. Otherwise pinning one node would hand every other node from the elk layout to the spiral placer and the picture would jump.
+- `dg op` has no geometry: a `move` from the command line pins only the node it names. Agents read drawn positions with `dg export --format json`, which gives every node's frame and its drawn position relative to that frame's content origin (`frame`, `rel`), the coordinates `move` takes. An agent that wants the elk layout kept pins every node at its `rel` in one batch, as the editor's first drag does, except the nodes the export marks `ordered_in` a container, which `move` refuses.
 - Placement is deterministic. Pinned nodes never move.
 - In a view with pinned nodes, unpinned nodes are drawn faded in the editor; in a view with nothing pinned no node is faded and the editor shows a hint that the layout is not saved. Export draws every node normally.
 
@@ -643,7 +656,7 @@ A node is in a view if it matches `include` and not `exclude`, and is not inside
 
 ### 8.2 Drill-down
 
-`of = node.X` declares that a view shows the inside of container `X`.
+`of = node.X` declares that a view shows the inside of container `X`. When `X` is a `stack` or `grid` container the view does not draw, its policy places its children there (section 7.3).
 - In every other view, `X` shows a drill-down badge (a magnifying glass in the top right corner of its content area, or of its box when it is expanded); clicking it opens the view. If several views have `of = node.X`, the editor shows a menu of them. The badge is a control of the editor: exports do not draw it (the collapse badge, which says the box holds more, they do).
 - The editor shows breadcrumbs for a view with `of = node.X`: the levels of views it leads back to, outermost first, then the view itself. The level above a view with `of = node.Y` is the views with `of` on the nearest ancestor of `Y` that some view targets, only those that draw `Y` when some do; when no ancestor of `Y` is targeted, it is the views without `of` that draw `Y`, collapsed or with its badge, and nothing is above that level. A level of one view is a link to it; a level of several is one crumb that opens a menu of them.
 
@@ -682,12 +695,13 @@ There are no defaults outside the cascade: the built-in `generic` pack's `style 
 | `external` | `rounded`, dashed |
 | `note` | `document` |
 | `group` | container, `free` |
-| `lane-set` | container, `stack` vertical, stretch |
+| `lane-set` | container, `stack` vertical, stretch, `label_side = "left"` (a pool: its lanes are stacked right of its label) |
 | `lane` | container, `free`, `label_side = "left"` |
 | `grid-group` | container, `grid`, 3 columns |
 | `decision` | `diamond` |
 | `terminal` | `stadium` |
-| `state` | container, `free`, `rounded` |
+| `state` | container, `free`, `rounded`: a state with substates |
+| `simple-state` | `rounded`: a state without substates |
 | `initial` | `point`, no label drawn |
 | `final` | `bullseye`, no label drawn |
 | `table` | `rows = true`, shape `table`, bold label |
@@ -740,7 +754,8 @@ Warnings:
 - layout entries naming IDs that no longer exist, and `lift:` hints of lifted edges the view does not draw (orphans);
 - style labels naming undefined kinds; selectors that match nothing;
 - stale frames (section 7.1);
-- `x`/`y` on children of `stack`/`grid` containers;
+- `x`/`y` on nodes a `stack` or `grid` container places (section 7.3);
+- `order` lists on containers that are not `stack` or `grid`, and entries of an `order` that name a node twice or a node that is not the container's child;
 - pinned containers too small for their children (computed at render time; reported by the editor and by `dg export`).
 
 Information: a kind, edge kind, shape or style overridden by a later pack or the project (section 4.1).
@@ -817,10 +832,10 @@ When a model file does not parse, references, selectors and layout entries are n
 | `connect {from, to, id?, kind?, labels?, tags?, view?}` | append `edge` block; `from` and `to` are `{node, port?}` or `{node, row?}`; if `view` given and its `edges` filter would hide the edge, add `edge.<id>` to it (refused if the view does not show both ends) |
 | `disconnect {id}` | remove edge, its hints and its view references |
 | `set_edge_labels {id, labels?}` | replace labels: `label` for a middle label alone, else `labels`; none removes both |
-| `move {view, id, x, y}` / `resize {view, id, w, h}` | update `place` (frame-relative, `in:` set to the node's current frame), values rounded to the grid; refused for a node the view does not show, `move` for a child of a `stack`/`grid` container, `resize` for a node not pinned |
-| `reorder {view, container, order}` | update `order` |
-| `unpin {view, id}` | remove from `place` |
-| `pin_port {view, id, port, side, offset?}` | update `ports` in `place` of a pinned node; `offset` kept to two decimals |
+| `move {view, id, x, y}` / `resize {view, id, w, h}` | update `place` (frame-relative, `in:` set to the node's current frame), values rounded to the grid; refused for a node the view does not show, `move` for a node a `stack`/`grid` container places (section 7.3), `resize` for a node not pinned unless such a container places it |
+| `reorder {view, container, order?}` | set the `order` of a `stack`/`grid` container the view draws expanded, or of the view's `of` when its policy places the canvas; `order` lists children the view draws, each once; an empty or omitted `order` removes the `order` of any node, so a stale one can be cleared |
+| `unpin {view, id}` | remove the node's position, size and pinned ports from `place`; a container's `order` stays |
+| `pin_port {view, id, port, side, offset?}` | update `ports` in `place` of a pinned node, or of one a `stack`/`grid` container places; `offset` kept to two decimals |
 | `set_edge_hint {view, id, hint}` | replace the edge's entry in `edge_hints` (`id` may be a `lift:` key); `via` rounded to the grid, `label_pos` to two decimals; an empty hint removes it; refused for an edge or lifted edge the view does not draw, unless the hint is empty |
 | `rename_id {type, old, new}` | atomic refactor of a node, edge or view ID (section 6.4) |
 | `create_view {id, title?, include?, exclude?, collapse?, edges?, of?, direction?, overlays?, styles?}` | append a view block to `views.hcl` (selectors written as in it, such as `node.api` or `edge_kind.uses`; `overlays` a list of `{id, members, style?, label?}`; `styles` a list of view style rules `{type?: style or edge_style, label, props}`) |
@@ -847,7 +862,7 @@ Writers of one project are serialized: an operation, undo or redo holds a lock f
 
 ### F. Command line
 
-**FR-14 Export (`dg export --view <id> | --all --format svg|png|gif|json [--out path]`).** Go starts headless Chromium via `chromedp`, loads the embedded app in export mode, waits for geometry and routing, and reads back SVG, a PNG screenshot, a GIF, or JSON geometry (every node's box, port positions, the `y` of each row's line, whose ends are the box's left and right edges, and edge routes in canvas coordinates; and every node's `frame`, omitted for the canvas, and `rel`, its drawn position relative to the frame's content origin, as `move` takes it). With `--all`, `--out` is a directory that receives one `<view>.<format>` file per view, all written together, and nothing is written unless every view resolves. A picture the browser cannot draw fails the export, naming its node.
+**FR-14 Export (`dg export --view <id> | --all --format svg|png|gif|json [--out path]`).** Go starts headless Chromium via `chromedp`, loads the embedded app in export mode, waits for geometry and routing, and reads back SVG, a PNG screenshot, a GIF, or JSON geometry (every node's box, port positions, the `y` of each row's line, whose ends are the box's left and right edges, and edge routes in canvas coordinates; and every node's `frame`, omitted for the canvas, and `rel`, its drawn position relative to the frame's content origin, as `move` takes it; a node a `stack` or `grid` container places, which `move` refuses, has `ordered_in`, that container's ID, as `reorder` takes it). With `--all`, `--out` is a directory that receives one `<view>.<format>` file per view, all written together, and nothing is written unless every view resolves. A picture the browser cannot draw fails the export, naming its node.
 - SVG keeps edge animation as CSS, in a `<style>` element. PNG and GIF are screenshots of the drawing on white, one pixel per unit; PNG shows the animation at time 0. GIF holds one half-second animation period as 10 frames of 50 milliseconds, looping forever; each frame is captured with the animation clock set to that frame's time, never the wall clock (the app pauses every animation at that time), and encoded with Go's `image/gif`: one palette of the 255 colors most frequent across the frames, each pixel the nearest of them without dithering, and in every frame after the first the pixels that did not change are transparent. The editor runs the same animation in real time.
 - AC: output matches the editor (no selection, unpinned nodes not faded, no drill-down badges).
 - The app writes the SVG and JSON from its computed geometry, not by copying a DOM, so the output holds no editor state.
@@ -994,4 +1009,7 @@ The order follows two rules. First, export comes before editing: once `dg export
 | Breadcrumbs | levels of views leading back to where `X` is drawn, a level of several views one crumb with a menu | Only the views with `of` on ancestors: a container view whose system has no such view leads nowhere. Every view of every level in one row: reads as a path through views that are alternatives. |
 | Badges in exports | the collapse badge only | Both badges: a drill-down badge does nothing in a picture. Neither: a collapsed box would look like a leaf. |
 | Layout direction | a view's `direction` attribute, defaulting to the rules of section 7.4 | The rules only: a view cannot choose. A style property of edge kinds: direction belongs to a view, not to the kinds it shows. |
+| First layout of the free containers in a stack (swimlanes) | one elk run over the steps of all lanes, layers across the stack, then rows packed per lane | One elk run per lane: steps start at the left of every lane whatever the edges between lanes, so cross-lane flows zigzag. The whole view in one elk run with lanes as compound nodes: elk places compound nodes side by side in layers, not stacked, and has no swimlane support. |
+| Cycles in the first layout | dg reverses the back edges of a depth-first search from the nodes no edge enters; cycles no such node leads to are left to elk | elk's greedy cycle breaking alone: a decision with more edges out than in goes first, so a flowchart with a loop back can be drawn upside down. elk's `DEPTH_FIRST`: starts from the first node by ID when a cycle has no source, which drew `examples/c4-container`'s customer at the bottom. |
+| Rotated container label | `label_side = "left"`, centered along the left edge with a line between label and content | Label at the top of each lane: lanes stacked vertically read as rows of boxes, not swimlanes. Unrotated text on the left: a long label makes a wide strip in every lane. |
 | Spiral clearance | four grid units | Two grid units: with libavoid's buffer around each box no edge fits between two neighbors, and libavoid draws a straight line through them. |

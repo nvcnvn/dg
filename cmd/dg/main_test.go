@@ -41,7 +41,6 @@ func TestRun(t *testing.T) {
 		{name: "fmt syntax error", args: []string{"fmt", "-C", "../../testdata/check/syntax"}, code: 1, stderr: "model.hcl:2:11: error: Invalid expression"},
 		{name: "serve refuses a non-loopback address", args: []string{"serve", "-C", "../../examples/hello", "-addr", "0.0.0.0:0", "-open=false"}, code: 1, stderr: "not a loopback address"},
 		{name: "export undefined view", args: []string{"export", "-C", "../../examples/hello", "--view", "nope"}, code: 1, stderr: `view "nope" is not defined (views: main)`},
-		{name: "export refuses what is not drawn yet", args: []string{"export", "-C", "../../testdata/refused"}, code: 1, stderr: "drawn from M8"},
 		{name: "project with errors", args: []string{"export", "-C", broken}, code: 1, stderr: `model.hcl:1:1: error: Undefined kind: Node "a" has undefined kind "nope".`},
 		{
 			name:     "export to a file",
@@ -73,7 +72,6 @@ func TestRun(t *testing.T) {
 		},
 		{name: "export every view needs a directory", args: []string{"export", "-C", "../../examples/hello", "--all"}, code: 1, stderr: "--all needs --out"},
 		{name: "export every view or one", args: []string{"export", "-C", "../../examples/hello", "--all", "--view", "main", "--out", allDir}, code: 1, stderr: "--all and --view exclude each other"},
-		{name: "export every view refuses what is not drawn yet", args: []string{"export", "-C", "../../testdata/refused", "--all", "--out", filepath.Join(tmp, "refused")}, code: 1, stderr: "drawn from M8"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

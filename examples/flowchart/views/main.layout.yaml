@@ -1,0 +1,5 @@
+version: 1
+place:
+  checks: {order: [lint, unit, scan, integration]}
+edge_hints:
+  fix-checks: {from_side: bottom, to_side: left}

@@ -1,4 +1,5 @@
 import { cmp, containerSize, intersects, roundTo, type Box, type Layout, type NodeMeasure, type Point, type Size } from '../geometry/geometry';
+import { arrangeFrame } from '../geometry/policy';
 import type { ResolvedView } from '../protocol/view';
 
 const MAX_RINGS = 1000;
@@ -10,7 +11,7 @@ const CLEARANCE = 4;
 // frame, else at the center of the frame, and moves outward in a spiral on the grid until it
 // keeps four grid units of clearance from every placed node of the frame. pins are positions
 // relative to the frame's content origin; a negative one inside a container is drawn at 0 (spec
-// 7.1), so it is placed there.
+// 7.1), so it is placed there. A stack or grid frame places its children by its policy instead.
 export function placeSpiral(view: ResolvedView, measures: Map<string, NodeMeasure>, pins: Map<string, Point>, grid: number): Layout {
   const byId = new Map(view.nodes.map((n) => [n.id, n]));
   const kids = new Map<string, string[]>();
@@ -72,6 +73,10 @@ export function placeSpiral(view: ResolvedView, measures: Map<string, NodeMeasur
       const { size, tooSmall: small } = containerSize(n, measures.get(id)!, children, grid);
       sizes.set(id, size);
       if (small) tooSmall.add(id);
+    }
+    if (byId.get(frame)?.policy) {
+      arrangeFrame(byId, measures, frame, rel, sizes);
+      return;
     }
     const placed: Box[] = [];
     const done = new Set<string>();

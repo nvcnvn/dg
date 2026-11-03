@@ -72,7 +72,13 @@ export function measureNode(n: ViewNode, m: TextMeasure, grid: number, custom?: 
   const pin = n.pin;
 
   if (n.container) {
-    const origin = { x: pad, y: content.h ? pad / 2 + content.h + pad : pad };
+    const header = content.h ? pad / 2 + content.h + pad : pad;
+    if (s.label_side === 'left') {
+      const origin = { x: header, y: pad };
+      const size = { w: Math.max(s.min_w, ceilTo(origin.x + pad, grid)), h: Math.max(s.min_h, ceilTo(content.w + 2 * pad, grid)) };
+      return { text, icon, picture, content, size, origin };
+    }
+    const origin = { x: pad, y: header };
     const size = {
       w: Math.max(s.min_w, ceilTo(content.w + 2 * pad, grid)),
       h: Math.max(s.min_h, ceilTo(origin.y + pad, grid)),
@@ -144,26 +150,6 @@ export interface Layout {
   tooSmall: Set<string>;
 }
 
-// fitContainers completes a layout whose leaf sizes and positions are known by sizing every
-// container, innermost first.
-export function fitContainers(view: ResolvedView, measures: Map<string, NodeMeasure>, rel: Map<string, Point>, grid: number): Layout {
-  const sizes = new Map<string, Size>();
-  const tooSmall = new Set<string>();
-  const byId = new Map(view.nodes.map((n) => [n.id, n]));
-  const deepestFirst = view.nodes.map((n) => ({ n, d: depth(byId, n) })).sort((a, b) => b.d - a.d || cmp(a.n.id, b.n.id));
-  for (const { n } of deepestFirst) {
-    if (!n.container) {
-      sizes.set(n.id, measures.get(n.id)!.size);
-      continue;
-    }
-    const children = view.nodes.filter((c) => c.frame === n.id).map((c) => ({ ...at(rel, c.id), ...sizes.get(c.id)! }));
-    const { size, tooSmall: small } = containerSize(n, measures.get(n.id)!, children, grid);
-    sizes.set(n.id, size);
-    if (small) tooSmall.add(n.id);
-  }
-  return { rel, sizes, tooSmall };
-}
-
 // absoluteBoxes returns every node's box in canvas coordinates. A negative coordinate inside a
 // container is drawn as 0 (spec 7.1).
 export function absoluteBoxes(view: ResolvedView, measures: Map<string, NodeMeasure>, layout: Layout): Map<string, Box> {
@@ -201,6 +187,11 @@ export interface ContentLayout {
   picture?: Box;
   // badge is the "+" badge of a collapsed container, under its label.
   badge?: Box;
+  // rotate is set for a container's label along its left edge: the label and icon are laid out
+  // as on top and turned a quarter counterclockwise around this point, the middle of the strip
+  // left of the content origin's padding; divider is the x of the line between strip and content.
+  rotate?: Point;
+  divider?: number;
 }
 
 // contentLayout lays out a node's content in box b: a container's at its top-left corner, its
@@ -210,11 +201,15 @@ export function contentLayout(n: ViewNode, m: NodeMeasure, b: Box, custom?: Cust
   const pad = n.style.padding;
   const th = m.text?.h ?? 0;
   if (n.container) {
-    const x = b.x + pad;
-    const y = b.y + pad / 2;
+    const left = n.style.label_side === 'left' && m.content.h > 0;
+    const strip = m.origin.x - pad / 2;
+    const rotate = left ? { x: b.x + strip / 2, y: b.y + b.h / 2 } : undefined;
+    const x = rotate ? rotate.x - m.content.w / 2 : b.x + pad;
+    const y = rotate ? rotate.y - m.content.h / 2 : b.y + pad / 2;
     const icon = m.icon ? { x, y, w: m.icon, h: m.icon } : undefined;
     const top = y + (icon ? m.icon + GAP : 0);
-    return { textBox: { x, y: top, w: m.text?.w ?? 0, h: th }, align: 'left', icon };
+    const textBox = { x, y: top, w: m.text?.w ?? 0, h: th };
+    return rotate ? { textBox, align: 'left', icon, rotate, divider: b.x + strip } : { textBox, align: 'left', icon };
   }
   if (m.table) return { textBox: { x: b.x + pad, y: b.y + pad, w: Math.max(0, b.w - 2 * pad), h: th }, align: 'center' };
   const inner = innerBox(n.style.shape, b, custom);

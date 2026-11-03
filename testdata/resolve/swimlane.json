@@ -1,0 +1,545 @@
+{
+  "view": "main",
+  "grid": 10,
+  "nodes": [
+    {
+      "id": "backorder",
+      "kind": "node",
+      "label": "Backorder",
+      "frame": "sales",
+      "style": {
+        "shape": "rect",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "billing",
+      "kind": "lane",
+      "label": "Billing",
+      "frame": "fulfilment",
+      "container": true,
+      "style": {
+        "shape": "rect",
+        "fill": "#F8F9FA",
+        "stroke": "#9AA0A6",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 20,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0,
+        "label_side": "left"
+      }
+    },
+    {
+      "id": "check",
+      "kind": "node",
+      "label": "Check order",
+      "frame": "sales",
+      "style": {
+        "shape": "rect",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "customer",
+      "kind": "lane",
+      "label": "Customer",
+      "frame": "fulfilment",
+      "container": true,
+      "style": {
+        "shape": "rect",
+        "fill": "#F8F9FA",
+        "stroke": "#9AA0A6",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 20,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0,
+        "label_side": "left"
+      }
+    },
+    {
+      "id": "fulfilment",
+      "kind": "lane-set",
+      "label": "Order fulfilment",
+      "container": true,
+      "drill": [
+        "lanes"
+      ],
+      "policy": {
+        "layout": "stack",
+        "direction": "vertical",
+        "gap": 0,
+        "stretch": true,
+        "columns": 3,
+        "align": "start",
+        "order": [
+          "customer",
+          "sales",
+          "warehouse",
+          "billing"
+        ]
+      },
+      "style": {
+        "shape": "rect",
+        "fill": "#FFFFFF",
+        "stroke": "#9AA0A6",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0,
+        "label_side": "left"
+      }
+    },
+    {
+      "id": "in-stock",
+      "kind": "decision",
+      "label": "In stock?",
+      "frame": "sales",
+      "style": {
+        "shape": "diamond",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "invoice",
+      "kind": "node",
+      "label": "Send invoice",
+      "frame": "billing",
+      "style": {
+        "shape": "rect",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "order",
+      "kind": "terminal",
+      "label": "Place order",
+      "frame": "customer",
+      "style": {
+        "shape": "stadium",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "payment",
+      "kind": "node",
+      "label": "Collect payment",
+      "frame": "billing",
+      "style": {
+        "shape": "rect",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "pick",
+      "kind": "node",
+      "label": "Pick items",
+      "frame": "warehouse",
+      "style": {
+        "shape": "rect",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "receive",
+      "kind": "terminal",
+      "label": "Receive goods",
+      "frame": "customer",
+      "style": {
+        "shape": "stadium",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "sales",
+      "kind": "lane",
+      "label": "Sales",
+      "frame": "fulfilment",
+      "container": true,
+      "style": {
+        "shape": "rect",
+        "fill": "#F8F9FA",
+        "stroke": "#9AA0A6",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 20,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0,
+        "label_side": "left"
+      }
+    },
+    {
+      "id": "ship",
+      "kind": "node",
+      "label": "Ship",
+      "frame": "warehouse",
+      "style": {
+        "shape": "rect",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "warehouse",
+      "kind": "lane",
+      "label": "Warehouse",
+      "frame": "fulfilment",
+      "container": true,
+      "style": {
+        "shape": "rect",
+        "fill": "#F8F9FA",
+        "stroke": "#9AA0A6",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 20,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0,
+        "label_side": "left"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "backorder-pick",
+      "kind": "async",
+      "from": {
+        "node": "backorder"
+      },
+      "to": {
+        "node": "pick"
+      },
+      "labels": {
+        "mid": "restocked"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [
+          6,
+          4
+        ],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "check-in-stock",
+      "kind": "default",
+      "from": {
+        "node": "check"
+      },
+      "to": {
+        "node": "in-stock"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "in-stock-backorder",
+      "kind": "default",
+      "from": {
+        "node": "in-stock"
+      },
+      "to": {
+        "node": "backorder"
+      },
+      "labels": {
+        "mid": "no"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "in-stock-pick",
+      "kind": "default",
+      "from": {
+        "node": "in-stock"
+      },
+      "to": {
+        "node": "pick"
+      },
+      "labels": {
+        "mid": "yes"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "invoice-payment",
+      "kind": "default",
+      "from": {
+        "node": "invoice"
+      },
+      "to": {
+        "node": "payment"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "order-check",
+      "kind": "default",
+      "from": {
+        "node": "order"
+      },
+      "to": {
+        "node": "check"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "pick-ship",
+      "kind": "default",
+      "from": {
+        "node": "pick"
+      },
+      "to": {
+        "node": "ship"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "ship-invoice",
+      "kind": "default",
+      "from": {
+        "node": "ship"
+      },
+      "to": {
+        "node": "invoice"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "ship-receive",
+      "kind": "default",
+      "from": {
+        "node": "ship"
+      },
+      "to": {
+        "node": "receive"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-spec.hcl:1:1: info: Overridden definition: The kind "lane-set" replaces the one defined at <generic>/spec.hcl:20:1.
+spec.hcl:1:1: info: Overridden definition: The kind "lane-set" replaces the one defined at <generic>/spec.hcl:21:1.
 style.hcl:1:1: info: Overridden definition: The style "lane-set" overrides the properties it sets of the one defined at <generic>/style.hcl:106:1.
 views/broken.layout.yaml:1:10: error: Invalid layout: Version 2 is not supported; the version is 1.
 views/broken.layout.yaml:3:3: error: Invalid layout: Invalid ID: "bad:key" contains a raw ':' or '#'; write %3A or %23.
@@ -33,11 +33,15 @@ views/broken.layout.yaml:18:105: error: Invalid layout: The values of stroke_das
 views/broken.layout.yaml:19:5: error: File not found: Decoration "m": the picture "missing.svg" cannot be read.
 views/broken.layout.yaml:20:5: error: Invalid picture: Decoration "n": the picture "model.hcl" must be an SVG picture, whose root element is svg with xmlns="http://www.w3.org/2000/svg".
 views/broken.layout.yaml:21:1: error: Invalid layout: Unknown field "extra"; expected one of version, place, edge_hints, decorations.
+views/lanes.layout.yaml:3:3: warning: Ignored position: Node "b" is placed in order by "lanes", a stack container, so its x and y are ignored.
 views/main.layout.yaml:3:3: warning: Stale frame: Node "a" is stored relative to the canvas, but its frame in this view is node "g".
 views/main.layout.yaml:3:58: warning: Orphan layout entry: Port "p9" does not exist.
-views/main.layout.yaml:4:3: warning: Ignored position: Node "b" is in "lanes", a stack container, so its x and y are ignored.
+views/main.layout.yaml:4:3: warning: Ignored position: Node "b" is placed in order by "lanes", a stack container, so its x and y are ignored.
+views/main.layout.yaml:5:3: warning: Ignored order: Node "g" is not a stack or grid container, so its order is ignored.
 views/main.layout.yaml:5:3: warning: Stale frame: Node "g" is stored relative to node "lanes", but its frame in this view is the canvas.
 views/main.layout.yaml:6:3: warning: Orphan layout entry: Node "gone" does not exist.
+views/main.layout.yaml:7:3: warning: Ignored order entry: Node "a" in the order of "lanes" is not its child.
+views/main.layout.yaml:7:3: warning: Ignored order entry: Node "b" is in the order of "lanes" twice.
 views/main.layout.yaml:7:3: warning: Orphan layout entry: Ordered node "gone" does not exist.
 views/main.layout.yaml:11:3: warning: Orphan layout entry: Edge "old" does not exist.
 views/main.layout.yaml:12:3: warning: Orphan layout entry: Node "nobody" does not exist.

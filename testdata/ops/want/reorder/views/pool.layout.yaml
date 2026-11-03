@@ -1,0 +1,3 @@
+version: 1
+place:
+  pool: {order: [worker-2, worker-1]}

@@ -2,7 +2,7 @@
   {
     "severity": "info",
     "summary": "Overridden definition",
-    "detail": "The kind \"lane-set\" replaces the one defined at \u003cgeneric\u003e/spec.hcl:20:1.",
+    "detail": "The kind \"lane-set\" replaces the one defined at \u003cgeneric\u003e/spec.hcl:21:1.",
     "file": "spec.hcl",
     "line": 1,
     "column": 1,
@@ -351,6 +351,16 @@
   },
   {
     "severity": "warning",
+    "summary": "Ignored position",
+    "detail": "Node \"b\" is placed in order by \"lanes\", a stack container, so its x and y are ignored.",
+    "file": "views/lanes.layout.yaml",
+    "line": 3,
+    "column": 3,
+    "end_line": 3,
+    "end_column": 3
+  },
+  {
+    "severity": "warning",
     "summary": "Stale frame",
     "detail": "Node \"a\" is stored relative to the canvas, but its frame in this view is node \"g\".",
     "file": "views/main.layout.yaml",
@@ -372,11 +382,21 @@
   {
     "severity": "warning",
     "summary": "Ignored position",
-    "detail": "Node \"b\" is in \"lanes\", a stack container, so its x and y are ignored.",
+    "detail": "Node \"b\" is placed in order by \"lanes\", a stack container, so its x and y are ignored.",
     "file": "views/main.layout.yaml",
     "line": 4,
     "column": 3,
     "end_line": 4,
+    "end_column": 3
+  },
+  {
+    "severity": "warning",
+    "summary": "Ignored order",
+    "detail": "Node \"g\" is not a stack or grid container, so its order is ignored.",
+    "file": "views/main.layout.yaml",
+    "line": 5,
+    "column": 3,
+    "end_line": 5,
     "end_column": 3
   },
   {
@@ -397,6 +417,26 @@
     "line": 6,
     "column": 3,
     "end_line": 6,
+    "end_column": 3
+  },
+  {
+    "severity": "warning",
+    "summary": "Ignored order entry",
+    "detail": "Node \"a\" in the order of \"lanes\" is not its child.",
+    "file": "views/main.layout.yaml",
+    "line": 7,
+    "column": 3,
+    "end_line": 7,
+    "end_column": 3
+  },
+  {
+    "severity": "warning",
+    "summary": "Ignored order entry",
+    "detail": "Node \"b\" is in the order of \"lanes\" twice.",
+    "file": "views/main.layout.yaml",
+    "line": 7,
+    "column": 3,
+    "end_line": 7,
     "end_column": 3
   },
   {

@@ -32,7 +32,7 @@
   {
     "severity": "info",
     "summary": "Overridden definition",
-    "detail": "The edge kind \"default\" replaces the one defined at \u003cgeneric\u003e/spec.hcl:44:1.",
+    "detail": "The edge kind \"default\" replaces the one defined at \u003cgeneric\u003e/spec.hcl:45:1.",
     "file": "spec.hcl",
     "line": 3,
     "column": 1,

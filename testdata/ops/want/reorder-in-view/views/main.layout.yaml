@@ -1,0 +1,9 @@
+version: 1
+place:
+  disk: {in: rack, x: 10, y: 10}
+  gateway: {x: 0, y: 0}
+  pool: {order: [worker-2]}
+  rack: {x: 0, y: 400}
+  worker-2: {w: 210, h: 60}
+edge_hints:
+  gw-w1: {from_side: right}

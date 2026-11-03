@@ -1,6 +1,6 @@
 packs/one/spec.hcl:1:1: info: Overridden definition: The kind "service" replaces the one defined at <generic>/spec.hcl:3:1.
 packs/one/style.hcl:1:1: info: Overridden definition: The style "service" overrides the properties it sets of the one defined at <generic>/style.hcl:28:1.
 spec.hcl:1:1: info: Overridden definition: The kind "widget" replaces the one defined at packs/one/spec.hcl:5:1.
-spec.hcl:3:1: info: Overridden definition: The edge kind "default" replaces the one defined at <generic>/spec.hcl:44:1.
+spec.hcl:3:1: info: Overridden definition: The edge kind "default" replaces the one defined at <generic>/spec.hcl:45:1.
 style.hcl:1:1: info: Overridden definition: The style "widget" overrides the properties it sets of the one defined at packs/one/style.hcl:5:1.
 exit 0

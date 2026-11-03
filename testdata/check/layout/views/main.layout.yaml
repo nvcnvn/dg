@@ -2,9 +2,9 @@ version: 1
 place:
   a: {x: 0, y: 0, ports: {p1: {side: left, offset: 0.5}, p9: {side: top, offset: 0.1}}}
   b: {in: lanes, x: 10, y: 20}
-  g: {in: lanes, x: 0, y: 0}
+  g: {in: lanes, x: 0, y: 0, order: [a]}
   gone: {x: 0, y: 0}
-  lanes: {x: 100, y: 0, order: [b, gone]}
+  lanes: {x: 100, y: 0, order: [b, gone, b, a]}
   sys%3Actl: {x: 0, y: 0}
 edge_hints:
   ab: {from_side: bottom}

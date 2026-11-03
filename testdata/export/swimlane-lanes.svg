@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 1490 470" width="1490" height="470" font-family="Inter, sans-serif">
+<g data-node="billing">
+<rect x="10" y="360" width="1450" height="80" fill="#F8F9FA" stroke="#9AA0A6" stroke-width="1"/>
+<path d="M50 360 L50 440" stroke="#9AA0A6" stroke-width="1"/>
+<g transform="rotate(-90 30 400)">
+<text x="10" y="405" fill="#202124" font-size="14">Billing</text>
+</g>
+</g>
+<g data-node="customer">
+<rect x="10" y="10" width="1450" height="110" fill="#F8F9FA" stroke="#9AA0A6" stroke-width="1"/>
+<path d="M50 10 L50 120" stroke="#9AA0A6" stroke-width="1"/>
+<g transform="rotate(-90 30 65)">
+<text x="-2" y="70" fill="#202124" font-size="14">Customer</text>
+</g>
+</g>
+<g data-node="sales">
+<rect x="10" y="120" width="1450" height="120" fill="#F8F9FA" stroke="#9AA0A6" stroke-width="1"/>
+<path d="M50 120 L50 240" stroke="#9AA0A6" stroke-width="1"/>
+<g transform="rotate(-90 30 180)">
+<text x="12" y="185" fill="#202124" font-size="14">Sales</text>
+</g>
+</g>
+<g data-node="warehouse">
+<rect x="10" y="240" width="1450" height="120" fill="#F8F9FA" stroke="#9AA0A6" stroke-width="1"/>
+<path d="M50 240 L50 360" stroke="#9AA0A6" stroke-width="1"/>
+<g transform="rotate(-90 30 300)">
+<text x="-7" y="305" fill="#202124" font-size="14">Warehouse</text>
+</g>
+</g>
+<g data-node="backorder">
+<rect x="630" y="160" width="100" height="40" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="680" y="185" text-anchor="middle" fill="#202124" font-size="14">Backorder</text>
+</g>
+<g data-node="check">
+<rect x="240" y="160" width="110" height="40" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="295" y="185" text-anchor="middle" fill="#202124" font-size="14">Check order</text>
+</g>
+<g data-node="in-stock">
+<path d="M490 140 L570 180 L490 220 L410 180 Z" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="490" y="185" text-anchor="middle" fill="#202124" font-size="14">In stock?</text>
+</g>
+<g data-node="invoice">
+<rect x="1130" y="380" width="110" height="40" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="1185" y="405" text-anchor="middle" fill="#202124" font-size="14">Send invoice</text>
+</g>
+<g data-node="order">
+<rect x="60" y="30" width="120" height="40" rx="20" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="120" y="55" text-anchor="middle" fill="#202124" font-size="14">Place order</text>
+</g>
+<g data-node="payment">
+<rect x="1310" y="380" width="130" height="40" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="1375" y="405" text-anchor="middle" fill="#202124" font-size="14">Collect payment</text>
+</g>
+<g data-node="pick">
+<rect x="790" y="260" width="100" height="40" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="840" y="285" text-anchor="middle" fill="#202124" font-size="14">Pick items</text>
+</g>
+<g data-node="receive">
+<rect x="1110" y="30" width="140" height="40" rx="20" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="1180" y="55" text-anchor="middle" fill="#202124" font-size="14">Receive goods</text>
+</g>
+<g data-node="ship">
+<rect x="950" y="260" width="100" height="40" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="1000" y="285" text-anchor="middle" fill="#202124" font-size="14">Ship</text>
+</g>
+<g data-edge="backorder-pick">
+<path d="M730 180 L840 180 L840 260" fill="none" stroke="#3C4043" stroke-width="1.5" stroke-dasharray="6 4"/>
+<path d="M835 250 L840 260 L845 250" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="790" y="172" width="70" height="17" fill="#FFFFFF"/>
+<text x="825" y="185" text-anchor="middle" fill="#202124" font-size="12">restocked</text>
+</g>
+<g data-edge="check-in-stock">
+<path d="M350 180 L410 180" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M400 185 L410 180 L400 175" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="in-stock-backorder">
+<path d="M570 180 L630 180" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M620 185 L630 180 L620 175" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="585" y="172" width="30" height="17" fill="#FFFFFF"/>
+<text x="600" y="185" text-anchor="middle" fill="#202124" font-size="12">no</text>
+</g>
+<g data-edge="in-stock-pick">
+<path d="M490 220 L490 230 L778 230 L778 280 L790 280" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M780 285 L790 280 L780 275" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="645" y="222" width="30" height="17" fill="#FFFFFF"/>
+<text x="660" y="235" text-anchor="middle" fill="#202124" font-size="12">yes</text>
+</g>
+<g data-edge="invoice-payment">
+<path d="M1240 400 L1310 400" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M1300 405 L1310 400 L1300 395" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="order-check">
+<path d="M120 70 L120 82 L228 82 L228 180 L240 180" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M230 185 L240 180 L230 175" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="pick-ship">
+<path d="M890 280 L950 280" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M940 285 L950 280 L940 275" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="ship-invoice">
+<path d="M1000 300 L1000 312 L1118 312 L1118 400 L1130 400" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M1120 405 L1130 400 L1120 395" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="ship-receive">
+<path d="M1000 260 L1000 250 L1098 250 L1098 50 L1110 50" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M1100 55 L1110 50 L1100 45" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+</svg>

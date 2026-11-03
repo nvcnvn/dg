@@ -16,7 +16,7 @@ style.hcl:20:1: error: Invalid ID: The tag ID "bad tag" is not a simple ID (lett
 style.hcl:22:1: error: Invalid style label: The label "node.api" names one node; such rules are only allowed in a view.
 style.hcl:24:1: warning: Undefined kind: Style label "ghost" names no defined kind.
 style.hcl:26:1: error: Invalid style label: The label "a.b" is not a kind, tag.<tag> or node.<id>.
-style.hcl:32:1: info: Overridden definition: The edge_style "default" overrides the properties it sets of the one defined at <generic>/style.hcl:151:1.
+style.hcl:32:1: info: Overridden definition: The edge_style "default" overrides the properties it sets of the one defined at <generic>/style.hcl:158:1.
 style.hcl:33:3: error: Unsupported argument: An argument named "fill" is not expected here.
 style.hcl:34:15: error: Invalid style value: The value of arrow_end must be one of "none", "arrow", "triangle", "triangle-open", "diamond", "diamond-open", "circle", "circle-open", "crow-one", "crow-zero-one", "crow-many", "crow-one-many", "crow-zero-many".
 style.hcl:35:15: error: Invalid style value: The value of routing must be one of "orthogonal", "polyline", "straight".

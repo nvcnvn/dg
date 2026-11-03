@@ -73,7 +73,7 @@ func (s *Server) Tools() []Tool {
 		}, s.op},
 		{&sdk.Tool{
 			Name:        "export",
-			Description: "Draw a view (the same as dg export): png (the default) and gif return the picture as an image, svg and json as text; json holds every node's box, port positions and edge routes in canvas coordinates, and every node's frame and rel, its position relative to the frame's content origin, which op move takes.",
+			Description: "Draw a view (the same as dg export): png (the default) and gif return the picture as an image, svg and json as text; json holds every node's box, port positions and edge routes in canvas coordinates, and every node's frame and rel, its position relative to the frame's content origin, which op move takes; ordered_in names the stack or grid container that places a node, which op reorder takes instead.",
 			InputSchema: json.RawMessage(`{"type":"object","properties":{"view":{"type":"string","description":"view ID (default main)"},"format":{"type":"string","enum":["png","gif","svg","json"],"description":"default png"}},"additionalProperties":false}`),
 		}, s.export},
 	}

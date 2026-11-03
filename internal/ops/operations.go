@@ -62,6 +62,8 @@ func (s *state) apply(op Op) error {
 		return s.move(op)
 	case "resize":
 		return s.resize(op)
+	case "reorder":
+		return s.reorder(op)
 	case "unpin":
 		return s.unpin(op)
 	case "pin_port":
@@ -845,10 +847,8 @@ func (s *state) place(v, id string, x, y int) (*int, *int, error) {
 	}
 	p := s.p
 	frame := view.Frame(p.Model, visible, id)
-	if frame != "" {
-		if set, ok := p.NodeStyle(vw, p.Model.Nodes[frame])["layout"]; ok && set.Value.AsString() != "free" {
-			return nil, nil, fmt.Errorf("node %q is in %q, a %s container, which places its children in order (reorder, M8)", id, frame, set.Value.AsString())
-		}
+	if c := p.PlacedBy(vw, visible, id); c != "" {
+		return nil, nil, fmt.Errorf("node %q is placed in order by %q, a %s container; reorder it instead", id, c, p.NodeStyle(vw, p.Model.Nodes[c])["layout"].Value.AsString())
 	}
 	l, err := s.layout(v)
 	if err != nil {
@@ -877,9 +877,12 @@ func (s *state) move(op Op) error {
 	return nil
 }
 
-// pinned returns the layout of view v and node id's entry in it.
+// pinned returns the layout of view v and node id's entry in it, which pins the node when it
+// holds a position or size. A child of a stack or grid container has no position to pin, so its
+// entry is made when it has none.
 func (s *state) pinned(v, id string) (*view.Layout, *view.Place, error) {
-	if _, _, err := s.shown(v, id); err != nil {
+	vw, visible, err := s.shown(v, id)
+	if err != nil {
 		return nil, nil, err
 	}
 	l, err := s.layout(v)
@@ -887,10 +890,23 @@ func (s *state) pinned(v, id string) (*view.Layout, *view.Place, error) {
 		return nil, nil, err
 	}
 	pl := l.Place[id]
-	if pl == nil {
+	if s.p.PlacedBy(vw, visible, id) != "" {
+		if pl == nil {
+			pl = &view.Place{}
+			l.Place[id] = pl
+		}
+		return l, pl, nil
+	}
+	if pl == nil || !pins(pl) {
 		return nil, nil, fmt.Errorf("node %q is not pinned in view %q; move it first (dg op has no geometry: read drawn positions with dg export --format json)", id, v)
 	}
 	return l, pl, nil
+}
+
+// pins reports whether a layout entry pins its node: whether it holds a position or size,
+// rather than only a container's order.
+func pins(pl *view.Place) bool {
+	return pl.X != nil || pl.Y != nil || pl.W != nil || pl.H != nil
 }
 
 func (s *state) resize(op Op) error {
@@ -926,12 +942,68 @@ func (s *state) unpin(op Op) error {
 	if err != nil {
 		return err
 	}
-	if l.Place[op.ID] == nil {
+	pl := l.Place[op.ID]
+	if pl == nil || !pins(pl) && len(pl.Ports) == 0 {
 		return fmt.Errorf("node %q is not pinned in view %q", op.ID, op.View)
 	}
-	delete(l.Place, op.ID)
+	l.Place[op.ID] = &view.Place{Order: pl.Order}
 	s.putLayout(op.View, l)
 	s.result(Result{Op: op.Op, ID: op.ID})
+	return nil
+}
+
+// reorder sets the order list of a stack or grid container in a view: one drawn expanded, or
+// the view's of, whose policy places its children on the canvas. An empty order removes the
+// list from any node, so a stale one can be cleared.
+func (s *state) reorder(op Op) error {
+	p, err := s.project()
+	if err != nil {
+		return err
+	}
+	vw := p.Views[op.View]
+	switch {
+	case vw == nil:
+		return fmt.Errorf("view %q does not exist", op.View)
+	case p.Model.Nodes[op.Container] == nil:
+		return fmt.Errorf("node %q does not exist", op.Container)
+	}
+	visible, collapsed := vw.Visible(p.Spec, p.Model)
+	c := op.Container
+	switch {
+	case len(op.Order) == 0:
+	case !visible[c] && p.PolicyContainer(vw, visible, "") == c:
+	case !visible[c]:
+		return fmt.Errorf("view %q does not show node %q", op.View, c)
+	case collapsed[c]:
+		return fmt.Errorf("view %q draws node %q collapsed", op.View, c)
+	case p.PolicyContainer(vw, visible, c) == "":
+		return fmt.Errorf("node %q is not a stack or grid container in view %q", c, op.View)
+	}
+	seen := map[string]bool{}
+	for _, id := range op.Order {
+		switch {
+		case seen[id]:
+			return fmt.Errorf("node %q is in the order twice", id)
+		case !visible[id] || p.PlacedBy(vw, visible, id) != c:
+			return fmt.Errorf("node %q is not a child of %q drawn in view %q", id, c, op.View)
+		}
+		seen[id] = true
+	}
+	l, err := s.layout(op.View)
+	if err != nil {
+		return err
+	}
+	s.result(Result{Op: op.Op, ID: c})
+	pl := l.Place[c]
+	if pl == nil {
+		if len(op.Order) == 0 {
+			return nil
+		}
+		pl = &view.Place{}
+		l.Place[c] = pl
+	}
+	pl.Order = slices.Clone(op.Order)
+	s.putLayout(op.View, l)
 	return nil
 }
 

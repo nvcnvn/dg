@@ -61,7 +61,7 @@ var opFlagHelp = map[string]string{
 // applyOp applies an operation; tests replace it to record operations instead.
 var applyOp = ops.Apply
 
-var listFields = []string{"tags", "include", "exclude", "collapse", "edges", "unset"}
+var listFields = []string{"tags", "include", "exclude", "collapse", "edges", "unset", "order"}
 
 type listFlag []string
 

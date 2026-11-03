@@ -31,7 +31,10 @@ type Resolved struct {
 	Grid      int    `json:"grid"`
 	Direction string `json:"direction,omitempty"`
 	// Breadcrumbs are the levels of views this view leads back to, outermost first.
-	Breadcrumbs [][]string              `json:"breadcrumbs,omitempty"`
+	Breadcrumbs [][]string `json:"breadcrumbs,omitempty"`
+	// Policy is set in a view whose of is a stack or grid container it does not draw: the
+	// container's policy then places the nodes on the canvas (spec 7.3).
+	Policy      *Policy                 `json:"policy,omitempty"`
 	Font        *Font                   `json:"font,omitempty"`
 	Nodes       []Node                  `json:"nodes"`
 	Edges       []Edge                  `json:"edges"`
@@ -95,7 +98,22 @@ type Node struct {
 	// Compartments holds the node's rows; rows outside compartments are in one named "".
 	Compartments []Compartment `json:"compartments,omitempty"`
 	Pin          *Pin          `json:"pin,omitempty"`
-	Style        style.Node    `json:"style"`
+	// Policy is set on an expanded stack or grid container.
+	Policy *Policy    `json:"policy,omitempty"`
+	Style  style.Node `json:"style"`
+}
+
+// Policy is how a stack or grid container places its drawn children (spec 7.3). Order lists
+// them: those in the layout's order list first, as listed, then the others in sorted ID order.
+type Policy struct {
+	Container string   `json:"container,omitempty"`
+	Layout    string   `json:"layout"`
+	Direction string   `json:"direction"`
+	Gap       float64  `json:"gap"`
+	Stretch   bool     `json:"stretch,omitempty"`
+	Columns   int      `json:"columns"`
+	Align     string   `json:"align"`
+	Order     []string `json:"order"`
 }
 
 // Compartment is a named group of a node's rows, in declaration order.
@@ -119,7 +137,8 @@ type Port struct {
 
 // Pin is a node's entry in the layout file. X and Y are relative to the content origin of its
 // frame; In is set, to the stored frame ("" for the canvas), only when that differs from the
-// node's frame and the browser must convert the coordinates (spec 7.1).
+// node's frame and the browser must convert the coordinates (spec 7.1). A child of a stack or
+// grid container has no position, so X and Y are 0 and its pin holds only a size and ports.
 type Pin struct {
 	In    *string               `json:"in,omitempty"`
 	X     int                   `json:"x"`
@@ -164,19 +183,11 @@ type EdgeHint struct {
 	LabelPos *float64 `json:"label_pos,omitempty"`
 }
 
-// Resolve returns the resolved view id, with nodes and edges sorted by ID. Features the
-// renderer does not draw yet are refused with errors naming the milestone that adds them.
+// Resolve returns the resolved view id, with nodes and edges sorted by ID.
 func (s *Sources) Resolve(id string) (*Resolved, hcl.Diagnostics) {
 	v := s.Views[id]
 	if v == nil {
 		return nil, hcl.Diagnostics{{Severity: hcl.DiagError, Summary: "Undefined view", Detail: "View \"" + id + "\" is not defined."}}
-	}
-	var diags hcl.Diagnostics
-	notYet := func(rng hcl.Range, milestone int, what string) {
-		d := spec.Errorf(rng, "Not supported yet", "%s drawn from M%d.", what, milestone)
-		if !slices.ContainsFunc(diags, func(o *hcl.Diagnostic) bool { return o.Subject.String() == rng.String() && o.Detail == d.Detail }) {
-			diags = append(diags, d)
-		}
 	}
 	l := s.Layouts[id]
 	if l == nil {
@@ -185,16 +196,22 @@ func (s *Sources) Resolve(id string) (*Resolved, hcl.Diagnostics) {
 
 	m := s.Model
 	visible, collapsed := v.Visible(s.Spec, m)
+	frames := map[string]string{}
+	for nid := range visible {
+		frames[nid] = Frame(m, visible, nid)
+	}
 	r := &Resolved{View: id, Grid: s.Grid, Direction: v.Direction, Breadcrumbs: s.breadcrumbs(v), Nodes: []Node{}, Edges: []Edge{}}
+	if c := s.PolicyContainer(v, visible, ""); c != "" {
+		r.Policy = s.policy(v, l, c, "", frames)
+	}
 	for _, nid := range slices.Sorted(maps.Keys(visible)) {
 		n := m.Nodes[nid]
 		props := s.NodeStyle(v, n)
-		s.refuseUndrawn(props, style.NodeProps, notYet)
 		node := Node{
 			ID:        n.ID,
 			Kind:      n.Kind,
 			Label:     n.Label,
-			Frame:     Frame(m, visible, nid),
+			Frame:     frames[nid],
 			Container: s.Spec.IsContainer(n.Kind) && !collapsed[nid],
 			Collapsed: collapsed[nid],
 			Drill:     s.drill(id, nid),
@@ -208,11 +225,11 @@ func (s *Sources) Resolve(id string) (*Resolved, hcl.Diagnostics) {
 			}
 			node.Compartments = append(node.Compartments, rc)
 		}
+		if node.Container && s.PolicyContainer(v, visible, nid) != "" {
+			node.Policy = s.policy(v, l, nid, nid, frames)
+		}
 		if p := l.Place[nid]; p != nil {
-			if len(p.Order) > 0 {
-				notYet(p.Range, 8, "Order lists are")
-			}
-			node.Pin = pin(m, visible, node, p)
+			node.Pin = pin(m, visible, node, p, s.PlacedBy(v, visible, nid) != "")
 		}
 		if sh := s.Styles.Shapes[node.Style.Shape]; sh != nil {
 			if r.Shapes == nil {
@@ -223,7 +240,7 @@ func (s *Sources) Resolve(id string) (*Resolved, hcl.Diagnostics) {
 		r.Nodes = append(r.Nodes, node)
 	}
 	for _, de := range v.DrawnEdges(s.Spec, m, visible, collapsed) {
-		r.Edges = append(r.Edges, s.edge(v, l, de, notYet))
+		r.Edges = append(r.Edges, s.edge(v, l, de))
 	}
 	for _, o := range v.Overlays {
 		members := v.OverlayMembers(s.Spec, m, visible, collapsed, o)
@@ -239,10 +256,71 @@ func (s *Sources) Resolve(id string) (*Resolved, hcl.Diagnostics) {
 		}
 		r.Decorations = append(r.Decorations, resolveDecoration(d))
 	}
-	slices.SortFunc(diags, func(a, b *hcl.Diagnostic) int {
-		return cmp.Or(cmp.Compare(a.Subject.Filename, b.Subject.Filename), cmp.Compare(a.Subject.Start.Line, b.Subject.Start.Line), cmp.Compare(a.Subject.Start.Column, b.Subject.Start.Column), cmp.Compare(a.Detail, b.Detail))
-	})
-	return r, diags
+	return r, nil
+}
+
+// PolicyContainer returns the stack or grid container whose policy places nodes of frame in
+// view v, or "" when the frame is free: the frame itself, or for the canvas ("") the view's of
+// when the view does not draw it, which places only its own children there.
+func (s *Sources) PolicyContainer(v *View, visible map[string]bool, frame string) string {
+	c := frame
+	if frame == "" {
+		if v.Of == nil || visible[v.Of.Target] || s.Model.Nodes[v.Of.Target] == nil {
+			return ""
+		}
+		c = v.Of.Target
+	}
+	if set, ok := s.NodeStyle(v, s.Model.Nodes[c])["layout"]; ok && set.Value.AsString() != "free" {
+		return c
+	}
+	return ""
+}
+
+// PlacedBy returns the stack or grid container that places node id in view v, or "" when it
+// is placed freely (spec 7.3).
+func (s *Sources) PlacedBy(v *View, visible map[string]bool, id string) string {
+	frame := Frame(s.Model, visible, id)
+	c := s.PolicyContainer(v, visible, frame)
+	if frame == "" && c != "" {
+		if n := s.Model.Nodes[id]; n == nil || n.Parent == nil || n.Parent.Node != c {
+			return ""
+		}
+	}
+	return c
+}
+
+// policy returns the policy of container c, which places its children drawn in frame.
+func (s *Sources) policy(v *View, l *Layout, c, frame string, frames map[string]string) *Policy {
+	props := s.NodeStyle(v, s.Model.Nodes[c])
+	p := &Policy{
+		Layout:    props["layout"].Value.AsString(),
+		Direction: props["direction"].Value.AsString(),
+		Stretch:   props["stretch"].Value.True(),
+		Align:     props["align"].Value.AsString(),
+		Order:     []string{},
+	}
+	p.Gap, _ = props["gap"].Value.AsBigFloat().Float64()
+	columns, _ := props["columns"].Value.AsBigFloat().Int64()
+	p.Columns = int(columns)
+	if frame == "" {
+		p.Container = c
+	}
+	in := map[string]bool{}
+	for id, f := range frames {
+		if n := s.Model.Nodes[id]; f == frame && (frame != "" || n.Parent != nil && n.Parent.Node == c) {
+			in[id] = true
+		}
+	}
+	if pl := l.Place[c]; pl != nil {
+		for _, id := range pl.Order {
+			if in[id] {
+				p.Order = append(p.Order, id)
+				delete(in, id)
+			}
+		}
+	}
+	p.Order = append(p.Order, slices.Sorted(maps.Keys(in))...)
+	return p
 }
 
 // mergedLabel is the middle label of N > 1 lifted edges merged into one.
@@ -253,12 +331,11 @@ func mergedLabel(n int) string {
 // edge resolves a drawn edge. A lifted edge standing for one model edge keeps its labels and
 // style; one standing for several is labeled ×N and styled by their kind if they share one,
 // else by default. A lifted end has no port or row; the other end keeps those its edges share.
-func (s *Sources) edge(v *View, l *Layout, de DrawnEdge, notYet func(hcl.Range, int, string)) Edge {
+func (s *Sources) edge(v *View, l *Layout, de DrawnEdge) Edge {
 	m := s.Model
 	e := m.Edges[de.Edges[0]]
 	if !de.Lifted {
 		props := s.EdgeStyle(v, e.Kind, e.Tags, e.ID)
-		s.refuseUndrawn(props, style.EdgeProps, notYet)
 		edge := Edge{
 			ID:     e.ID,
 			Kind:   e.Kind,
@@ -296,7 +373,6 @@ func (s *Sources) edge(v *View, l *Layout, de DrawnEdge, notYet func(hcl.Range, 
 		labels = model.Labels{Mid: mergedLabel(len(de.Edges))}
 		props = s.EdgeStyle(v, kind, nil, "")
 	}
-	s.refuseUndrawn(props, style.EdgeProps, notYet)
 	edge := Edge{ID: de.Key, Edges: de.Edges, Kind: kind, From: from, To: to, Labels: labels, Style: style.DrawnEdge(props)}
 	if h := l.LiftHints[[2]string{de.From, de.To}]; h != nil {
 		edge.Hint = drawnHint(h)
@@ -434,21 +510,32 @@ func (s *Sources) ports(n *model.Node) []Port {
 	return out
 }
 
-// pin returns node's pin data from its layout entry, or nil when the entry's stored frame is
-// not drawn in this view or lies inside the node itself, so the node is unpinned (spec 7.1).
-func pin(m *model.Model, visible map[string]bool, node Node, p *Place) *Pin {
-	if p.In != node.Frame && (p.In != "" && !visible[p.In] || p.In == node.ID || m.Contains(node.ID, p.In)) {
+// pin returns node's pin data from its layout entry, or nil when the entry pins nothing: it
+// holds no position or size (only an order list), its stored frame is not drawn in this view or
+// lies inside the node itself (spec 7.1), or the node is placed by a stack or grid policy
+// (ordered) and the entry has no size or ports.
+func pin(m *model.Model, visible map[string]bool, node Node, p *Place, ordered bool) *Pin {
+	switch {
+	case ordered:
+		if p.W == nil && p.H == nil && len(p.Ports) == 0 {
+			return nil
+		}
+	case p.X == nil && p.Y == nil && p.W == nil && p.H == nil:
+		return nil
+	case p.In != node.Frame && (p.In != "" && !visible[p.In] || p.In == node.ID || m.Contains(node.ID, p.In)):
 		return nil
 	}
 	out := &Pin{W: p.W, H: p.H}
-	if p.In != node.Frame {
-		out.In = &p.In
-	}
-	if p.X != nil {
-		out.X = *p.X
-	}
-	if p.Y != nil {
-		out.Y = *p.Y
+	if !ordered {
+		if p.In != node.Frame {
+			out.In = &p.In
+		}
+		if p.X != nil {
+			out.X = *p.X
+		}
+		if p.Y != nil {
+			out.Y = *p.Y
+		}
 	}
 	for name, pp := range p.Ports {
 		if !slices.ContainsFunc(node.Ports, func(port Port) bool { return port.Name == name }) {
@@ -460,13 +547,4 @@ func pin(m *model.Model, visible map[string]bool, node Node, p *Place) *Pin {
 		out.Ports[name] = PinnedPort{Side: pp.Side, Offset: pp.Offset}
 	}
 	return out
-}
-
-func (s *Sources) refuseUndrawn(props map[string]style.Setting, defs map[string]style.Prop, notYet func(hcl.Range, int, string)) {
-	for _, name := range slices.Sorted(maps.Keys(props)) {
-		set := props[name]
-		if m := style.DrawnFrom(defs, name, set.Value); m > 0 {
-			notYet(set.Range, m, "The value of "+name+" set here is")
-		}
-	}
 }

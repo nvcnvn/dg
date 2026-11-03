@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-50 -10 500 890" width="500" height="890" font-family="Inter, sans-serif">
+<g data-node="checks">
+<rect x="10" y="110" width="310" height="170" fill="#F8F9FA" stroke="#9AA0A6" stroke-width="1"/>
+<text x="30" y="135" fill="#202124" font-size="14">Checks</text>
+</g>
+<g data-node="approved">
+<path d="M335 580 L430 620 L335 660 L240 620 Z" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="335" y="625" text-anchor="middle" fill="#202124" font-size="14">Approved?</text>
+</g>
+<g data-node="deployed">
+<rect x="310" y="820" width="110" height="40" rx="20" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="365" y="845" text-anchor="middle" fill="#202124" font-size="14">Deployed</text>
+</g>
+<g data-node="fix">
+<rect x="170" y="720" width="100" height="40" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="220" y="745" text-anchor="middle" fill="#202124" font-size="14">Push a fix</text>
+</g>
+<g data-node="green">
+<path d="M110 340 L200 380 L110 420 L20 380 Z" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="110" y="385" text-anchor="middle" fill="#202124" font-size="14">All green?</text>
+</g>
+<g data-node="merge">
+<rect x="320" y="720" width="100" height="40" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="370" y="745" text-anchor="middle" fill="#202124" font-size="14">Merge</text>
+</g>
+<g data-node="opened">
+<rect x="80" y="10" width="180" height="40" rx="20" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="170" y="35" text-anchor="middle" fill="#202124" font-size="14">Pull request opened</text>
+</g>
+<g data-node="review">
+<rect x="280" y="480" width="110" height="40" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="335" y="505" text-anchor="middle" fill="#202124" font-size="14">Code review</text>
+</g>
+<g data-node="integration">
+<rect x="170" y="220" width="130" height="40" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="235" y="245" text-anchor="middle" fill="#202124" font-size="14">Integration tests</text>
+</g>
+<g data-node="lint">
+<rect x="40" y="160" width="100" height="40" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="90" y="185" text-anchor="middle" fill="#202124" font-size="14">Lint</text>
+</g>
+<g data-node="scan">
+<rect x="30" y="220" width="120" height="40" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="90" y="245" text-anchor="middle" fill="#202124" font-size="14">Security scan</text>
+</g>
+<g data-node="unit">
+<rect x="185" y="160" width="100" height="40" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="235" y="185" text-anchor="middle" fill="#202124" font-size="14">Unit tests</text>
+</g>
+<g data-edge="approved-fix">
+<path d="M240 620 L228 620 L228 708 L220 708 L220 720" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M215 710 L220 720 L225 710" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="198" y="660" width="60" height="17" fill="#FFFFFF"/>
+<text x="228" y="673" text-anchor="middle" fill="#202124" font-size="12">changes</text>
+</g>
+<g data-edge="approved-merge">
+<path d="M335 660 L335 672 L370 672 L370 720" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M365 710 L370 720 L375 710" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="355" y="664" width="30" height="17" fill="#FFFFFF"/>
+<text x="370" y="677" text-anchor="middle" fill="#202124" font-size="12">yes</text>
+</g>
+<g data-edge="checks-green">
+<path d="M110 280 L110 340" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M105 330 L110 340 L115 330" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="fix-checks">
+<path d="M220 760 L220 772 L-2 772 L-2 264 L10 264" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M0 269 L10 264 L0 259" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="-22" y="621" width="40" height="17" fill="#FFFFFF"/>
+<text x="-2" y="634" text-anchor="middle" fill="#202124" font-size="12">push</text>
+</g>
+<g data-edge="green-fix">
+<path d="M80 407 L80 446 L158 446 L158 740 L170 740" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M160 745 L170 740 L160 735" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="143" y="532" width="30" height="17" fill="#FFFFFF"/>
+<text x="158" y="545" text-anchor="middle" fill="#202124" font-size="12">no</text>
+</g>
+<g data-edge="green-review">
+<path d="M140 407 L140 430 L268 430 L268 500 L280 500" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M270 505 L280 500 L270 495" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="219" y="422" width="30" height="17" fill="#FFFFFF"/>
+<text x="234" y="435" text-anchor="middle" fill="#202124" font-size="12">yes</text>
+</g>
+<g data-edge="merge-deployed">
+<path d="M368 760 L368 820" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M363 810 L368 820 L373 810" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="opened-checks">
+<path d="M170 50 L170 110" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M165 100 L170 110 L175 100" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="review-approved">
+<path d="M335 520 L335 580" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M330 570 L335 580 L340 570" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+</svg>

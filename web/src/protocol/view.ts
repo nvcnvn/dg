@@ -7,6 +7,9 @@ export interface ResolvedView {
   direction?: 'down' | 'right' | 'up' | 'left';
   // breadcrumbs are the levels of views this view leads back to, outermost first.
   breadcrumbs?: string[][];
+  // policy is set in a view whose of is a stack or grid container it does not draw: the
+  // container's policy places the nodes on the canvas.
+  policy?: Policy;
   font?: { family: string; data: string };
   nodes: ViewNode[];
   edges: ViewEdge[];
@@ -73,7 +76,22 @@ export interface ViewNode {
   ports?: Port[];
   compartments?: Compartment[];
   pin?: Pin;
+  // policy is set on an expanded stack or grid container.
+  policy?: Policy;
   style: NodeStyle;
+}
+
+// Policy is how a stack or grid container places its drawn children (spec 7.3), which order
+// lists in the order they take.
+export interface Policy {
+  container?: string;
+  layout: 'stack' | 'grid';
+  direction: 'horizontal' | 'vertical';
+  gap: number;
+  stretch?: boolean;
+  columns: number;
+  align: 'start' | 'center' | 'end';
+  order: string[];
 }
 
 export interface Port {
@@ -92,6 +110,8 @@ export interface Row {
   key?: string;
 }
 
+// Pin is a node's layout entry. A node a stack or grid container places has no position: x and
+// y are 0 and only its size and ports apply.
 export interface Pin {
   in?: string;
   x: number;
@@ -119,6 +139,7 @@ export interface NodeStyle {
   min_h: number;
   max_w: number;
   z: number;
+  label_side?: 'left';
 }
 
 export interface ViewEdge {

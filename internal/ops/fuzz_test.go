@@ -46,6 +46,8 @@ func FuzzOp(f *testing.F) {
 		`{"op": "update_decoration", "view": "solo", "id": "note", "decoration": {"type": "rect", "w": 10, "h": 10}, "unset": ["text"]}`,
 		`{"op": "delete_decoration", "view": "solo", "id": "shelf"}`,
 		`{"op": "promote_decoration", "view": "solo", "id": "shelf", "kind": "group", "new": "s"}`,
+		`[{"op": "set_kind", "id": "pool", "kind": "lane-set"}, {"op": "reorder", "view": "pool", "container": "pool", "order": ["worker-2"]}, {"op": "unpin", "view": "main", "id": "pool"}]`,
+		`[{"op": "set_kind", "id": "pool", "kind": "grid-group"}, {"op": "reorder", "view": "main", "container": "pool", "order": ["worker-1", "worker-2"]}, {"op": "resize", "view": "main", "id": "worker-2", "w": 10, "h": 10}]`,
 		`[{"op": "create_node", "kind": "group"}, {"op": "set_label", "id": "group", "label": "Rack 2"}, {"op": "move", "view": "main", "id": "rack-2", "x": -5, "y": 5}]`,
 	} {
 		f.Add([]byte(seed), []byte{})

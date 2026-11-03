@@ -51,6 +51,8 @@ bin/dg op create_node -C my-diagram --kind service --label "API"        # ID api
 bin/dg op create_node -C my-diagram --kind database --id db --label "Orders"
 bin/dg op connect -C my-diagram --from api --to db --label "SQL" --json
 bin/dg op move -C my-diagram --view main --id db --x 200 --y 0
+bin/dg op reorder -C my-diagram --view main --container lanes \
+  --order intake --order review                                        # stack or grid order
 bin/dg op update_view -C my-diagram --id main \
   --collapse node.backend --unset edges                                # collapse, show every edge
 bin/dg op add_decoration -C my-diagram --view main \
@@ -62,8 +64,10 @@ bin/dg mcp -C my-diagram                   # MCP server over stdio: check, vocab
 
 An operation that would add a validation error, or change a `read_only` file, is refused and
 writes nothing. `dg op` computes no geometry: `dg export --format json` gives each node's `frame`
-and its position `rel` in it, which `move` takes. The scripts in `testdata/rebuild` rebuild
-`examples/c4-container`, `examples/c4` and `examples/incident` with operations alone.
+and its position `rel` in it, which `move` takes; a node a stack or grid container places also has
+`ordered_in`, the container `reorder` takes, since `move` refuses it. The scripts in `testdata/rebuild` rebuild
+`examples/c4-container`, `examples/c4`, `examples/incident`, `examples/swimlane`,
+`examples/flowchart` and `examples/state-machine` with operations alone.
 
 `dg serve` shows the views read-only (editing comes later): it redraws within tens of
 milliseconds of a save, and while the project has errors it lists them and keeps the last good
@@ -83,7 +87,12 @@ badge of the level above, relationships written between components and lifted to
 draws), `incident` (an overlay outlining a blast radius, view style rules, a collapsed tier, and
 decorations of every type around a pinned layout), `shapes` (every built-in shape, custom shapes,
 icons, style properties, arrow markers, ports and edge hints), `er` (tables with keyed rows,
-foreign keys from row to row with crow's-foot cardinality, a self-reference) and `class` (classes
-with compartments, inheritance, composition, aggregation, multiplicities, a self-association).
+foreign keys from row to row with crow's-foot cardinality, a self-reference), `class` (classes
+with compartments, inheritance, composition, aggregation, multiplicities, a self-association),
+`swimlane` (a lane set, drawn as a pool, stacking lanes in a stored order, rotated lane labels,
+steps flowing across the lanes, and a view whose `of` is the lane set), `flowchart` (steps,
+decisions, a loop back to the checks held to one side by edge hints, and parallel checks in a grid
+with centered columns) and `state-machine` (simple, initial and final states, a self-transition,
+and a state whose concurrent regions are stacked inside it).
 
 `dg check` exits 0 without errors, 1 with errors, 2 when dg itself fails.

@@ -12,5 +12,5 @@ model.hcl:51:10: error: Undefined node: Edge "undefined" references undefined no
 model.hcl:56:10: error: Invalid node reference: Expected node.<id>, node.<id>.port.<port> or node.<id>.row.<row>, with index form node["<id>"] for IDs that are not simple.
 model.hcl:57:10: error: Invalid node reference: Expected node.<id>, node.<id>.port.<port> or node.<id>.row.<row>, with index form node["<id>"] for IDs that are not simple.
 model.hcl:60:1: error: Missing required argument: The argument "to" is required.
-spec.hcl:1:1: info: Overridden definition: The kind "table" replaces the one defined at <generic>/spec.hcl:36:1.
+spec.hcl:1:1: info: Overridden definition: The kind "table" replaces the one defined at <generic>/spec.hcl:37:1.
 exit 1

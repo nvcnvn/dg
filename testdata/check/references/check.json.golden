@@ -142,7 +142,7 @@
   {
     "severity": "info",
     "summary": "Overridden definition",
-    "detail": "The kind \"table\" replaces the one defined at \u003cgeneric\u003e/spec.hcl:36:1.",
+    "detail": "The kind \"table\" replaces the one defined at \u003cgeneric\u003e/spec.hcl:37:1.",
     "file": "spec.hcl",
     "line": 1,
     "column": 1,

@@ -11,6 +11,7 @@ kind "decision" {}
 kind "terminal" {}
 kind "initial" {}
 kind "final" {}
+kind "simple-state" {}
 kind "junction" {}
 
 kind "group" {

@@ -110,6 +110,11 @@ var goldenOps = []struct{ name, op string }{
 	{"move-new", `{"op": "move", "view": "main", "id": "worker-2", "x": 40, "y": 120}`},
 	{"move-new-layout", `{"op": "move", "view": "pool", "id": "worker-2", "x": 0, "y": 0}`},
 	{"resize", `{"op": "resize", "view": "main", "id": "pool", "w": 455, "h": 300}`},
+	{"reorder", `[{"op": "unpin", "view": "main", "id": "worker-1"}, {"op": "set_kind", "id": "pool", "kind": "lane-set"}, {"op": "reorder", "view": "pool", "container": "pool", "order": ["worker-2", "worker-1"]}]`},
+	{"reorder-in-view", `[{"op": "unpin", "view": "main", "id": "worker-1"}, {"op": "set_kind", "id": "pool", "kind": "lane-set"}, {"op": "reorder", "view": "main", "container": "pool", "order": ["worker-2"]}, {"op": "resize", "view": "main", "id": "worker-2", "w": 205, "h": 60}, {"op": "unpin", "view": "main", "id": "pool"}]`},
+	{"reorder-remove", `[{"op": "unpin", "view": "main", "id": "worker-1"}, {"op": "set_kind", "id": "pool", "kind": "lane-set"}, {"op": "reorder", "view": "pool", "container": "pool", "order": ["worker-2"]}, {"op": "reorder", "view": "pool", "container": "pool"}]`},
+	{"reorder-clear-stale", `[{"op": "unpin", "view": "main", "id": "worker-1"}, {"op": "set_kind", "id": "pool", "kind": "lane-set"}, {"op": "reorder", "view": "main", "container": "pool", "order": ["worker-2"]}, {"op": "set_kind", "id": "pool", "kind": "group"}, {"op": "reorder", "view": "main", "container": "pool"}]`},
+	{"delete_node-last-ordered", `[{"op": "unpin", "view": "main", "id": "worker-1"}, {"op": "unpin", "view": "main", "id": "pool"}, {"op": "set_kind", "id": "pool", "kind": "lane-set"}, {"op": "reorder", "view": "main", "container": "pool", "order": ["worker-2"]}, {"op": "delete_node", "id": "worker-2"}]`},
 	{"unpin", `{"op": "unpin", "view": "main", "id": "worker-1"}`},
 	{"unpin-last", `{"op": "unpin", "view": "calls", "id": "gateway"}`},
 	{"pin_port", `{"op": "pin_port", "view": "main", "id": "worker-1", "port": "nic0", "side": "bottom", "offset": 0.333}`},
@@ -234,6 +239,11 @@ func TestRefused(t *testing.T) {
 		{"rename to an invalid view ID", `{"op": "rename_id", "type": "view", "old": "calls", "new": "a/b"}`, `not a simple ID`},
 		{"not shown", `{"op": "move", "view": "calls", "id": "worker-2", "x": 0, "y": 0}`, `view "calls" does not show node "worker-2"`},
 		{"not pinned", `{"op": "resize", "view": "main", "id": "worker-2", "w": 10, "h": 10}`, `not pinned`},
+		{"reorder a free container", `{"op": "reorder", "view": "main", "container": "pool", "order": ["worker-1"]}`, `"pool" is not a stack or grid container in view "main"`},
+		{"reorder a node not in the container", `[{"op": "set_kind", "id": "pool", "kind": "lane-set"}, {"op": "reorder", "view": "main", "container": "pool", "order": ["gateway"]}]`, `node "gateway" is not a child of "pool" drawn in view "main"`},
+		{"reorder twice", `[{"op": "set_kind", "id": "pool", "kind": "lane-set"}, {"op": "reorder", "view": "pool", "container": "pool", "order": ["worker-1", "worker-1"]}]`, `in the order twice`},
+		{"reorder a hidden container", `{"op": "reorder", "view": "solo", "container": "pool", "order": ["worker-1"]}`, `view "solo" does not show node "pool"`},
+		{"move an ordered node", `[{"op": "set_kind", "id": "pool", "kind": "lane-set"}, {"op": "move", "view": "main", "id": "worker-2", "x": 0, "y": 0}]`, `node "worker-2" is placed in order by "pool", a stack container; reorder it instead`},
 		{"not a port", `{"op": "pin_port", "view": "main", "id": "worker-1", "port": "nope", "side": "top"}`, `no port "nope"`},
 		{"lifted edge not drawn", `{"op": "set_edge_hint", "view": "main", "id": "lift:gateway:pool", "hint": {"to_side": "left"}}`, `draws no lifted edge from "gateway" to "pool"`},
 		{"edge not shown", `{"op": "set_edge_hint", "view": "calls", "id": "w1-w2", "hint": {"to_side": "top"}}`, `does not show edge`},
@@ -516,13 +526,14 @@ func TestReadOnlyViews(t *testing.T) {
 		{"views/*", `{"op": "delete_decoration", "view": "main", "id": "t"}`, "views/main.layout.yaml"},
 		{"views/*", `{"op": "promote_decoration", "view": "main", "id": "t", "kind": "note"}`, "views/main.layout.yaml"},
 		{"model.hcl", `{"op": "promote_decoration", "view": "main", "id": "t", "kind": "note"}`, "model.hcl"},
+		{"views/*", `{"op": "reorder", "view": "main", "container": "s", "order": ["c"]}`, "views/main.layout.yaml"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.op, func(t *testing.T) {
 			dir := t.TempDir()
 			files := map[string]string{
 				"dg.hcl":                 fmt.Sprintf("project \"p\" {\n  models    = [\"model.hcl\"]\n  read_only = [%q]\n}\n", tt.readOnly),
-				"model.hcl":              "node \"a\" {}\n",
+				"model.hcl":              "node \"a\" {}\n\nnode \"s\" {\n  kind = \"lane-set\"\n}\n\nnode \"c\" {\n  parent = node.s\n}\n",
 				"views.hcl":              "view \"main\" {}\n",
 				"views/main.layout.yaml": "version: 1\ndecorations:\n  - {id: t, type: text, x: 0, y: 0, text: T}\n",
 			}

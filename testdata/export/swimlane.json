@@ -1,0 +1,212 @@
+{
+  "view": "main",
+  "nodes": [
+    {
+      "id": "backorder",
+      "x": 665,
+      "y": 170,
+      "w": 100,
+      "h": 40,
+      "frame": "sales",
+      "rel": [570, 20]
+    },
+    {
+      "id": "billing",
+      "x": 45,
+      "y": 370,
+      "w": 1450,
+      "h": 80,
+      "frame": "fulfilment",
+      "rel": [0, 350],
+      "ordered_in": "fulfilment"
+    },
+    {
+      "id": "check",
+      "x": 275,
+      "y": 170,
+      "w": 110,
+      "h": 40,
+      "frame": "sales",
+      "rel": [180, 20]
+    },
+    {
+      "id": "customer",
+      "x": 45,
+      "y": 20,
+      "w": 1450,
+      "h": 110,
+      "frame": "fulfilment",
+      "rel": [0, 0],
+      "ordered_in": "fulfilment"
+    },
+    {
+      "id": "fulfilment",
+      "x": 10,
+      "y": 10,
+      "w": 1500,
+      "h": 450,
+      "rel": [10, 10]
+    },
+    {
+      "id": "in-stock",
+      "x": 445,
+      "y": 150,
+      "w": 160,
+      "h": 80,
+      "frame": "sales",
+      "rel": [350, 0]
+    },
+    {
+      "id": "invoice",
+      "x": 1165,
+      "y": 390,
+      "w": 110,
+      "h": 40,
+      "frame": "billing",
+      "rel": [1070, 0]
+    },
+    {
+      "id": "order",
+      "x": 95,
+      "y": 40,
+      "w": 120,
+      "h": 40,
+      "frame": "customer",
+      "rel": [0, 0]
+    },
+    {
+      "id": "payment",
+      "x": 1345,
+      "y": 390,
+      "w": 130,
+      "h": 40,
+      "frame": "billing",
+      "rel": [1250, 0]
+    },
+    {
+      "id": "pick",
+      "x": 825,
+      "y": 270,
+      "w": 100,
+      "h": 40,
+      "frame": "warehouse",
+      "rel": [730, 0]
+    },
+    {
+      "id": "receive",
+      "x": 1145,
+      "y": 40,
+      "w": 140,
+      "h": 40,
+      "frame": "customer",
+      "rel": [1050, 0]
+    },
+    {
+      "id": "sales",
+      "x": 45,
+      "y": 130,
+      "w": 1450,
+      "h": 120,
+      "frame": "fulfilment",
+      "rel": [0, 110],
+      "ordered_in": "fulfilment"
+    },
+    {
+      "id": "ship",
+      "x": 985,
+      "y": 270,
+      "w": 100,
+      "h": 40,
+      "frame": "warehouse",
+      "rel": [890, 0]
+    },
+    {
+      "id": "warehouse",
+      "x": 45,
+      "y": 250,
+      "w": 1450,
+      "h": 120,
+      "frame": "fulfilment",
+      "rel": [0, 230],
+      "ordered_in": "fulfilment"
+    }
+  ],
+  "edges": [
+    {
+      "id": "backorder-pick",
+      "points": [
+        [765, 190],
+        [875, 190],
+        [875, 270]
+      ]
+    },
+    {
+      "id": "check-in-stock",
+      "points": [
+        [385, 190],
+        [445, 190]
+      ]
+    },
+    {
+      "id": "in-stock-backorder",
+      "points": [
+        [605, 190],
+        [665, 190]
+      ]
+    },
+    {
+      "id": "in-stock-pick",
+      "points": [
+        [525, 230],
+        [525, 240],
+        [813, 240],
+        [813, 290],
+        [825, 290]
+      ]
+    },
+    {
+      "id": "invoice-payment",
+      "points": [
+        [1275, 410],
+        [1345, 410]
+      ]
+    },
+    {
+      "id": "order-check",
+      "points": [
+        [155, 80],
+        [155, 92],
+        [263, 92],
+        [263, 190],
+        [275, 190]
+      ]
+    },
+    {
+      "id": "pick-ship",
+      "points": [
+        [925, 290],
+        [985, 290]
+      ]
+    },
+    {
+      "id": "ship-invoice",
+      "points": [
+        [1035, 310],
+        [1035, 322],
+        [1153, 322],
+        [1153, 410],
+        [1165, 410]
+      ]
+    },
+    {
+      "id": "ship-receive",
+      "points": [
+        [1035, 270],
+        [1035, 260],
+        [1133, 260],
+        [1133, 60],
+        [1145, 60]
+      ]
+    }
+  ]
+}

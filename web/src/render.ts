@@ -1,11 +1,12 @@
 import type { Drawing } from './canvas/export';
 import type { DrawnDecoration, DrawnEdge, DrawnNode, DrawnOverlay } from './canvas/markup';
 import { placeDecorations } from './geometry/decoration';
-import { absoluteBoxes, ceilTo, cmp, contentLayout, depth, drillBadge, fitContainers, measureNode, type Box, type Layout, type NodeMeasure, type Point } from './geometry/geometry';
+import { absoluteBoxes, ceilTo, cmp, contentLayout, depth, drillBadge, measureNode, type Box, type Layout, type NodeMeasure, type Point } from './geometry/geometry';
+import { alignHeaders, withBlock } from './geometry/policy';
 import { hull } from './geometry/overlay';
 import { rowLines } from './geometry/table';
 import { textBlock, type TextMeasure } from './geometry/text';
-import { placeWithElk, type EdgeLabelSizes, type Elk } from './place/elk';
+import { elkLayout, type EdgeLabelSizes, type Elk } from './place/elk';
 import { placeSpiral } from './place/spiral';
 import type { ResolvedView, ViewNode } from './protocol/view';
 import { LABEL_PAD, placeLabels, planPorts, routeEdges, type Router } from './route/edges';
@@ -20,9 +21,16 @@ export async function draw(view: ResolvedView, text: TextMeasure, family: string
   const grid = view.grid;
   const shapes = view.shapes ?? {};
   const byId = new Map(view.nodes.map((n) => [n.id, n]));
-  const measures = new Map(view.nodes.map((n) => [n.id, measureNode(n, text, grid, shapes[n.style.shape])]));
-  const layout = await place(view, measures, text, elk);
-  const boxes = absoluteBoxes(view, measures, layout);
+  const placed = withBlock(view);
+  const measures = new Map(placed.nodes.map((n) => [n.id, measureNode(n, text, grid, shapes[n.style.shape])]));
+  alignHeaders(placed, measures);
+  const layout = await place(placed, measures, text, elk);
+  const boxes = absoluteBoxes(placed, measures, layout);
+  if (view.policy) {
+    const o = layout.rel.get(view.policy.container!)!;
+    for (const id of view.policy.order) layout.rel.set(id, { x: o.x + layout.rel.get(id)!.x, y: o.y + layout.rel.get(id)!.y });
+    boxes.delete(view.policy.container!);
+  }
   const headers = new Map(view.nodes.filter((n) => n.container && measures.get(n.id)!.content.h > 0).map((n) => [n.id, header(n, measures.get(n.id)!, boxes.get(n.id)!)]));
   const rows = new Map(view.nodes.filter((n) => measures.get(n.id)!.table).map((n) => [n.id, rowLines(measures.get(n.id)!.table!, boxes.get(n.id)!)]));
   const geometry = { view, boxes, headers, rows, grid };
@@ -34,7 +42,7 @@ export async function draw(view: ResolvedView, text: TextMeasure, family: string
   const nodes: DrawnNode[] = view.nodes
     .map((n) => ({ n, z: n.style.z, d: depth(byId, n) }))
     .sort((a, b) => a.z - b.z || a.d - b.d || cmp(a.n.id, b.n.id))
-    .map(({ n }) => drawnNode(n, measures.get(n.id)!, boxes.get(n.id)!, layout, shapes[n.style.shape] ? n.style.shape : undefined, view, ports.get(n.id)!));
+    .map(({ n }) => drawnNode(n, measures.get(n.id)!, boxes.get(n.id)!, layout, shapes[n.style.shape] ? n.style.shape : undefined, view, ports.get(n.id)!, byId));
   const edges: DrawnEdge[] = view.edges.map((e) => {
     return { id: e.id, points: routes.get(e.id)!, style: e.style, markers: markers.get(e.id)!.flat(), labels: labels.get(e.id)! };
   });
@@ -77,12 +85,30 @@ export async function draw(view: ResolvedView, text: TextMeasure, family: string
   };
 }
 
+// orderedIn returns the stack or grid container that places node n, if any: its frame, or for
+// a child of the of of a view whose policy places it on the canvas, that of.
+function orderedIn(view: ResolvedView, byId: Map<string, ViewNode>, n: ViewNode): string | undefined {
+  if (n.frame) return byId.get(n.frame)!.policy ? n.frame : undefined;
+  return view.policy?.order.includes(n.id) ? view.policy.container : undefined;
+}
+
+// pinned reports whether node n is where a layout file puts it: pinned itself, or placed by a
+// container that is, or by the of of its view while the view has pinned nodes (spec 2.4).
+function pinned(view: ResolvedView, byId: Map<string, ViewNode>, n: ViewNode): boolean {
+  const c = orderedIn(view, byId, n);
+  if (c === undefined) return !!n.pin;
+  const frame = byId.get(c);
+  return frame ? pinned(view, byId, frame) : view.nodes.some((m) => m.pin && !orderedIn(view, byId, m));
+}
+
 // place positions every node relative to its frame (spec 7.4): elk when nothing is pinned,
-// otherwise the spiral placer. A node pinned in a stale frame that is still drawn is first
-// placed as if unpinned; its stored position is then converted to its current frame and the
-// view placed again with it pinned there (spec 7.1).
+// otherwise the spiral placer, a stack or grid container placing its children by its policy in
+// both. A node pinned in a stale frame that is still drawn is first placed as if unpinned; its
+// stored position is then converted to its current frame and the view placed again with it
+// pinned there (spec 7.1).
 async function place(view: ResolvedView, measures: Map<string, NodeMeasure>, text: TextMeasure, elk: Elk): Promise<Layout> {
-  if (!view.nodes.some((n) => n.pin)) return fitContainers(view, measures, await placeWithElk(elk, view, measures, edgeLabelSizes(view, text)), view.grid);
+  const byId = new Map(view.nodes.map((n) => [n.id, n]));
+  if (!view.nodes.some((n) => n.pin && !orderedIn(view, byId, n))) return elkLayout(elk, view, measures, edgeLabelSizes(view, text));
   const pins = new Map(view.nodes.filter((n) => n.pin && n.pin.in === undefined).map((n) => [n.id, { x: n.pin!.x, y: n.pin!.y }]));
   const layout = placeSpiral(view, measures, pins, view.grid);
   const stale = view.nodes.filter((n) => n.pin?.in !== undefined);
@@ -102,7 +128,7 @@ async function place(view: ResolvedView, measures: Map<string, NodeMeasure>, tex
   return placeSpiral(view, measures, pins, view.grid);
 }
 
-function drawnNode(n: ViewNode, m: NodeMeasure, box: Box, layout: Layout, custom: string | undefined, view: ResolvedView, ports: Map<string, PortPos>): DrawnNode {
+function drawnNode(n: ViewNode, m: NodeMeasure, box: Box, layout: Layout, custom: string | undefined, view: ResolvedView, ports: Map<string, PortPos>, byId: Map<string, ViewNode>): DrawnNode {
   const c = contentLayout(n, m, box, custom ? view.shapes![custom] : undefined);
   const t = m.table;
   const table = t && {
@@ -122,7 +148,8 @@ function drawnNode(n: ViewNode, m: NodeMeasure, box: Box, layout: Layout, custom
     ...(n.frame ? { frame: n.frame } : {}),
     rel: n.frame ? { x: Math.max(0, rel.x), y: Math.max(0, rel.y) } : rel,
     container: !!n.container,
-    pinned: !!n.pin,
+    pinned: pinned(view, byId, n),
+    ...(orderedIn(view, byId, n) !== undefined ? { orderedIn: orderedIn(view, byId, n) } : {}),
     tooSmall: layout.tooSmall.has(n.id),
     style: n.style,
     custom,
@@ -134,9 +161,10 @@ function drawnNode(n: ViewNode, m: NodeMeasure, box: Box, layout: Layout, custom
   };
 }
 
-// header returns the box of a container's label and icon.
+// header returns the box of a container's label and icon, turned with them along its left edge.
 function header(n: ViewNode, m: NodeMeasure, b: Box): Box {
   const c = contentLayout(n, m, b);
+  if (c.rotate) return { x: c.rotate.x - m.content.h / 2, y: c.rotate.y - m.content.w / 2, w: m.content.h, h: m.content.w };
   return { x: c.icon?.x ?? c.textBox.x, y: c.icon?.y ?? c.textBox.y, w: m.content.w, h: m.content.h };
 }
 

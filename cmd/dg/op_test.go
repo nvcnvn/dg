@@ -75,6 +75,9 @@ func TestOp(t *testing.T) {
 		{args: []string{"op", "add_decoration", "--view", "main", "--decoration", `{"type": "text", "x": 3, "y": -61, "text": "Title"}`}, stdout: "add_decoration text\nwrote views/main.layout.yaml\n"},
 		{args: []string{"op", "update_decoration", "--view", "main", "--id", "text", "--decoration", `{"font_size": 20}`}, stdout: "update_decoration text\nwrote views/main.layout.yaml\n"},
 		{args: []string{"op", "promote_decoration", "--view", "main", "--id", "text", "--kind", "note"}, stdout: "promote_decoration title x=0 y=-60\nwrote model.hcl\nwrote views/main.layout.yaml\n"},
+		{args: []string{"op", "batch"}, stdin: `[{"op": "create_node", "kind": "lane-set", "id": "lanes"}, {"op": "create_node", "kind": "lane", "id": "b", "parent": "lanes"}, {"op": "create_node", "kind": "lane", "id": "a", "parent": "lanes"}]`, stdout: "wrote model.hcl\n"},
+		{args: []string{"op", "reorder", "--view", "main", "--container", "lanes", "--order", "b", "--order", "a"}, stdout: "reorder lanes\nwrote views/main.layout.yaml\n"},
+		{args: []string{"op", "move", "--view", "main", "--id", "a", "--x", "0", "--y", "0"}, code: 1, stderr: "reorder it instead"},
 		{args: []string{"op", "create_view", "--id", "old"}, stdout: "create_view old\nwrote views.hcl\n"},
 		{args: []string{"op", "delete_view", "--id", "old"}, stdout: "delete_view old\nwrote views.hcl\n"},
 		{args: []string{"op", "move", "-C", filepath.Join(dir, "missing"), "--view", "main", "--id", "a", "--x", "0", "--y", "0"}, code: 2},
@@ -153,6 +156,12 @@ func TestRebuild(t *testing.T) {
 			"main":     "../../testdata/export/incident.svg",
 			"incident": "../../testdata/export/incident-incident.svg",
 		},
+		"swimlane": {
+			"main":  "../../testdata/export/swimlane.svg",
+			"lanes": "../../testdata/export/swimlane-lanes.svg",
+		},
+		"flowchart":     {"main": "../../testdata/export/flowchart.svg"},
+		"state-machine": {"main": "../../testdata/export/state-machine.svg"},
 	} {
 		t.Run(example, func(t *testing.T) {
 			dir := rebuild(t, example, "")
@@ -233,6 +242,7 @@ func FuzzOpArgs(f *testing.F) {
 	for _, seed := range []string{
 		"connect\x00--from\x00a\x00--from-port\x00p\x00--to\x00b\x00--label\x00x\x00--end-label\x00y",
 		"set_edge_hint\x00--view\x00main\x00--id\x00e\x00--via\x0010,20\x00--label-pos\x000.5\x00--from-side\x00top",
+		"reorder\x00--view\x00main\x00--container\x00lanes\x00--order\x00b\x00--order\x00a",
 		"set_rows\x00--id\x00t\x00--compartments\x00[{\"rows\":[{\"name\":\"id\"}]}]",
 		"set_props\x00--id\x00n\x00--props\x00{\"a\":1}",
 		"create_view\x00--id\x00v\x00--include\x00node.a\x00--edges\x00edge_kind.k",

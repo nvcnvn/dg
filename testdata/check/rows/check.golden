@@ -4,5 +4,5 @@ model.hcl:12:3: error: Rows outside compartments: Node "t" declares rows both in
 model.hcl:22:3: error: Duplicate compartment: Node "class" declares compartment "fields" twice.
 model.hcl:24:5: error: Duplicate row: Node "class" declares row "name" twice.
 model.hcl:26:7: error: Unsupported argument: An argument named "size" is not expected here.
-spec.hcl:1:1: info: Overridden definition: The kind "table" replaces the one defined at <generic>/spec.hcl:36:1.
+spec.hcl:1:1: info: Overridden definition: The kind "table" replaces the one defined at <generic>/spec.hcl:37:1.
 exit 1

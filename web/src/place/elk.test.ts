@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { edge, node, text } from '../fixtures';
 import { measureNode } from '../geometry/geometry';
 import type { EdgeStyle, ResolvedView } from '../protocol/view';
-import { elkGraph, placeWithElk } from './elk';
+import { backEdges, elkGraph, elkLayout } from './elk';
 
 const view: ResolvedView = {
   view: 'main',
@@ -39,8 +39,8 @@ describe('elkGraph edges', () => {
   });
   it('gives an edge from the end with an open triangle', () => {
     const edges = [styled('a', { arrow_end: 'triangle-open' }), styled('b', { arrow_start: 'triangle-open', arrow_end: 'none' }), styled('c', { arrow_start: 'triangle-open', arrow_end: 'triangle-open' })];
-    const g = elkGraph({ view: 'v', grid: 10, nodes, edges }, measures);
-    expect(g.edges!.map((e) => [e.sources[0], e.targets[0]])).toEqual([['n:u', 'n:t'], ['n:t', 'n:u'], ['n:t', 'n:u']]);
+    const ends = edges.map((e) => elkGraph({ view: 'v', grid: 10, nodes, edges: [e] }, measures).edges!.map((g) => [g.sources[0], g.targets[0]])[0]);
+    expect(ends).toEqual([['n:u', 'n:t'], ['n:t', 'n:u'], ['n:t', 'n:u']]);
   });
   it('keeps self-loops and places start and end labels at the tail and head', () => {
     const g = elkGraph({ view: 'v', grid: 10, nodes, edges: [edge('l', 't', 't')] }, measures, new Map([['l', { start: { w: 20, h: 17 }, end: { w: 30, h: 17 } }]]));
@@ -49,11 +49,30 @@ describe('elkGraph edges', () => {
   });
 });
 
-describe('placeWithElk', () => {
+describe('backEdges', () => {
+  it('reverses the edges that loop back to where a flow from its sources has been', () => {
+    const edges = [
+      { id: 'a', a: 'start', b: 'check' },
+      { id: 'b', a: 'check', b: 'fix' },
+      { id: 'c', a: 'fix', b: 'check' },
+      { id: 'd', a: 'check', b: 'done' },
+    ];
+    expect([...backEdges(edges)]).toEqual(['c']);
+  });
+  it('leaves a cycle no source leads to', () => {
+    const edges = [
+      { id: 'a', a: 'x', b: 'y' },
+      { id: 'b', a: 'y', b: 'x' },
+    ];
+    expect([...backEdges(edges)]).toEqual([]);
+  });
+});
+
+describe('elkLayout', () => {
   it('is deterministic and grid-aligned', async () => {
     const elk = new ELK();
-    const first = await placeWithElk(elk, view, measures);
-    const second = await placeWithElk(elk, view, measures);
+    const first = (await elkLayout(elk, view, measures)).rel;
+    const second = (await elkLayout(elk, view, measures)).rel;
     expect([...first]).toEqual([...second]);
     for (const p of first.values()) {
       expect(p.x % 10).toBe(0);

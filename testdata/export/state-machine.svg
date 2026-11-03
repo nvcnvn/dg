@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 600 680" width="600" height="680" font-family="Inter, sans-serif">
+<g data-node="processing">
+<rect x="10" y="190" width="490" height="270" rx="8" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="20" y="210" fill="#202124" font-size="14">Processing</text>
+</g>
+<g data-node="payment">
+<rect x="20" y="225" width="470" height="110" fill="#FFFFFF" stroke="#9AA0A6" stroke-width="1" stroke-dasharray="6 4"/>
+<text x="40" y="250" fill="#202124" font-size="14">Payment</text>
+</g>
+<g data-node="shipping">
+<rect x="20" y="335" width="470" height="110" fill="#FFFFFF" stroke="#9AA0A6" stroke-width="1" stroke-dasharray="6 4"/>
+<text x="40" y="360" fill="#202124" font-size="14">Shipping</text>
+</g>
+<g data-node="cancelled">
+<rect x="460" y="520" width="100" height="40" rx="8" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="510" y="545" text-anchor="middle" fill="#202124" font-size="14">Cancelled</text>
+</g>
+<g data-node="created">
+<rect x="220" y="90" width="100" height="40" rx="8" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="270" y="115" text-anchor="middle" fill="#202124" font-size="14">Created</text>
+</g>
+<g data-node="delivered">
+<rect x="130" y="520" width="100" height="40" rx="8" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="180" y="545" text-anchor="middle" fill="#202124" font-size="14">Delivered</text>
+</g>
+<g data-node="end">
+<circle cx="185" cy="635" r="15" fill="none" stroke="#3C4043" stroke-width="1"/>
+<circle cx="185" cy="635" r="9" fill="#202124"/>
+</g>
+<g data-node="start">
+<circle cx="270" cy="20" r="10" fill="#202124" stroke="#3C4043" stroke-width="1"/>
+</g>
+<g data-node="authorizing">
+<rect x="120" y="275" width="100" height="40" rx="8" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="170" y="300" text-anchor="middle" fill="#202124" font-size="14">Authorizing</text>
+</g>
+<g data-node="packed">
+<rect x="280" y="385" width="100" height="40" rx="8" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="330" y="410" text-anchor="middle" fill="#202124" font-size="14">Packed</text>
+</g>
+<g data-node="paid">
+<rect x="280" y="275" width="100" height="40" rx="8" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="330" y="300" text-anchor="middle" fill="#202124" font-size="14">Paid</text>
+</g>
+<g data-node="pay-end">
+<circle cx="455" cy="300" r="15" fill="none" stroke="#3C4043" stroke-width="1"/>
+<circle cx="455" cy="300" r="9" fill="#202124"/>
+</g>
+<g data-node="pay-start">
+<circle cx="50" cy="295" r="10" fill="#202124" stroke="#3C4043" stroke-width="1"/>
+</g>
+<g data-node="picking">
+<rect x="120" y="385" width="100" height="40" rx="8" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="170" y="410" text-anchor="middle" fill="#202124" font-size="14">Picking</text>
+</g>
+<g data-node="ship-end">
+<circle cx="455" cy="410" r="15" fill="none" stroke="#3C4043" stroke-width="1"/>
+<circle cx="455" cy="410" r="9" fill="#202124"/>
+</g>
+<g data-node="ship-start">
+<circle cx="50" cy="405" r="10" fill="#202124" stroke="#3C4043" stroke-width="1"/>
+</g>
+<g data-edge="authorizing-paid">
+<path d="M220 295 L280 295" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M270 300 L280 295 L270 290" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="215" y="299" width="70" height="17" fill="#FFFFFF"/>
+<text x="250" y="312" text-anchor="middle" fill="#202124" font-size="12">authorized</text>
+</g>
+<g data-edge="cancelled-end">
+<path d="M510 560 L510 635 L200 635" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M210 630 L200 635 L210 640" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="created-cancelled">
+<path d="M320 110 L540 110 L540 508 L527 508 L527 520" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M522 510 L527 520 L532 510" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="515" y="203" width="50" height="17" fill="#FFFFFF"/>
+<text x="540" y="216" text-anchor="middle" fill="#202124" font-size="12">cancel</text>
+</g>
+<g data-edge="created-edit">
+<path d="M220 110 L200 110 L200 150 L253 150 L253 130" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M258 140 L253 130 L248 140" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="192" y="142" width="30" height="17" fill="#FFFFFF"/>
+<text x="207" y="155" text-anchor="middle" fill="#202124" font-size="12">edit</text>
+</g>
+<g data-edge="created-processing">
+<path d="M287 130 L287 178 L270 178 L270 190" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M265 180 L270 190 L275 180" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="262" y="160" width="50" height="17" fill="#FFFFFF"/>
+<text x="287" y="173" text-anchor="middle" fill="#202124" font-size="12">submit</text>
+</g>
+<g data-edge="delivered-end">
+<path d="M183 560 L183 620" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M178 610 L183 620 L188 610" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="packed-ship-end">
+<path d="M380 408 L440 408" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M430 413 L440 408 L430 403" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="paid-pay-end">
+<path d="M380 298 L440 298" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M430 303 L440 298 L430 293" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="pay-start-authorizing">
+<path d="M60 295 L120 295" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M110 300 L120 295 L110 290" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="picking-packed">
+<path d="M220 405 L280 405" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M270 410 L280 405 L270 400" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="225" y="384" width="50" height="17" fill="#FFFFFF"/>
+<text x="250" y="397" text-anchor="middle" fill="#202124" font-size="12">packed</text>
+</g>
+<g data-edge="processing-cancelled">
+<path d="M484 460 L484 472 L493 472 L493 520" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M488 510 L493 520 L498 510" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="463" y="477" width="60" height="17" fill="#FFFFFF"/>
+<text x="493" y="490" text-anchor="middle" fill="#202124" font-size="12">declined</text>
+</g>
+<g data-edge="processing-delivered">
+<path d="M180 460 L180 520" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M175 510 L180 520 L185 510" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="145" y="482" width="70" height="17" fill="#FFFFFF"/>
+<text x="180" y="495" text-anchor="middle" fill="#202124" font-size="12">delivered</text>
+</g>
+<g data-edge="ship-start-picking">
+<path d="M60 405 L120 405" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M110 410 L120 405 L110 400" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="start-created">
+<path d="M270 30 L270 90" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M265 80 L270 90 L275 80" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+</svg>

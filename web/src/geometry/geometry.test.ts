@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { node, text } from '../fixtures';
 import type { ResolvedView } from '../protocol/view';
-import { absoluteBoxes, BADGE, containerSize, contentLayout, drillBadge, fitContainers, GAP, measureNode } from './geometry';
+import { absoluteBoxes, BADGE, containerSize, contentLayout, drillBadge, GAP, measureNode } from './geometry';
 import { innerBox, outerSize, svgSize } from './shapes';
 import { lineHeight, textBlock } from './text';
 
@@ -107,7 +107,8 @@ describe('absoluteBoxes', () => {
       ['h', { x: 0, y: 60 }],
       ['i', { x: -10, y: 0 }],
     ]);
-    const layout = fitContainers(view, measures, rel, 10);
+    const sizes = new Map([...measures].map(([id, m]) => [id, m.size]));
+    const layout = { rel, sizes, tooSmall: new Set<string>() };
     const boxes = absoluteBoxes(view, measures, layout);
     const o = measures.get('g')!.origin;
     const h = boxes.get('h')!;

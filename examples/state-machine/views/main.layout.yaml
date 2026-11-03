@@ -1,0 +1,5 @@
+version: 1
+place:
+  processing: {order: [payment, shipping]}
+edge_hints:
+  created-cancelled: {from_side: right, via: [[540, 110]]}

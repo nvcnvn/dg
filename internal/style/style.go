@@ -34,6 +34,8 @@ type Node struct {
 	MinH         float64   `json:"min_h"`
 	MaxW         float64   `json:"max_w"`
 	Z            float64   `json:"z"`
+	// LabelSide is left for a label drawn rotated along the left edge of a container, else "".
+	LabelSide string `json:"label_side,omitempty"`
 }
 
 // Edge is the computed style of an edge, as far as the renderer draws it.
@@ -384,7 +386,15 @@ func DrawnNode(props map[string]Setting) Node {
 		MinH:         num(props, "min_h"),
 		MaxW:         num(props, "max_w"),
 		Z:            num(props, "z"),
+		LabelSide:    labelSide(props),
 	}
+}
+
+func labelSide(props map[string]Setting) string {
+	if s := str(props, "label_side"); s == "left" {
+		return s
+	}
+	return ""
 }
 
 // DrawnEdge returns the drawn part of an edge's settings.
