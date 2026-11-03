@@ -24,10 +24,13 @@ import (
 const usage = `usage: dg <command> [flags]
 
 commands:
-  check    validate the project
-  fmt      format the project's files
-  export   draw a view, or every view, as SVG, PNG, GIF or JSON geometry
-  serve    show the views in the browser, redrawn when a file changes
+  check       validate the project
+  fmt         format the project's files
+  export      draw a view, or every view, as SVG, PNG, GIF or JSON geometry
+  serve       show the views in the browser, redrawn when a file changes
+  vocabulary  print the kinds, edge kinds, tags and views the project defines, as JSON
+  op          apply an operation to the project's files (dg op --help lists them)
+  mcp         serve the Model Context Protocol over standard input and output
 `
 
 // errDiagnostics marks a failure already reported as diagnostics.
@@ -49,6 +52,9 @@ func run(args []string, stdout, stderr io.Writer) int {
 	}
 	var err error
 	switch args[0] {
+	case "-h", "-help", "--help", "help":
+		fmt.Fprint(stdout, usage)
+		return 0
 	case "check":
 		err = runCheck(args[1:], stdout, stderr)
 	case "fmt":
@@ -57,6 +63,12 @@ func run(args []string, stdout, stderr io.Writer) int {
 		err = runExport(args[1:], stdout, stderr)
 	case "serve":
 		err = runServe(args[1:], stdout, stderr)
+	case "op":
+		err = runOp(args[1:], stdout, stderr)
+	case "vocabulary":
+		err = runVocabulary(args[1:], stdout, stderr)
+	case "mcp":
+		err = runMCP(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "dg: unknown command %q\n%s", args[0], usage)
 		return 1
@@ -133,6 +145,25 @@ func runCheck(args []string, stdout, stderr io.Writer) error {
 	}
 	if diags.HasErrors() || strict && diags.Has(diag.Warning) {
 		return errDiagnostics
+	}
+	return nil
+}
+
+func runVocabulary(args []string, stdout, stderr io.Writer) error {
+	dir, err := flags("vocabulary", args, stderr, func(*flag.FlagSet) {})
+	if err != nil {
+		return err
+	}
+	p, _, err := load(dir)
+	if err != nil {
+		return err
+	}
+	data, err := json.MarshalIndent(p.Vocabulary(), "", "  ")
+	if err == nil {
+		_, err = stdout.Write(append(data, '\n'))
+	}
+	if err != nil {
+		return internalError{err}
 	}
 	return nil
 }

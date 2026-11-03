@@ -16,10 +16,11 @@ func WriteFile(path string, data []byte) error {
 }
 
 // WriteFiles writes every file through a temporary file beside it. No file is replaced until
-// every temporary file is written; then each is renamed over its target. A file that exists keeps
-// its permissions, and a symbolic link is written through to the file it names.
+// every temporary file is written; then each is renamed over its target, and the files whose
+// content is nil are removed. A file that exists keeps its permissions, and a symbolic link is
+// written through to the file it names.
 func WriteFiles(files map[string][]byte) error {
-	var targets, tmps []string
+	var targets, tmps, removed []string
 	cleanup := func(err error) error {
 		for _, t := range tmps {
 			err = errors.Join(err, os.Remove(t))
@@ -27,6 +28,10 @@ func WriteFiles(files map[string][]byte) error {
 		return err
 	}
 	for _, path := range slices.Sorted(maps.Keys(files)) {
+		if files[path] == nil {
+			removed = append(removed, path)
+			continue
+		}
 		target, mode, err := resolve(path)
 		if err != nil {
 			return cleanup(err)
@@ -46,6 +51,11 @@ func WriteFiles(files map[string][]byte) error {
 		if err := os.Rename(tmps[i], target); err != nil {
 			tmps = tmps[i:]
 			return cleanup(err)
+		}
+	}
+	for _, path := range removed {
+		if err := os.Remove(path); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return err
 		}
 	}
 	return nil

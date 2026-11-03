@@ -57,3 +57,15 @@ to remove it.
   shows correct labels.
 - **Remove when:** end labels stay beside their own edge with three or more edges converging on
   one side; then restore the edge in `examples/class` and regenerate its golden.
+
+## Writing files with hclwrite token by token
+
+- **Where:** `internal/ops/hcl.go` (`source`, `setAttr`, `newBlock`, `expand`, `removeBlocks`,
+  `setLabel`).
+- **Why:** `hclwrite`'s `File.Bytes` formats the whole file, so dg writes the file's tokens itself
+  and spaces each token it adds; there is no API to format one attribute or block, to remove a
+  block with the blank line that separated it, or to add an attribute to a block on one line;
+  `Block.SetLabels` drops the space before the label; and the lexer keeps leading whitespace as
+  a count of spaces, so a tab in an edited file becomes a space.
+- **Remove when:** `hclwrite` writes tokens without formatting, formats a range of tokens, keeps
+  whitespace as written, and removes blocks and sets labels without disturbing their neighbors.

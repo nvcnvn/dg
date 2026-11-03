@@ -1,0 +1,4 @@
+version: 1
+place:
+  gateway: {x: 0, y: 0}
+  worker-3: {in: pool, x: 20, y: 40}

@@ -158,6 +158,15 @@ func parseSelectors(expr hcl.Expression, forms []string) ([]Selector, hcl.Diagno
 	return out, diags
 }
 
+// ParseSelector parses one selector of a node list (include, exclude, collapse, members, of) or,
+// with edges, of an edges list.
+func ParseSelector(expr hcl.Expression, edges bool) (Selector, hcl.Diagnostics) {
+	if edges {
+		return parseSelector(expr, edgeForms)
+	}
+	return parseSelector(expr, nodeForms)
+}
+
 func parseSelector(expr hcl.Expression, forms []string) (Selector, hcl.Diagnostics) {
 	tr, diags := hcl.AbsTraversalForExpr(expr)
 	s := Selector{Range: expr.Range()}

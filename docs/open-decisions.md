@@ -35,7 +35,8 @@ the decision in `docs/spec.md`).
 ## Third-party notices and LGPL relinking
 
 - **Question:** the binary embeds Inter (OFL-1.1, notice required), libavoid (LGPL-2.1+: users must
-  be able to replace it), JointJS (MPL-2.0) and elkjs (EPL-2.0). How does the binary carry
+  be able to replace it), JointJS (MPL-2.0) and elkjs (EPL-2.0), and links the MCP Go SDK
+  (Apache-2.0 and MIT, notices required). How does the binary carry
   notices, and how does a user swap libavoid?
 - **Options:** (a) a `dg licenses` command plus a flag or environment variable naming a
   directory with a replacement `libavoid.wasm` and its glue `libavoid-*.js`; (b) notices in
@@ -113,15 +114,21 @@ the decision in `docs/spec.md`).
   keeps four grid units between nodes, so crossings need an edge squeezed between neighbors.
 - **Milestone:** M4.
 
-## Pixel size, background and colors of PNG and GIF
+## Colors of GIF exports
 
-- **Question:** PNG and GIF exports are drawn at one pixel per unit on white, and a GIF uses one
-  palette of the 255 colors most frequent across its frames, without dithering, so a drawing with
-  many colors bands (about 30 fills put the worst channel error at 47). Should the scale (for
-  high-density screens and agents reading the picture over MCP), the background or the
-  quantization be selectable or better?
-- **Options:** (a) fixed; (b) a `--scale` flag (1 to 4) for both; (c) also `--background none`
-  for PNG (a GIF has one transparent color, which antialiased edges cannot use well); (d)
-  per-frame palettes, median-cut quantization or ordered dithering for GIF.
+- **Question:** a GIF uses one palette of the 255 colors most frequent across its frames, without
+  dithering, so a drawing with many colors bands (about 30 fills put the worst channel error at
+  47). Should the quantization be better?
+- **Options:** (a) as it is; (b) per-frame palettes; (c) median-cut quantization; (d) ordered
+  dithering.
 - **Default:** (a).
-- **Milestone:** M5; decide in M6, where MCP returns PNG to agents.
+- **Milestone:** M5.
+
+## Undo after an external edit to the same file
+
+- **Question:** an undo restores whole files, so it fails when a file it restores was changed
+  outside the editor since the operation, even in an unrelated place (FR-10).
+- **Options:** (a) fail, as now; (b) a three-way merge of the content before the operation, after
+  it and now, failing only on a conflict; (c) an inverse operation per operation.
+- **Default:** (a); (b) recommended.
+- **Milestone:** M6; decide in M10.

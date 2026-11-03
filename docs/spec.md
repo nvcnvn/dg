@@ -98,7 +98,8 @@ Layout files are YAML, because they are machine-owned and rarely edited by hand.
 | WebSocket | `github.com/coder/websocket` |
 | Headless export | `github.com/chromedp/chromedp` |
 | GIF export | standard library `image/gif` |
-| MCP server | `github.com/modelcontextprotocol/go-sdk` (MIT) |
+| MCP server | `github.com/modelcontextprotocol/go-sdk` (Apache-2.0 for new code, MIT for code not yet relicensed) |
+| Project lock on Windows | `golang.org/x/sys/windows` (BSD-3-Clause) |
 | Embedding the web app in the binary | standard library `embed` |
 
 **TypeScript (browser)**
@@ -520,12 +521,14 @@ func newID(kind, label string, taken map[string]bool) string {
 }
 ```
 
-Edge IDs: `slug(fromNode) + "-" + slug(toNode)` (node IDs only, without port or row) with the same collision suffix. Generated IDs are always simple.
+Edge IDs: `slug(fromNode) + "-" + slug(toNode)` (node IDs only, without port or row), slugged again and prefixed alike, with the same collision suffix. Generated IDs are always simple.
+
+`create_node` and `connect` (FR-12) take an optional `id`: given, it is used as it is (simple or quoted, section 6.1) and the operation is refused if the ID is taken or invalid; omitted, it is generated as above. An agent that builds a model names its IDs; the editor generates them.
 
 ### 6.3 Freezing
 
 - An ID is frozen once created.
-- One exception: a node created with an ID derived from its kind (no label yet) is re-slugged **once**, from the first label entered in the same editing session.
+- One exception: a node created with an ID derived from its kind (no label and no `id` given) is re-slugged **once**, from the first label entered in the same editing session, with every reference renamed as by `rename_id`. A session is one `dg op` command or MCP `op` call (so the rule applies within a `batch`), or the lifetime of `dg serve`.
 - Changing a label never changes an ID.
 
 ### 6.4 Renaming
@@ -587,7 +590,7 @@ Set in style (`layout = ...`), applying to a container's **direct** children onl
 - If a view has **no** pinned nodes at all: run `elkjs` (layered algorithm) once, with nodes and edges given in sorted ID order, and `stack`/`grid` containers laid out by their policy first and passed as fixed-size boxes. Each edge carries the sizes of its start, middle and end labels, so the layers leave room for them, and self-loops of leaf nodes are passed too. Layers run top to bottom, except in a view where some edge ends at a row: rows attach at their left and right ends, so its layers run left to right, further apart to hold the markers at both ends of an edge. An edge with `triangle-open` at one end only (inheritance, realization) is given to elk from that end, so the general element is drawn above the specific ones. The result is not saved.
 - Otherwise the spiral placer fills frames innermost first, so a container's size is known before it is placed. Within a frame, for each unpinned node in **sorted ID order**: start from the centroid of its already-placed neighbors in that frame (a neighbor in another frame counts as its ancestor in this frame, if any; fallback: the center of a container's pinned content area, else of what is already placed in the frame, else the frame's content origin), then search outward in a spiral on the grid until it keeps four grid units of clearance from everything placed in its frame, the room an edge and its label need between two boxes. Inside a container coordinates stay at least 0.
 - In a view with nothing pinned, the editor sends the first drag as one batch (FR-12) that pins every visible node where it is drawn, plus the drag itself. Otherwise pinning one node would hand every other node from the elk layout to the spiral placer and the picture would jump.
-- `dg op` has no geometry: a `move` from the command line pins only the node it names. Agents read drawn positions with `dg export --format json`.
+- `dg op` has no geometry: a `move` from the command line pins only the node it names. Agents read drawn positions with `dg export --format json`, which gives every node's frame and its drawn position relative to that frame's content origin (`frame`, `rel`), the coordinates `move` takes. An agent that wants the elk layout kept pins every node at its `rel` in one batch, as the editor's first drag does.
 - Placement is deterministic. Pinned nodes never move.
 - In a view with pinned nodes, unpinned nodes are drawn faded in the editor; in a view with nothing pinned no node is faded and the editor shows a hint that the layout is not saved. Export draws every node normally.
 
@@ -761,7 +764,7 @@ When a model file does not parse, references, selectors and layout entries are n
 - server → client: `snapshot` (resolved view), `diagnostics`, `ack` (operation result, including generated IDs), `error`;
 - client → server: `op`, `select-view`, `undo`, `redo`. Selecting a view that is not defined is answered with `error`.
 - `dg serve` listens only on a loopback address and answers only requests whose `Host` is one, so another site cannot reach it by rebinding a host name; it has no authentication.
-- Undo history belongs to the `dg serve` session and is shared by its clients; `dg op` has none (git is its undo). An undo whose inverse no longer applies, because a file changed outside the editor, fails with an error and is dropped.
+- Undo history belongs to the `dg serve` session and is shared by its clients; `dg op` has none (git is its undo). Undo and redo restore the session's state with the files (the re-slug-once rule, section 6.3). An undo applies only while every file it restores still holds exactly what the operation wrote: after any change to such a file outside the editor, even elsewhere in it, the undo fails with an error and is dropped.
 - AC: a change on disk produces a new `snapshot` within 300 milliseconds.
 - AC: if the project fails to parse, the editor shows diagnostics and keeps the last good snapshot visible, read-only.
 
@@ -786,36 +789,41 @@ When a model file does not parse, references, selectors and layout entries are n
 
 ### E. Operations and files
 
-**FR-12 Operation API.** One API used by the editor, `dg op`, and agents. Applied by Go, which writes files and returns the result.
+**FR-12 Operation API.** One API used by the editor, `dg op`, and agents. Applied by Go, which writes files and returns the result: for each operation the ID of the element it created or changed (after a rename or re-slug, the new ID), and for `move` and `resize` the values stored.
 
 | Operation | Effect |
 |---|---|
-| `batch {ops}` | apply the operations in order, atomically, as one undo step |
-| `create_node {kind, label?, parent?, view?, x?, y?}` | append `node` block; if `view` given, pin at `x`,`y` (relative to the new node's frame) and, if the view's selectors would not show it, add `node.<id>` to its `include` |
-| `delete_node {id, recursive?}` | remove the block, its edges, its layout entries and attached decorations, and its entries in view selectors and `node.<id>` rules; children move to its parent (unpinned), or are deleted too with `recursive`; refused while a view has `of` on it |
+| `batch {ops}` | apply the operations in order, atomically, as one undo step; validation runs once, on the result |
+| `create_node {kind, id?, label?, parent?, view?, x?, y?}` | append `node` block; if `view` given, add `node.<id>` to its `include` when its selectors would not show the node (refused if the view still does not, because of `exclude` or a collapse) and, with `x`,`y`, pin it there (relative to the new node's frame) |
+| `delete_node {id, recursive?}` | remove the block, its edges, its layout entries, the decorations attached to it or placed in it, its lifted-edge hints, and its entries in view selectors and `node.<id>` rules; children move to its parent (unpinned), or are deleted too with `recursive`; refused while a view has `of` on it |
 | `set_label {id, label}` | change `label` |
-| `set_parent {id, parent \| null}` | set or remove `parent` |
-| `set_kind {id, kind}`, `set_tags {id, tags}`, `set_props {id, props}` | change attribute |
-| `add_port {id, name, side?}`, `remove_port {id, name}` | instance `port` block |
-| `set_rows {id, compartments}` | replace rows/compartments |
-| `connect {from, to, kind?, labels?, id?, view?}` | append `edge` block; if `view` given and its `edges` filter would hide the edge, add `edge.<id>` to it |
+| `set_parent {id, parent?}` | set `parent`, or remove it when `parent` is empty or omitted; layout entries keep their frame, which may become stale (section 7.1) |
+| `set_kind {id, kind, type?}`, `set_tags {id, tags, type?}` | change the attribute of a node, or of an edge with `type = edge`; an empty `tags` removes it |
+| `set_props {id, props}` | replace `props` (strings, numbers, booleans); empty removes it |
+| `add_port {id, name, side?}`, `remove_port {id, name}` | instance `port` block; `remove_port` also removes the port's pinned positions, and refuses a kind port or one from a `ports` attribute |
+| `set_rows {id, compartments}` | replace rows/compartments; one compartment without a name holds rows declared directly in the node |
+| `connect {from, to, id?, kind?, labels?, tags?, view?}` | append `edge` block; `from` and `to` are `{node, port?}` or `{node, row?}`; if `view` given and its `edges` filter would hide the edge, add `edge.<id>` to it (refused if the view does not show both ends) |
 | `disconnect {id}` | remove edge, its hints and its view references |
-| `set_edge_labels {id, labels}` | change labels |
-| `move {view, id, x, y}` / `resize {view, id, w, h}` | update `place` (frame-relative) |
+| `set_edge_labels {id, labels?}` | replace labels: `label` for a middle label alone, else `labels`; none removes both |
+| `move {view, id, x, y}` / `resize {view, id, w, h}` | update `place` (frame-relative, `in:` set to the node's current frame), values rounded to the grid; refused for a node the view does not show, `move` for a child of a `stack`/`grid` container, `resize` for a node not pinned |
 | `reorder {view, container, order}` | update `order` |
 | `unpin {view, id}` | remove from `place` |
-| `pin_port {view, id, port, side, offset}` | update `ports` in `place` |
-| `set_edge_hint {view, id, hint}` | update `edge_hints` (also `lift:` keys) |
+| `pin_port {view, id, port, side, offset?}` | update `ports` in `place` of a pinned node; `offset` kept to two decimals |
+| `set_edge_hint {view, id, hint}` | replace the edge's entry in `edge_hints` (`id` may be a `lift:` key); `via` rounded to the grid, `label_pos` to two decimals; an empty hint removes it |
 | `rename_id {type, old, new}` | atomic refactor of a node, edge or view ID (section 6.4) |
-| `create_view` / `update_view` / `delete_view {id, ...}` | edit `views.hcl`; `delete_view` also removes its layout file |
+| `create_view {id, title?, include?, exclude?, collapse?, edges?, of?}` / `update_view` / `delete_view {id, ...}` | edit `views.hcl` (selectors written as in it, such as `node.api` or `edge_kind.uses`); `delete_view` also removes its layout file |
 | `add_decoration` / `update_decoration` / `delete_decoration {view, ...}` | update `decorations` |
 | `promote_decoration {view, id, kind}` | create node, pin it, remove decoration |
 
+Operations take JSON objects whose `op` field names the operation and whose other fields are its arguments; an unknown or missing field is an error. Coordinates and sizes lie within ±10⁹. New blocks go at the end of the file of the node they relate to (the parent, or the `from` node) when it is writable, else of the first writable model file, else of a new `model.hcl`, and are written in canonical format. An edit writes only the tokens it changes, spaced canonically and indented like their neighbors; a block on one line is first spread over several lines so it can take more; `rename_id` changes only the tokens of the names. Every other byte stays as it is, except that `hclwrite` keeps leading whitespace as a count of spaces, so a tab in an edited file becomes a space. A layout file left empty is removed.
+
+Writers of one project are serialized: an operation, undo or redo holds a lock from reading the files to writing them, within the process and across processes (an advisory lock on the project directory, on Windows on a file in the user's cache directory named after the project's path, so no lock file is written into the project). A writer waits up to 10 seconds for another, then fails saying so. The check that files are unchanged since read still covers writers that take no lock, such as a text editor.
+
 - AC: model edits use `hclwrite`; comments and formatting elsewhere are unchanged (golden-file tests).
 - AC: operations touching read-only files fail with an error naming the file.
-- AC: every operation records an inverse for undo.
+- AC: every operation records an inverse for undo: the content each file it wrote had before (or that it did not exist) and has after. Undo writes the contents before, redo those after, each only while every file still has the other content (FR-10).
 - AC: multi-file operations are atomic.
-- AC: an operation that would add a validation error (FR-2) is refused with that error; for example `set_kind` to a non-container while the node has children, or `remove_port` while an edge uses the port.
+- AC: an operation that would add a validation error (FR-2) is refused with that error, an error being added when the operation increases the number of errors with its summary (errors name IDs, which a rename changes); for example `set_kind` to a non-container while the node has children, or `remove_port` while an edge uses the port. Operations are refused while `dg.hcl` has errors or an HCL file does not parse, and an operation that would edit a layout file with errors is refused, since what does not decode would be lost.
 - AC: before writing, Go checks that each file is unchanged since it was read; if not, it reloads and re-applies the operation, failing if it no longer applies. This covers `dg op` running beside `dg serve` and saves from a text editor.
 
 **FR-13 File watching.** Watch all project files. After Go writes a file, record its content hash; a change event whose content matches is ignored.
@@ -823,19 +831,19 @@ When a model file does not parse, references, selectors and layout entries are n
 
 ### F. Command line
 
-**FR-14 Export (`dg export --view <id> | --all --format svg|png|gif|json [--out path]`).** Go starts headless Chromium via `chromedp`, loads the embedded app in export mode, waits for geometry and routing, and reads back SVG, a PNG screenshot, a GIF, or JSON geometry (every node's box, port positions, the `y` of each row's line, whose ends are the box's left and right edges, and edge routes in canvas coordinates). With `--all`, `--out` is a directory that receives one `<view>.<format>` file per view, all written together, and nothing is written unless every view resolves. A picture the browser cannot draw fails the export, naming its node.
+**FR-14 Export (`dg export --view <id> | --all --format svg|png|gif|json [--out path]`).** Go starts headless Chromium via `chromedp`, loads the embedded app in export mode, waits for geometry and routing, and reads back SVG, a PNG screenshot, a GIF, or JSON geometry (every node's box, port positions, the `y` of each row's line, whose ends are the box's left and right edges, and edge routes in canvas coordinates; and every node's `frame`, omitted for the canvas, and `rel`, its drawn position relative to the frame's content origin, as `move` takes it). With `--all`, `--out` is a directory that receives one `<view>.<format>` file per view, all written together, and nothing is written unless every view resolves. A picture the browser cannot draw fails the export, naming its node.
 - SVG keeps edge animation as CSS, in a `<style>` element. PNG and GIF are screenshots of the drawing on white, one pixel per unit; PNG shows the animation at time 0. GIF holds one half-second animation period as 10 frames of 50 milliseconds, looping forever; each frame is captured with the animation clock set to that frame's time, never the wall clock (the app pauses every animation at that time), and encoded with Go's `image/gif`: one palette of the 255 colors most frequent across the frames, each pixel the nearest of them without dithering, and in every frame after the first the pixels that did not change are transparent. The editor runs the same animation in real time.
 - AC: output matches the editor (no selection, unpinned nodes not faded).
 - The app writes the SVG and JSON from its computed geometry, not by copying a DOM, so the output holds no editor state.
 - AC: JSON geometry lets an agent pin nodes relative to the drawn layout without opening the editor.
 - AC: export works with no network: Chromium resolves no host name, and the app's content security policy allows only its embedded files.
 
-**FR-15 Operations (`dg op <operation> [flags] [--json]`).** Direct mapping of FR-12.
-- AC: an agent can build a full model and views using only `dg op`, `dg check`, and `dg export`.
+**FR-15 Operations (`dg op <operation> [flags] [--json]`).** Direct mapping of FR-12: each field of an operation is a flag of the same name (`--id`, `--kind`, `--view`, `--x`; lists such as `--tags` and `--include` are repeated; `--props` and `--compartments` take JSON), except the ends of `connect` (`--from`, `--from-port`, `--from-row`, `--to`, …), labels (`--start-label`, `--label`, `--end-label`) and the hint of `set_edge_hint` (`--from-side`, `--to-side`, `--via x,y` repeated, `--label-pos`). `dg op batch` reads a JSON list of operations (or one operation) from standard input or `--file`. `dg op --help` lists the operations and `dg op <operation> --help` its flags and JSON form. `--json` prints `{"results", "files", "warnings"}` (warnings the operation added), or `{"error", "diagnostics"}` when it is refused. Exit code 0: applied; 1: refused or invalid; 2: dg failed. `dg vocabulary` prints, as JSON, the kinds (with inherited ports, properties and the `container` and `rows` flags), edge kinds, tags and views the project defines.
+- AC: an agent can build a full model and views using only `dg op`, `dg vocabulary`, `dg check`, and `dg export`.
 
 ### G. Integrations
 
-**FR-16 MCP server (`dg mcp [-C dir]`).** A Model Context Protocol server over stdio with four tools: `check` (FR-2 diagnostics), `vocabulary` (the kinds, edge kinds, ports, properties and tags the loaded packs and model define), `op` (any FR-12 operation, including `batch`), and `export` (FR-14; PNG is returned as image content so the agent sees the drawing).
+**FR-16 MCP server (`dg mcp [-C dir]`).** A Model Context Protocol server over stdio with four tools: `check` (FR-2 diagnostics, as `dg check --json`), `vocabulary` (as `dg vocabulary`), `op` (any FR-12 operation as a JSON object, including `batch`; the result is `dg op --json`'s, an error result when refused), and `export` (FR-14, `{view?, format?}`; PNG, the default, and GIF are returned as image content so the agent sees the drawing, SVG and JSON as text).
 - AC: every tool gives the same result as the matching `dg` command.
 
 **FR-17 Language server (`dg lsp`).** Language Server Protocol over stdio for model files and `views.hcl`, working on unsaved editor buffers:
@@ -865,7 +873,7 @@ When a model file does not parse, references, selectors and layout entries are n
 ## 12. Repository layout
 
 ```
-/cmd/dg/                  # serve, check, fmt, export, op, mcp, lsp
+/cmd/dg/                  # serve, check, fmt, export, op, vocabulary, mcp, lsp
 /internal/project/        # dg.hcl, packs, file discovery, read-only rules
 /internal/spec/           # kinds, edge kinds, inheritance
 /internal/style/          # style blocks, shapes, cascade (section 8.4)
@@ -910,11 +918,11 @@ The order follows two rules. First, export comes before editing: once `dg export
    *Done when:* `examples/er` and `examples/class` match their goldens, with each row edge attached to the end of the row facing the other endpoint.
 5. **M5 — Animated edges.** `animate = "flow"` (section 4.3) drawn in the browser and in SVG export; `dg export --format png|gif` (FR-14).
    *Done when:* the animated SVG is golden; the GIF is byte-identical across runs and loops without a jump (the drawing at the end of the period equals the first frame); `examples/c4-container` has an animated variant (the `sign-in` view, a dynamic diagram whose interactions are animated).
-6. **M6 — Operations and agent surface.** FR-12 except view, decoration and `reorder` operations; `batch`; inverses; read-only enforcement; `rename_id`; FR-15 `dg op`; FR-16 MCP server.
-   *Done when:* every operation has a golden `hclwrite` round-trip; applying an operation then its inverse restores every file byte for byte; a refused operation leaves every file untouched; a file changed between read and write is reloaded and the operation re-applied; `dg op` arguments are fuzzed; a script rebuilds `examples/c4-container` from an empty directory using only `dg op` and matches the M3 golden; an in-process MCP client builds the same diagram through the MCP tools.
-7. **M7 — Views.** Section 8 in full: collapse, edge lifting and merging, drill-down badges, breadcrumbs and view switcher, overlays, view style rules, decorations (including attached); the view and decoration operations, including `promote_decoration`.
+6. **M6 — Operations and agent surface.** FR-12 except `update_view`, `delete_view`, the decoration operations and `reorder`; `create_view` is pulled forward from M7 so operations can rebuild a project's views; `batch`; inverses and the undo log `dg serve` will use; read-only enforcement; `rename_id`; FR-15 `dg op` and `dg vocabulary`; FR-16 MCP server; frames and frame-relative positions in JSON export.
+   *Done when:* every operation has a golden `hclwrite` round-trip; applying an operation then its inverse restores every file byte for byte; a refused operation leaves every file untouched; a file changed between read and write is reloaded and the operation re-applied; `dg op` arguments and MCP requests are fuzzed; `testdata/rebuild/c4-container.sh` rebuilds `examples/c4-container` using only `dg op`, starting from a directory holding only its `dg.hcl` and `c4` pack (operations edit models, views and layouts, not packs), and every view (`main`, `pinned`, `sign-in`) matches its golden SVG; an in-process MCP client builds the same diagram through the MCP tools.
+7. **M7 — Views.** Section 8 in full: collapse, edge lifting and merging, drill-down badges, breadcrumbs and view switcher, overlays, view style rules, decorations (including attached); the view operations other than `create_view` and the decoration operations, including `promote_decoration`.
    *Done when:* every lifting and merging case in section 8.3 has a golden resolved view; `examples/c4` shows three levels (system context with collapsed systems, a container view with `of` on a system, a component view with `of` on a container) navigable by drill-down; an incident example draws an overlay.
-8. **M8 — Container policies.** `stack` and `grid`, `order`, the `reorder` operation.
+8. **M8 — Container policies.** `stack` and `grid`, `order`, the `reorder` operation; JSON export marks the children of `stack` and `grid` containers, which `move` refuses.
    *Done when:* `examples/swimlane`, `examples/flowchart` and `examples/state-machine` match their goldens; children missing from `order` are appended in sorted ID order; `x`/`y` on a `stack` child is ignored with a warning.
 9. **M9 — Language server and VS Code extension.** FR-17 and FR-18, with the diagram panel read-only.
    *Done when:* language server tests replay recorded JSON-RPC sessions (completion at given positions, rename edits, diagnostics identical to `dg check`); an extension test opens `examples/c4` in VS Code, receives diagnostics and opens the diagram panel; a platform-specific VSIX installs and runs offline.
@@ -960,4 +968,9 @@ The order follows two rules. First, export comes before editing: once `dg export
 | Calling libavoid | `libavoid-js` directly | `@joint/router-avoid`: no `via` checkpoints, no ends at containers (which are not obstacles), orthogonal only, and it routes a JointJS graph that export would build only for it. |
 | Edge animation in the page | the SVG's CSS animation in a `<style>` element, allowed by `style-src 'self' 'unsafe-inline'` in the content security policy; a refused style fails the export and shows an error in the editor. Fonts, pictures and connections stay limited to the embedded files (and `data:` pictures), so CSS cannot send anything out. Frames are captured by pausing the page's animations at the frame's time | Constructed style sheets: they pass only because browsers do not apply `style-src` to them, which no specification guarantees. A per-response nonce: `index.html` rewritten for every request in `dg serve` and export, for no gain while nothing else can load. Animating with the Web Animations API or computing each frame's dash offset: a second animation path beside the exported CSS, which can drift from it. |
 | Editor drawing | the editor canvas puts the export's node and edge markup (`web/src/canvas/markup.ts`) in JointJS elements, so there is one drawing path | JointJS shapes for the editor and a DOM copy for export: the export would hold editor state. Two renderers kept equal by tests: they drift. |
+| Inverse of an operation | the files it wrote, with their content before and after; undo and redo apply only while the files hold what they expect | An inverse operation per operation (`create_node` undone by `delete_node`, …): it cannot restore byte for byte the comments of a deleted block, the formatting of an edited one, a default view block written out or a canonicalized layout file. |
+| Operation IDs | an optional `id` on `create_node` and `connect`; generated from the label or ends when omitted | Generated IDs only: an agent cannot refer to a node it creates in the same batch without predicting the generated ID, nor rebuild a model with its IDs. |
+| Concurrent writers | serialized by an advisory lock on the project directory (Windows: a file in the user's cache directory), waited for up to 10 seconds | A lock file in the project: litters the user's repository. No lock, relying on the unchanged-since-read check: two writers can both pass it, and parallel `dg op` runs lost changes while reporting success. |
+| MCP `op` tool schema | the union of every operation's fields, each described per operation; required fields in the tool's description and checked by dg | `oneOf` with one schema per operation: the Anthropic API refuses `oneOf` at the top of a tool's input schema. |
+| PNG and GIF size | one pixel per unit, on white, also for MCP | A `--scale` flag: no use yet; an agent sees the text at the size it is drawn. |
 | Spiral clearance | four grid units | Two grid units: with libavoid's buffer around each box no edge fits between two neighbors, and libavoid draws a straight line through them. |

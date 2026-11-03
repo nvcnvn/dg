@@ -85,9 +85,12 @@ function drawnNode(n: ViewNode, m: NodeMeasure, box: Box, layout: Layout, custom
     font: t.font,
     keyFont: t.keyFont,
   };
+  const rel = layout.rel.get(n.id) ?? { x: 0, y: 0 };
   return {
     id: n.id,
     box,
+    ...(n.frame ? { frame: n.frame } : {}),
+    rel: n.frame ? { x: Math.max(0, rel.x), y: Math.max(0, rel.y) } : rel,
     container: !!n.container,
     pinned: !!n.pin,
     tooSmall: layout.tooSmall.has(n.id),

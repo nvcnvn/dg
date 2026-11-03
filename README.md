@@ -22,9 +22,13 @@ tests that start Chromium. Golden files are rewritten with
 `go test ./cmd/dg ./internal/export ./internal/view -update`: diagnostics of the projects under
 `testdata/check`, `dg fmt` output in `testdata/fmt/want`, resolved views and exports of every
 view of every example (PNG and GIF exports are not golden: the tests compare two runs).
+`go test ./internal/ops -update` rewrites the operation goldens in `testdata/ops/want` (the files
+each operation writes to a copy of `testdata/ops/in`).
 `go test ./internal/project -bench Load1000` times `dg check` at 1,000 nodes; the fuzz targets
-are `FuzzLoad` (`internal/project`), `FuzzDecodeLayout` (`internal/view`) and
-`FuzzDecodeMessage` (`internal/server`, the WebSocket protocol).
+are `FuzzLoad` (`internal/project`), `FuzzDecodeLayout` (`internal/view`),
+`FuzzDecodeMessage` (`internal/server`, the WebSocket protocol), `FuzzOp` (`internal/ops`,
+operations as JSON), `FuzzOpArgs` (`cmd/dg`, `dg op` command lines) and `FuzzTools`
+(`internal/mcp`, MCP tool calls).
 
 ## Use
 
@@ -37,6 +41,24 @@ bin/dg export -C examples/c4-container --view sign-in --format gif --out sign-in
 bin/dg export -C examples/c4-container --all --format png --out pictures   # one file per view
 bin/dg serve -C examples/c4-container         # opens the browser; redraws when a file is saved
 ```
+
+Operations change the files (`dg op --help` lists them; `dg op <operation> --help` shows its
+flags and JSON form):
+
+```sh
+bin/dg op create_node -C my-diagram --kind service --label "API"        # ID api
+bin/dg op create_node -C my-diagram --kind database --id db --label "Orders"
+bin/dg op connect -C my-diagram --from api --to db --label "SQL" --json
+bin/dg op move -C my-diagram --view main --id db --x 200 --y 0
+bin/dg op batch -C my-diagram < ops.json   # a JSON list of operations, applied as one change
+bin/dg vocabulary -C my-diagram            # kinds, edge kinds, tags and views, as JSON
+bin/dg mcp -C my-diagram                   # MCP server over stdio: check, vocabulary, op, export
+```
+
+An operation that would add a validation error, or change a `read_only` file, is refused and
+writes nothing. `dg op` computes no geometry: `dg export --format json` gives each node's `frame`
+and its position `rel` in it, which `move` takes. `testdata/rebuild/c4-container.sh` rebuilds
+`examples/c4-container` with operations alone.
 
 `dg serve` shows the views read-only (editing comes later): it redraws within tens of
 milliseconds of a save, and while the project has errors it lists them and keeps the last good

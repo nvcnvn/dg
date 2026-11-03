@@ -50,6 +50,8 @@ type Project struct {
 	FontRange hcl.Range
 	// ConfigInvalid is set when dg.hcl has errors, so ReadOnly may be incomplete.
 	ConfigInvalid bool
+	// Unparsed names the HCL files with syntax errors, as diagnostics name them.
+	Unparsed []string
 	view.Sources
 }
 
@@ -87,14 +89,18 @@ func Load(dir string) (*Project, diag.Diagnostics, error) {
 		return nil, nil, err
 	}
 	defer root.Close()
-	return load(root.FS(), dir)
+	return LoadFS(root.FS(), dir)
+}
+
+// LoadFS is Load reading the project's files from fsys; dir is only recorded as Project.Dir.
+func LoadFS(fsys fs.FS, dir string) (*Project, diag.Diagnostics, error) {
+	return load(fsys, dir)
 }
 
 type loader struct {
-	fsys     fs.FS
-	p        *Project
-	diags    hcl.Diagnostics
-	unparsed int // files that did not parse
+	fsys  fs.FS
+	p     *Project
+	diags hcl.Diagnostics
 }
 
 type decodeFunc func(hcl.Body, *hcl.EvalContext) hcl.Diagnostics
@@ -109,7 +115,7 @@ func (l *loader) parse(fsys fs.FS, rel, name string, decode decodeFunc) error {
 	f, d := hclsyntax.ParseConfig(src, name, hcl.InitialPos)
 	l.diags = append(l.diags, d...)
 	if d.HasErrors() {
-		l.unparsed++
+		l.p.Unparsed = append(l.p.Unparsed, name)
 	} else {
 		l.diags = append(l.diags, decode(f.Body, evalContext(fsys, path.Dir(rel)))...)
 	}
@@ -188,13 +194,13 @@ func load(fsys fs.FS, dir string) (*Project, diag.Diagnostics, error) {
 			return nil, nil, err
 		}
 	}
-	before := l.unparsed
+	before := len(p.Unparsed)
 	for _, rel := range models {
 		if err := l.parseProject(rel, RoleModel, p.Model.Decode); err != nil {
 			return nil, nil, err
 		}
 	}
-	modelUnparsed := l.unparsed > before
+	modelUnparsed := len(p.Unparsed) > before
 	if len(models) == 0 {
 		l.diags = append(l.diags, &hcl.Diagnostic{Severity: hcl.DiagWarning, Summary: "No model files", Detail: "The project has no model files."})
 	}

@@ -11,6 +11,10 @@ import type { MarkerPart } from '../route/markers';
 export interface DrawnNode {
   id: string;
   box: Box;
+  // frame is the node's frame, and rel its drawn position relative to the frame's content origin
+  // (spec 7.1), the coordinates a move operation takes.
+  frame?: string;
+  rel?: Point;
   container: boolean;
   pinned: boolean;
   tooSmall: boolean;
