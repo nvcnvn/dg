@@ -1,0 +1,53 @@
+[
+  {
+    "severity": "info",
+    "summary": "Overridden definition",
+    "detail": "The kind \"service\" replaces the one defined at \u003cgeneric\u003e/spec.hcl:3:1.",
+    "file": "packs/one/spec.hcl",
+    "line": 1,
+    "column": 1,
+    "end_line": 1,
+    "end_column": 15
+  },
+  {
+    "severity": "info",
+    "summary": "Overridden definition",
+    "detail": "The style \"service\" overrides the properties it sets of the one defined at \u003cgeneric\u003e/style.hcl:7:1.",
+    "file": "packs/one/style.hcl",
+    "line": 1,
+    "column": 1,
+    "end_line": 1,
+    "end_column": 16
+  },
+  {
+    "severity": "info",
+    "summary": "Overridden definition",
+    "detail": "The kind \"widget\" replaces the one defined at packs/one/spec.hcl:5:1.",
+    "file": "spec.hcl",
+    "line": 1,
+    "column": 1,
+    "end_line": 1,
+    "end_column": 14
+  },
+  {
+    "severity": "info",
+    "summary": "Overridden definition",
+    "detail": "The edge kind \"default\" replaces the one defined at \u003cgeneric\u003e/spec.hcl:12:1.",
+    "file": "spec.hcl",
+    "line": 3,
+    "column": 1,
+    "end_line": 3,
+    "end_column": 20
+  },
+  {
+    "severity": "info",
+    "summary": "Overridden definition",
+    "detail": "The style \"widget\" overrides the properties it sets of the one defined at packs/one/style.hcl:5:1.",
+    "file": "style.hcl",
+    "line": 1,
+    "column": 1,
+    "end_line": 1,
+    "end_column": 15
+  }
+]
+exit 0

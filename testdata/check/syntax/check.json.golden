@@ -1,0 +1,13 @@
+[
+  {
+    "severity": "error",
+    "summary": "Invalid expression",
+    "detail": "Expected the start of an expression, but found an invalid expression token.",
+    "file": "model.hcl",
+    "line": 2,
+    "column": 11,
+    "end_line": 3,
+    "end_column": 1
+  }
+]
+exit 1

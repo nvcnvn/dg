@@ -1,0 +1,33 @@
+[
+  {
+    "severity": "error",
+    "summary": "Invalid pack",
+    "detail": "The project root is not a pack; its spec.hcl and style.hcl load after every pack.",
+    "file": "dg.hcl",
+    "line": 2,
+    "column": 13,
+    "end_line": 2,
+    "end_column": 16
+  },
+  {
+    "severity": "warning",
+    "summary": "No matching files",
+    "detail": "The pattern \"packs/*/*.hcl\" matches no model files.",
+    "file": "dg.hcl",
+    "line": 3,
+    "column": 33,
+    "end_line": 3,
+    "end_column": 48
+  },
+  {
+    "severity": "error",
+    "summary": "Not a file",
+    "detail": "dir.hcl is a directory.",
+    "file": "dir.hcl",
+    "line": 1,
+    "column": 1,
+    "end_line": 1,
+    "end_column": 1
+  }
+]
+exit 1

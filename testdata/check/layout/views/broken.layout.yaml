@@ -1,0 +1,15 @@
+version: 2
+place:
+  bad:key: {x: 1}
+  "50%": {x: 1}
+  c: {x: 1.5, y: 0, z: 3}
+  d: [1, 2]
+  "lift:a:b": {x: 0}
+edge_hints:
+  e: {from_side: middle, label_pos: 2, via: [[1, 2, 3]]}
+  "lift:a": {}
+decorations:
+  - {id: t, type: text}
+  - {id: t, type: rect}
+  - {type: blob}
+extra: 1

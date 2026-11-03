@@ -1,0 +1,3 @@
+kind "table" {
+  rows = true
+}

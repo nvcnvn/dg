@@ -93,7 +93,7 @@ Layout files are YAML, because they are machine-owned and rarely edited by hand.
 | HCL parse, decode, diagnostics | `github.com/hashicorp/hcl/v2` (`hclsyntax`, `gohcl`) |
 | HCL functions (`port_range`, `file`) | `github.com/zclconf/go-cty` function API |
 | Comment-preserving writes | `github.com/hashicorp/hcl/v2/hclwrite` |
-| YAML with stable key order | `gopkg.in/yaml.v3` (`yaml.Node`) |
+| YAML with stable key order | `go.yaml.in/yaml/v3` (`yaml.Node`; the maintained fork of the archived `gopkg.in/yaml.v3`) |
 | File watching | `github.com/fsnotify/fsnotify` |
 | WebSocket | `github.com/coder/websocket` |
 | Headless export | `github.com/chromedp/chromedp` |
@@ -158,9 +158,16 @@ project "inference-stack" {
 }
 ```
 
-`dg.hcl` is optional. Without it, the project root is the current directory (or `-C <dir>`), `packs = ["generic"]`, and `models` is every `*.hcl` in the root except `dg.hcl`, `spec.hcl`, `style.hcl` and `views.hcl`.
+`dg.hcl` is optional and holds at most one `project` block; every field is optional. Without it, the project root is the current directory (or `-C <dir>`) and every field has its default.
 
-Load order for kinds and styles: built-in `generic` pack, then packs in listed order, then project-local `spec.hcl` / `style.hcl`. A later definition with the same name overrides an earlier one, and `dg check` reports the override as information.
+- Paths are slash-separated, relative to the project root, and stay inside it.
+- Symbolic links are followed only while they stay inside the project.
+- `packs` lists local pack directories, each holding an optional `spec.hcl` and `style.hcl`; the project root itself is not a pack. The built-in `generic` pack is always loaded first, whether or not `packs` lists it.
+- `models` lists glob patterns (`path.Match` syntax, no `**`). Default: every `*.hcl` in the root. `dg.hcl`, the `views` file, and the `spec.hcl` and `style.hcl` of the project and its packs are never model files. A pattern that matches no file is a warning; a directory it matches is an error.
+- `read_only` lists glob patterns of files dg never writes: `dg fmt` skips them, and operations that would write them fail naming the file.
+- `font` is checked to exist; drawing with it comes in M3.
+
+Load order for kinds and styles: built-in `generic` pack, then packs in listed order, then project-local `spec.hcl` / `style.hcl`. A later `kind`, `edge_kind`, `shape` or `overlay_style` with the same name replaces the earlier one; a later `style` or `edge_style` with the same label overrides only the properties it sets (later wins, as in the cascade, section 8.4). Defining a name twice in one file is an error. `dg check` reports each override across files as information, a severity that `--strict` never turns into an error.
 
 ### 4.2 Spec — kinds
 
@@ -257,8 +264,11 @@ shape "gpu-node" {
 }
 ```
 
-**Node style properties:** `shape`, `fill`, `stroke`, `stroke_width`, `stroke_dash`, `corner_radius`, `opacity`, `text_color`, `font_size`, `font_weight`, `icon`, `image`, `padding`, `min_w`, `min_h`, `max_w`, `z`. `icon` and `image` (the picture for the `image` shape) take `file("…")`, an SVG or PNG resolved relative to the file that calls it.
-**Container properties:** `layout`, `direction`, `gap`, `stretch`, `columns`, `align`, `label_side` (`top` | `left`; `left` draws the label rotated along the left edge, as on a swimlane).
+**Node style properties:** `shape`, `fill`, `stroke`, `stroke_width`, `stroke_dash`, `corner_radius`, `opacity`, `text_color`, `font_size`, `font_weight`, `icon`, `image`, `padding`, `min_w`, `min_h`, `max_w`, `z`. `icon` and `image` (the picture for the `image` shape) take `file("…")`, an SVG resolved relative to the file that calls it.
+**Container properties:** `layout`, `direction` (`horizontal` | `vertical`), `gap`, `stretch`, `columns`, `align` (`start` | `center` | `end`), `label_side` (`top` | `left`; `left` draws the label rotated along the left edge, as on a swimlane).
+**Overlay style properties:** `fill`, `stroke`, `stroke_width`, `stroke_dash`, `opacity`, `padding`.
+**Values:** colors are `#RGB`, `#RRGGBB` or `none`; sizes, widths, gaps and padding are numbers of at least 0, `font_size` at least 1; `opacity` is 0–1; `font_weight` is 100–900 in steps of 100; `z` and `columns` are whole numbers; `stroke_dash` is a list of numbers.
+**Custom shapes:** a shape's name may not be a built-in shape. Each of its `anchors` must name a port of every kind whose style (by kind, section 8.4 step 1–2) uses the shape; ports without an anchor are placed by section 7.5.
 **Edge style properties:** `stroke`, `stroke_width`, `stroke_dash`, `arrow_start`, `arrow_end`, `routing`, `font_size`, `animate`.
 **Animation** (`animate`): `none` (default) or `flow`. `flow` draws the edge dashed (its `stroke_dash`, or `[6, 4]`) and moves the dashes from `from` toward `to` by one dash period every half second, so every animated edge repeats with the same half-second period. Animation is style, so it is selected by kind or tag (`edge_style "tag.hot" { animate = "flow" }`), never set in the model.
 **Arrow markers** (`arrow_start`, `arrow_end`): `none`, `arrow` (open), `triangle`, `triangle-open`, `diamond`, `diamond-open`, `circle`, `circle-open`, and crow's-foot `crow-one`, `crow-zero-one`, `crow-many`, `crow-one-many`, `crow-zero-many`.
@@ -318,7 +328,12 @@ edge "dns" {
 - `node` and `edge` blocks must have exactly one label: the ID.
 - Defaults: node `kind = "node"` and `label` = ID; edge `kind = "default"` and no label.
 - `from` / `to`: `node.<id>`, `node.<id>.port.<port>`, or `node.<id>.row.<row>`; index form for IDs that are not simple (`node["a/b"]`, `node.t.row["save()"]`).
-- `label` is shorthand for `labels = { mid = "..." }`. Full form: `labels = { start = "1", mid = "places", end = "0..*" }`.
+- `label` is shorthand for `labels = { mid = "..." }`. Full form: `labels = { start = "1", mid = "places", end = "0..*" }`. Setting both is an error.
+- `tags` is a list of simple IDs; `props` is an object literal whose keys the kind declares and whose values have the declared type exactly (no conversion). Properties without a value take the kind's `default`, if any.
+
+**Functions**, available in every HCL file:
+- `port_range(prefix, from, to)`: the list `prefix<from>` … `prefix<to>`; `from` and `to` are whole numbers between -10⁹ and 10⁹, `from ≤ to`, at most 10,000 names.
+- `file(path)`: the contents of a UTF-8 text file, `path` relative to the directory of the file that calls it and inside the project.
 
 ### 4.5 View definitions — `views.hcl`
 
@@ -379,10 +394,10 @@ place:                                   # pinned nodes; keys sorted
     x: 700
     y: 100
     ports:                               # pinned port positions
-      p12: {side: bottom, offset: 0.4}
+      p12: {side: bottom, offset: 0.40}
   lanes:    {x: 0, y: 600, order: [ingest, train, serve]}   # stack/grid container
 edge_hints:                              # keys sorted
-  w1-tor:              {from_side: bottom, to_side: top, via: [[300, 420]], label_pos: 0.5}
+  w1-tor:              {from_side: bottom, to_side: top, via: [[300, 420]], label_pos: 0.50}
   "lift:router:pool":  {to_side: left}   # hint for a lifted edge
 decorations:
   - {id: title,  type: text, x: 0, y: -60, text: "Inference stack"}
@@ -410,7 +425,7 @@ A node whose kind has `container = true`. Children point to it with `parent`. Co
 ### 5.3 Port
 
 A named attachment point on a node.
-- **Kind ports** are declared in the spec (`ports = [...]`).
+- **Kind ports** are declared in the spec (`ports = [...]`, which may call `port_range`).
 - **Instance ports** are declared in the model (`port "name" { side = ... }` blocks or `ports = port_range(prefix, from, to)`).
 - A node's ports = kind ports + instance ports; duplicates are an error.
 - `side` ∈ `top | right | bottom | left | auto`.
@@ -442,6 +457,8 @@ node "user" {
   }
 }
 ```
+
+A row takes optional strings `type` and `key` (such as `pk`, `fk`). A node declares its rows either all directly or all in compartments. Row names are unique within the node, across compartments; compartment names are unique within the node.
 
 A row is drawn as a line inside the box **and acts as a port** whose attachment point is the left or right end of that line (whichever faces the other endpoint). Reference: `node.orders.row.customer_id`, or `node.user.row["save()"]`.
 
@@ -679,12 +696,13 @@ Each requirement has acceptance criteria (AC).
 **FR-1 Load project.** Parse `dg.hcl`, packs (built-in and listed), project-local spec and style, model files, `views.hcl`, layout files. Evaluate HCL functions `port_range` and `file`.
 - AC: syntax errors report file, line, column, message.
 - AC: missing optional files are not errors.
+- AC: a layout file is an error at its line and column (the line only, for YAML syntax errors) when it is not one YAML document, lacks `version: 1`, has unknown fields, values of the wrong type, a negative `w` or `h`, or IDs with a raw `:` or `#` or another escape than those of section 4.6. Port names in layout files are encoded like IDs.
 
 **FR-2 Validate (`dg check`).** Errors:
 - duplicate node, edge, view, overlay or decoration IDs; invalid or reserved IDs;
 - undefined node, port, row, kind, edge kind, or selector target; `extends` cycles;
 - `parent` pointing to a non-container kind; containment cycles;
-- duplicate port names on a node; ports/anchors mismatch between a kind and its custom shape;
+- duplicate port, row or compartment names on a node; a custom shape anchor naming no port of a kind drawn with it (section 4.3);
 - rows declared on a kind without `rows = true`;
 - properties the kind does not declare, or of the wrong type;
 - unknown style properties or invalid style values;
@@ -696,13 +714,16 @@ Warnings:
 - style labels naming undefined kinds; selectors that match nothing;
 - stale frames (section 7.1);
 - `x`/`y` on children of `stack`/`grid` containers;
-- pinned containers too small for their children (computed at render time; reported by the editor and by `dg export`);
-- kind or style overridden by a later pack.
+- pinned containers too small for their children (computed at render time; reported by the editor and by `dg export`).
 
-- AC: exit code 0 if no errors, 1 if errors, 2 on internal failure; `--strict` makes warnings errors.
-- AC: `--json` prints machine-readable diagnostics.
+Information: a kind, edge kind, shape or style overridden by a later pack or the project (section 4.1).
 
-**FR-3 Format (`dg fmt`).** Format writable model files and `views.hcl` with `hclwrite.Format`; regenerate layout files in canonical form.
+- AC: exit code 0 if no errors, 1 if errors, 2 on internal failure (such as an unreadable project directory); `--strict` makes warnings errors.
+- AC: `--json` prints a JSON array of diagnostics, each with `severity` (`error`, `warning` or `info`), `summary`, `detail`, and, when it has a position, `file`, `line`, `column`, `end_line` and `end_column`. `dg serve` (FR-10) and the language server send the same shape.
+- AC: `file` is the project-relative slash path, the same whatever `-C` and the working directory are; files of the built-in pack are `<generic>/spec.hcl` and `<generic>/style.hcl`, which no project path can be. A diagnostic about one element of a list (a pattern, port, tag or selector) points at that element.
+- AC: diagnostics are sorted by file, line and column.
+
+**FR-3 Format (`dg fmt`).** Format every writable HCL file the project loads (`dg.hcl`, local packs, project `spec.hcl` and `style.hcl`, model files, `views.hcl`) with `hclwrite.Format`; regenerate layout files in canonical form. Files matched by `read_only` are never written; files that do not parse are left as they are and reported. All changed files are written together (temporary files, then rename), keeping each file's permissions and writing through symbolic links that stay inside the project, and `dg fmt` prints the path of each. If `dg.hcl` has errors, `dg fmt` writes nothing, since `read_only` may be incomplete. `dg fmt --check` lists the files that would change, writes nothing, and exits 1 if there are any.
 
 ### B. Resolution (Go)
 
@@ -834,6 +855,7 @@ Warnings:
 /internal/spec/           # kinds, edge kinds, inheritance
 /internal/style/          # style blocks, shapes, cascade (section 8.4)
 /internal/model/          # nodes, edges, ports, rows, validation
+/internal/diag/           # diagnostics as dg check, dg serve and the language server report them
 /internal/view/           # views.hcl, selectors, collapse and lifting, layout YAML, resolve (FR-4)
 /internal/ops/            # operation API, hclwrite edits, undo log, atomic writes
 /internal/server/         # HTTP, WebSocket, fsnotify
@@ -860,12 +882,14 @@ The order follows two rules. First, export comes before editing: once `dg export
 
 **How a milestone is verified.** Rendering is tested through `dg export` in Go tests that drive headless Chromium: SVG and JSON geometry are golden files under `testdata/`, and every export test runs twice and requires byte-identical output (section 11). PNG and GIF are compared run against run on the same machine, not against goldens, because rasterization differs between Chromium versions. Each milestone ends with example projects in `/examples` for the diagram types it enables; their exports are goldens too.
 
+**Language ahead of drawing.** From M2, `dg check` accepts the whole language of sections 4–6. `dg export` refuses, with an error at the source position that names the milestone, anything the renderer does not draw yet (a style value, rows, edges ending at ports or rows, collapse, pinned positions, …), so nothing is silently drawn wrong.
+
 1. **M1 — Walking skeleton.** The thinnest path from file to picture: `node` and `edge` blocks with `kind`, `label` and `parent`; `kind`, `edge_kind`, `style` and `edge_style` with `shape` (`rect`, `rounded`), `fill` and `stroke`; resolve; the embedded web app with the bundled font, elkjs first layout and router-avoid routing; `dg export --format svg|json`.
    *Done when:* `examples/hello` exports a golden SVG, and export succeeds with the network blocked (font, WebAssembly and the elk worker are all embedded).
    *Why first:* the risk is in the joins (libavoid WebAssembly and the elk Web Worker inside the embedded app inside headless Chromium), not in any single part.
-2. **M2 — Language core.** FR-1, FR-2 (model-level checks), FR-3: kind inheritance, properties, ports, `port_range`, `file`, rows, quoted IDs, packs, project-local spec and style, read-only files.
+2. **M2 — Language core.** FR-1, FR-2, FR-3: kind inheritance, properties, ports, `port_range`, `file`, rows, quoted IDs, packs, project-local spec and style, read-only files; `views.hcl` and layout files parsed and validated, and views resolved by `include`, `exclude` and `edges`.
    *Done when:* every FR-2 error and warning has a golden diagnostic with file, line and column; HCL loading and layout YAML are fuzzed; the `dg check` benchmark at 1,000 nodes is under 1 second; `dg fmt` output is golden.
-3. **M3 — C4 diagrams.** FR-4 (without collapse and overlays), FR-5, FR-7, FR-8, FR-9 for `free` containers; the full `generic` pack and every built-in shape; label wrapping; pinned positions from layout files; `dg serve` read-only (FR-10 `snapshot` and `diagnostics`) with FR-13 reload, so editing HCL in a text editor updates the browser.
+3. **M3 — C4 diagrams.** FR-4 (without collapse and overlays), FR-5, FR-7, FR-8, FR-9 for `free` containers; the full `generic` pack, every built-in shape and custom shapes; the node and edge style properties other than the container policies, markers and animation; the project `font`; label wrapping; pinned positions from layout files; `dg serve` read-only (FR-10 `snapshot` and `diagnostics`) with FR-13 reload, so editing HCL in a text editor updates the browser.
    *Done when:* `examples/c4-container` (people, a system boundary holding its containers, external systems, a local `c4` pack) matches its golden SVG with nothing pinned and with a partial layout file (pinned plus spiral-placed nodes); saving a model file updates the browser within 300 milliseconds; a broken file keeps the last snapshot.
 4. **M4 — Entity-relationship and class diagrams.** Rows and compartments drawn; rows as ports (section 5.4); every arrow marker including crow's feet; start and end labels; self-loops; several edges between one pair.
    *Done when:* `examples/er` and `examples/class` match their goldens, with each row edge attached to the end of the row facing the other endpoint.

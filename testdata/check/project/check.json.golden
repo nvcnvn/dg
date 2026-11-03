@@ -1,0 +1,93 @@
+[
+  {
+    "severity": "error",
+    "summary": "Pack not found",
+    "detail": "The pack directory \"packs/missing\" does not exist.",
+    "file": "dg.hcl",
+    "line": 2,
+    "column": 28,
+    "end_line": 2,
+    "end_column": 43
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid path",
+    "detail": "\"../outside\" is not a slash-separated path inside the project.",
+    "file": "dg.hcl",
+    "line": 2,
+    "column": 45,
+    "end_line": 2,
+    "end_column": 57
+  },
+  {
+    "severity": "warning",
+    "summary": "No matching files",
+    "detail": "The pattern \"generated/*.hcl\" matches no model files.",
+    "file": "dg.hcl",
+    "line": 3,
+    "column": 30,
+    "end_line": 3,
+    "end_column": 47
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid pattern",
+    "detail": "\"[bad\": syntax error in pattern.",
+    "file": "dg.hcl",
+    "line": 3,
+    "column": 49,
+    "end_line": 3,
+    "end_column": 55
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid pattern",
+    "detail": "\"[bad\": syntax error in pattern.",
+    "file": "dg.hcl",
+    "line": 4,
+    "column": 36,
+    "end_line": 4,
+    "end_column": 42
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid grid",
+    "detail": "The grid must be a whole number of at least 1.",
+    "file": "dg.hcl",
+    "line": 5,
+    "column": 16,
+    "end_line": 5,
+    "end_column": 17
+  },
+  {
+    "severity": "error",
+    "summary": "File not found",
+    "detail": "The font file \"fonts/missing.ttf\" does not exist.",
+    "file": "dg.hcl",
+    "line": 6,
+    "column": 16,
+    "end_line": 6,
+    "end_column": 35
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid path",
+    "detail": "\"/abs\" is not a slash-separated path inside the project.",
+    "file": "dg.hcl",
+    "line": 7,
+    "column": 16,
+    "end_line": 7,
+    "end_column": 22
+  },
+  {
+    "severity": "error",
+    "summary": "Duplicate project block",
+    "detail": "dg.hcl holds at most one project block.",
+    "file": "dg.hcl",
+    "line": 10,
+    "column": 1,
+    "end_line": 10,
+    "end_column": 17
+  }
+]
+exit 1

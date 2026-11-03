@@ -19,11 +19,19 @@ make lint    # gofmt, go vet, staticcheck, govulncheck, tsc --noEmit
 
 After `make web`, plain `go build ./...` and `go test ./...` work. `go test -short ./...` skips the
 tests that start Chromium. Golden files are rewritten with
-`go test ./internal/export ./internal/view -update`.
+`go test ./cmd/dg ./internal/export ./internal/view -update`: diagnostics of the projects under
+`testdata/check`, `dg fmt` output in `testdata/fmt/want`, resolved views and exports of every
+view of every example. `go test ./internal/project -bench Load1000` times `dg check` at 1,000
+nodes; the fuzz targets are `FuzzLoad` (`internal/project`) and `FuzzDecodeLayout`
+(`internal/view`).
 
 ## Use
 
 ```sh
+bin/dg check -C examples/inference            # --strict: warnings fail; --json: machine-readable
+bin/dg fmt -C examples/inference              # rewrites writable files; --check: list, write nothing
 bin/dg export -C examples/hello --format svg --out hello.svg
-bin/dg export -C examples/hello --format json
+bin/dg export -C examples/inference --view services --format json
 ```
+
+`dg check` exits 0 without errors, 1 with errors, 2 when dg itself fails.

@@ -1,0 +1,24 @@
+views.hcl:2:20: error: Undefined node: The selector names undefined node "nope".
+views.hcl:2:31: error: Undefined kind: The selector names undefined kind "nope".
+views.hcl:2:42: warning: Selector matches nothing: No element matches this selector.
+views.hcl:2:54: warning: Selector matches nothing: No element matches this selector.
+views.hcl:2:66: error: Undefined node: The selector names undefined node "nope".
+views.hcl:2:84: error: Invalid selector: Expected one of "all", "node.<id>", "kind.<id>", "tag.<id>", "children.<id>", "descendants.<id>".
+views.hcl:4:15: error: Not a container: View "main" collapses node "a", which is not a container.
+views.hcl:4:23: error: Not a container: View "main" collapses kind "node", which is not a container kind.
+views.hcl:5:34: error: Undefined edge kind: The selector names undefined edge kind "nope".
+views.hcl:5:50: error: Undefined edge: The selector names undefined edge "nope".
+views.hcl:5:61: warning: Selector matches nothing: No element matches this selector.
+views.hcl:6:3: error: Undefined overlay style: Overlay "o" uses undefined overlay style "ghost".
+views.hcl:14:3: error: Undefined node: The style label "node.nope" names an undefined node.
+views.hcl:18:13: error: Invalid style value: The shape "blob" is neither a built-in shape nor defined by a shape block.
+views.hcl:23:3: error: Undefined edge: The style label "edge.zz" names an undefined edge.
+views.hcl:27:8: error: Not a container: View "inside" has of = node "a", which is not a container.
+views.hcl:27:8: warning: Selector matches nothing: No element matches this selector.
+views.hcl:35:14: warning: Selector matches nothing: No element matches this selector.
+views.hcl:39:14: error: Invalid selector: Expected one of "all", "node.<id>", "kind.<id>", "tag.<id>", "children.<id>", "descendants.<id>".
+views.hcl:39:20: error: Invalid selector: Expected one of "all", "node.<id>", "kind.<id>", "tag.<id>", "children.<id>", "descendants.<id>".
+views.hcl:39:27: error: Invalid selector: Expected one of "all", "node.<id>", "kind.<id>", "tag.<id>", "children.<id>", "descendants.<id>".
+views.hcl:39:36: error: Invalid selector: Expected one of "all", "node.<id>", "kind.<id>", "tag.<id>", "children.<id>", "descendants.<id>".
+views.hcl:40:13: error: Invalid selector: Expected one of "node.<id>".
+exit 1

@@ -2,12 +2,13 @@ module github.com/nvcnvn/dg
 
 go 1.27.0
 
-toolchain go1.27.2
+toolchain go1.27.3
 
 require (
 	github.com/chromedp/chromedp v0.21.1
 	github.com/hashicorp/hcl/v2 v2.25.0
 	github.com/zclconf/go-cty v1.19.0
+	go.yaml.in/yaml/v3 v3.0.6
 )
 
 require (

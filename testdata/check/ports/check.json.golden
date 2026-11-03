@@ -1,0 +1,83 @@
+[
+  {
+    "severity": "error",
+    "summary": "Duplicate port",
+    "detail": "Node \"tor\" declares port \"p2\" twice.",
+    "file": "model.hcl",
+    "line": 4,
+    "column": 3,
+    "end_line": 4,
+    "end_column": 12
+  },
+  {
+    "severity": "error",
+    "summary": "Duplicate port",
+    "detail": "Node \"tor\" declares port \"mgmt\", which its kind \"switch\" already has.",
+    "file": "model.hcl",
+    "line": 5,
+    "column": 3,
+    "end_line": 5,
+    "end_column": 14
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid value",
+    "detail": "\"middle\" is not one of \"top\", \"right\", \"bottom\", \"left\", \"auto\".",
+    "file": "model.hcl",
+    "line": 9,
+    "column": 12,
+    "end_line": 9,
+    "end_column": 20
+  },
+  {
+    "severity": "error",
+    "summary": "Error in function call",
+    "detail": "Call to function \"port_range\" failed: to must be at least from and at most 9999 more.",
+    "file": "model.hcl",
+    "line": 14,
+    "column": 11,
+    "end_line": 14,
+    "end_column": 22
+  },
+  {
+    "severity": "error",
+    "summary": "Error in function call",
+    "detail": "Call to function \"port_range\" failed: to must be at least from and at most 9999 more.",
+    "file": "model.hcl",
+    "line": 18,
+    "column": 11,
+    "end_line": 18,
+    "end_column": 22
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid function argument",
+    "detail": "Invalid value for \"from\" parameter: must be a whole number from -1000000000 to 1000000000.",
+    "file": "model.hcl",
+    "line": 22,
+    "column": 27,
+    "end_line": 22,
+    "end_column": 30
+  },
+  {
+    "severity": "error",
+    "summary": "Duplicate port",
+    "detail": "The port \"a\" is listed twice.",
+    "file": "model.hcl",
+    "line": 26,
+    "column": 17,
+    "end_line": 26,
+    "end_column": 20
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid name",
+    "detail": "The port name \"\" is empty.",
+    "file": "model.hcl",
+    "line": 26,
+    "column": 22,
+    "end_line": 26,
+    "end_column": 24
+  }
+]
+exit 1

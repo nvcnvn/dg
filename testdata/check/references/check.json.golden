@@ -1,0 +1,143 @@
+[
+  {
+    "severity": "error",
+    "summary": "Undefined kind",
+    "detail": "Node \"a\" has undefined kind \"nope\".",
+    "file": "model.hcl",
+    "line": 5,
+    "column": 1,
+    "end_line": 5,
+    "end_column": 9
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid node reference",
+    "detail": "Expected node.\u003cid\u003e or node[\"\u003cid\u003e\"].",
+    "file": "model.hcl",
+    "line": 11,
+    "column": 12,
+    "end_line": 11,
+    "end_column": 25
+  },
+  {
+    "severity": "error",
+    "summary": "Undefined node",
+    "detail": "Parent \"missing\" of node \"c\" is not defined.",
+    "file": "model.hcl",
+    "line": 15,
+    "column": 12,
+    "end_line": 15,
+    "end_column": 24
+  },
+  {
+    "severity": "error",
+    "summary": "Parent is not a container",
+    "detail": "Parent \"c\" of node \"d\" has kind \"node\", which is not a container.",
+    "file": "model.hcl",
+    "line": 19,
+    "column": 12,
+    "end_line": 19,
+    "end_column": 18
+  },
+  {
+    "severity": "error",
+    "summary": "Containment cycle",
+    "detail": "Node \"loop1\" contains itself through its parents.",
+    "file": "model.hcl",
+    "line": 24,
+    "column": 12,
+    "end_line": 24,
+    "end_column": 22
+  },
+  {
+    "severity": "error",
+    "summary": "Containment cycle",
+    "detail": "Node \"loop2\" contains itself through its parents.",
+    "file": "model.hcl",
+    "line": 29,
+    "column": 12,
+    "end_line": 29,
+    "end_column": 22
+  },
+  {
+    "severity": "error",
+    "summary": "Undefined port",
+    "detail": "Edge \"bad-ends\" references port \"nope\", which node \"t\" does not have.",
+    "file": "model.hcl",
+    "line": 45,
+    "column": 10,
+    "end_line": 45,
+    "end_column": 26
+  },
+  {
+    "severity": "error",
+    "summary": "Undefined row",
+    "detail": "Edge \"bad-ends\" references row \"nope\", which node \"t\" does not have.",
+    "file": "model.hcl",
+    "line": 46,
+    "column": 10,
+    "end_line": 46,
+    "end_column": 25
+  },
+  {
+    "severity": "error",
+    "summary": "Undefined edge kind",
+    "detail": "Edge \"undefined\" has undefined edge kind \"nope\".",
+    "file": "model.hcl",
+    "line": 49,
+    "column": 1,
+    "end_line": 49,
+    "end_column": 17
+  },
+  {
+    "severity": "error",
+    "summary": "Undefined node",
+    "detail": "Edge \"undefined\" references undefined node \"missing\".",
+    "file": "model.hcl",
+    "line": 50,
+    "column": 10,
+    "end_line": 50,
+    "end_column": 22
+  },
+  {
+    "severity": "error",
+    "summary": "Undefined node",
+    "detail": "Edge \"undefined\" references undefined node \"missing/too\".",
+    "file": "model.hcl",
+    "line": 51,
+    "column": 10,
+    "end_line": 51,
+    "end_column": 29
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid node reference",
+    "detail": "Expected node.\u003cid\u003e, node.\u003cid\u003e.port.\u003cport\u003e or node.\u003cid\u003e.row.\u003crow\u003e, with index form node[\"\u003cid\u003e\"] for IDs that are not simple.",
+    "file": "model.hcl",
+    "line": 56,
+    "column": 10,
+    "end_line": 56,
+    "end_column": 26
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid node reference",
+    "detail": "Expected node.\u003cid\u003e, node.\u003cid\u003e.port.\u003cport\u003e or node.\u003cid\u003e.row.\u003crow\u003e, with index form node[\"\u003cid\u003e\"] for IDs that are not simple.",
+    "file": "model.hcl",
+    "line": 57,
+    "column": 10,
+    "end_line": 57,
+    "end_column": 17
+  },
+  {
+    "severity": "error",
+    "summary": "Missing required argument",
+    "detail": "The argument \"to\" is required.",
+    "file": "model.hcl",
+    "line": 60,
+    "column": 1,
+    "end_line": 60,
+    "end_column": 12
+  }
+]
+exit 1

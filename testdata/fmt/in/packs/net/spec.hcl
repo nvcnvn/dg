@@ -1,0 +1,3 @@
+kind "switch" {
+    ports = ["mgmt"]
+}

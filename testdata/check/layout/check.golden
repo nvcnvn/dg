@@ -1,0 +1,29 @@
+views/broken.layout.yaml:1:10: error: Invalid layout: Version 2 is not supported; the version is 1.
+views/broken.layout.yaml:3:3: error: Invalid layout: Invalid ID: "bad:key" contains a raw ':' or '#'; write %3A or %23.
+views/broken.layout.yaml:4:3: error: Invalid layout: Invalid ID: "50%" contains "%"; only %25, %3A and %23 are escapes.
+views/broken.layout.yaml:5:3: warning: Orphan layout entry: Node "c" does not exist.
+views/broken.layout.yaml:5:10: error: Invalid layout: "1.5" is not a whole number.
+views/broken.layout.yaml:5:21: error: Invalid layout: Unknown field "z"; expected one of in, x, y, w, h, order, ports.
+views/broken.layout.yaml:6:6: error: Invalid layout: Expected a mapping.
+views/broken.layout.yaml:7:3: error: Invalid layout: A lift: key is only valid in edge_hints.
+views/broken.layout.yaml:9:3: warning: Orphan layout entry: Edge "e" does not exist.
+views/broken.layout.yaml:9:18: error: Invalid layout: "middle" is not one of top, right, bottom, left.
+views/broken.layout.yaml:9:37: error: Invalid layout: 2 is not between 0 and 1.
+views/broken.layout.yaml:9:46: error: Invalid layout: A point is [x, y].
+views/broken.layout.yaml:10:3: error: Invalid layout: A lifted edge key is lift:<from>:<to>.
+views/broken.layout.yaml:13:5: error: Duplicate ID: The decoration ID "t" is used twice in this view.
+views/broken.layout.yaml:14:5: error: Invalid layout: A decoration needs an id that is a simple ID.
+views/broken.layout.yaml:14:12: error: Invalid layout: "blob" is not one of text, rect, ellipse, band, image, arrow, freehand.
+views/broken.layout.yaml:15:1: error: Invalid layout: Unknown field "extra"; expected one of version, place, edge_hints, decorations.
+views/main.layout.yaml:3:3: warning: Stale frame: Node "a" is stored relative to the canvas, but its frame in this view is node "g".
+views/main.layout.yaml:3:58: warning: Orphan layout entry: Port "p9" does not exist.
+views/main.layout.yaml:4:3: warning: Ignored position: Node "b" is in "lanes", a stack container, so its x and y are ignored.
+views/main.layout.yaml:5:3: warning: Stale frame: Node "g" is stored relative to node "lanes", but its frame in this view is the canvas.
+views/main.layout.yaml:6:3: warning: Orphan layout entry: Node "gone" does not exist.
+views/main.layout.yaml:7:3: warning: Orphan layout entry: Ordered node "gone" does not exist.
+views/main.layout.yaml:11:3: warning: Orphan layout entry: Edge "old" does not exist.
+views/main.layout.yaml:12:3: warning: Orphan layout entry: Node "nobody" does not exist.
+views/main.layout.yaml:15:5: warning: Orphan layout entry: Node "ghost" does not exist.
+views/orphan.layout.yaml:1:1: error: Layout without view: No view "orphan" is defined for this layout file.
+views/syntax.layout.yaml:2:1: error: Invalid layout: did not find expected ',' or '}'.
+exit 1

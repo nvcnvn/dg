@@ -1,0 +1,283 @@
+[
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "Version 2 is not supported; the version is 1.",
+    "file": "views/broken.layout.yaml",
+    "line": 1,
+    "column": 10,
+    "end_line": 1,
+    "end_column": 10
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "Invalid ID: \"bad:key\" contains a raw ':' or '#'; write %3A or %23.",
+    "file": "views/broken.layout.yaml",
+    "line": 3,
+    "column": 3,
+    "end_line": 3,
+    "end_column": 3
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "Invalid ID: \"50%\" contains \"%\"; only %25, %3A and %23 are escapes.",
+    "file": "views/broken.layout.yaml",
+    "line": 4,
+    "column": 3,
+    "end_line": 4,
+    "end_column": 3
+  },
+  {
+    "severity": "warning",
+    "summary": "Orphan layout entry",
+    "detail": "Node \"c\" does not exist.",
+    "file": "views/broken.layout.yaml",
+    "line": 5,
+    "column": 3,
+    "end_line": 5,
+    "end_column": 3
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "\"1.5\" is not a whole number.",
+    "file": "views/broken.layout.yaml",
+    "line": 5,
+    "column": 10,
+    "end_line": 5,
+    "end_column": 10
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "Unknown field \"z\"; expected one of in, x, y, w, h, order, ports.",
+    "file": "views/broken.layout.yaml",
+    "line": 5,
+    "column": 21,
+    "end_line": 5,
+    "end_column": 21
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "Expected a mapping.",
+    "file": "views/broken.layout.yaml",
+    "line": 6,
+    "column": 6,
+    "end_line": 6,
+    "end_column": 6
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "A lift: key is only valid in edge_hints.",
+    "file": "views/broken.layout.yaml",
+    "line": 7,
+    "column": 3,
+    "end_line": 7,
+    "end_column": 3
+  },
+  {
+    "severity": "warning",
+    "summary": "Orphan layout entry",
+    "detail": "Edge \"e\" does not exist.",
+    "file": "views/broken.layout.yaml",
+    "line": 9,
+    "column": 3,
+    "end_line": 9,
+    "end_column": 3
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "\"middle\" is not one of top, right, bottom, left.",
+    "file": "views/broken.layout.yaml",
+    "line": 9,
+    "column": 18,
+    "end_line": 9,
+    "end_column": 18
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "2 is not between 0 and 1.",
+    "file": "views/broken.layout.yaml",
+    "line": 9,
+    "column": 37,
+    "end_line": 9,
+    "end_column": 37
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "A point is [x, y].",
+    "file": "views/broken.layout.yaml",
+    "line": 9,
+    "column": 46,
+    "end_line": 9,
+    "end_column": 46
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "A lifted edge key is lift:\u003cfrom\u003e:\u003cto\u003e.",
+    "file": "views/broken.layout.yaml",
+    "line": 10,
+    "column": 3,
+    "end_line": 10,
+    "end_column": 3
+  },
+  {
+    "severity": "error",
+    "summary": "Duplicate ID",
+    "detail": "The decoration ID \"t\" is used twice in this view.",
+    "file": "views/broken.layout.yaml",
+    "line": 13,
+    "column": 5,
+    "end_line": 13,
+    "end_column": 5
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "A decoration needs an id that is a simple ID.",
+    "file": "views/broken.layout.yaml",
+    "line": 14,
+    "column": 5,
+    "end_line": 14,
+    "end_column": 5
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "\"blob\" is not one of text, rect, ellipse, band, image, arrow, freehand.",
+    "file": "views/broken.layout.yaml",
+    "line": 14,
+    "column": 12,
+    "end_line": 14,
+    "end_column": 12
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "Unknown field \"extra\"; expected one of version, place, edge_hints, decorations.",
+    "file": "views/broken.layout.yaml",
+    "line": 15,
+    "column": 1,
+    "end_line": 15,
+    "end_column": 1
+  },
+  {
+    "severity": "warning",
+    "summary": "Stale frame",
+    "detail": "Node \"a\" is stored relative to the canvas, but its frame in this view is node \"g\".",
+    "file": "views/main.layout.yaml",
+    "line": 3,
+    "column": 3,
+    "end_line": 3,
+    "end_column": 3
+  },
+  {
+    "severity": "warning",
+    "summary": "Orphan layout entry",
+    "detail": "Port \"p9\" does not exist.",
+    "file": "views/main.layout.yaml",
+    "line": 3,
+    "column": 58,
+    "end_line": 3,
+    "end_column": 58
+  },
+  {
+    "severity": "warning",
+    "summary": "Ignored position",
+    "detail": "Node \"b\" is in \"lanes\", a stack container, so its x and y are ignored.",
+    "file": "views/main.layout.yaml",
+    "line": 4,
+    "column": 3,
+    "end_line": 4,
+    "end_column": 3
+  },
+  {
+    "severity": "warning",
+    "summary": "Stale frame",
+    "detail": "Node \"g\" is stored relative to node \"lanes\", but its frame in this view is the canvas.",
+    "file": "views/main.layout.yaml",
+    "line": 5,
+    "column": 3,
+    "end_line": 5,
+    "end_column": 3
+  },
+  {
+    "severity": "warning",
+    "summary": "Orphan layout entry",
+    "detail": "Node \"gone\" does not exist.",
+    "file": "views/main.layout.yaml",
+    "line": 6,
+    "column": 3,
+    "end_line": 6,
+    "end_column": 3
+  },
+  {
+    "severity": "warning",
+    "summary": "Orphan layout entry",
+    "detail": "Ordered node \"gone\" does not exist.",
+    "file": "views/main.layout.yaml",
+    "line": 7,
+    "column": 3,
+    "end_line": 7,
+    "end_column": 3
+  },
+  {
+    "severity": "warning",
+    "summary": "Orphan layout entry",
+    "detail": "Edge \"old\" does not exist.",
+    "file": "views/main.layout.yaml",
+    "line": 11,
+    "column": 3,
+    "end_line": 11,
+    "end_column": 3
+  },
+  {
+    "severity": "warning",
+    "summary": "Orphan layout entry",
+    "detail": "Node \"nobody\" does not exist.",
+    "file": "views/main.layout.yaml",
+    "line": 12,
+    "column": 3,
+    "end_line": 12,
+    "end_column": 3
+  },
+  {
+    "severity": "warning",
+    "summary": "Orphan layout entry",
+    "detail": "Node \"ghost\" does not exist.",
+    "file": "views/main.layout.yaml",
+    "line": 15,
+    "column": 5,
+    "end_line": 15,
+    "end_column": 5
+  },
+  {
+    "severity": "error",
+    "summary": "Layout without view",
+    "detail": "No view \"orphan\" is defined for this layout file.",
+    "file": "views/orphan.layout.yaml",
+    "line": 1,
+    "column": 1,
+    "end_line": 1,
+    "end_column": 1
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "did not find expected ',' or '}'.",
+    "file": "views/syntax.layout.yaml",
+    "line": 2,
+    "column": 1,
+    "end_line": 2,
+    "end_column": 1
+  }
+]
+exit 1

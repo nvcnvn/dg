@@ -1,0 +1,133 @@
+[
+  {
+    "severity": "error",
+    "summary": "Extends cycle",
+    "detail": "Kind \"a\" extends itself through its ancestors.",
+    "file": "spec.hcl",
+    "line": 1,
+    "column": 1,
+    "end_line": 1,
+    "end_column": 9
+  },
+  {
+    "severity": "error",
+    "summary": "Extends cycle",
+    "detail": "Kind \"b\" extends itself through its ancestors.",
+    "file": "spec.hcl",
+    "line": 5,
+    "column": 1,
+    "end_line": 5,
+    "end_column": 9
+  },
+  {
+    "severity": "error",
+    "summary": "Undefined kind",
+    "detail": "Kind \"c\" extends undefined kind \"zzz\".",
+    "file": "spec.hcl",
+    "line": 9,
+    "column": 1,
+    "end_line": 9,
+    "end_column": 9
+  },
+  {
+    "severity": "error",
+    "summary": "Duplicate definition",
+    "detail": "The kind \"x\" is already defined at line 13 of this file.",
+    "file": "spec.hcl",
+    "line": 15,
+    "column": 1,
+    "end_line": 15,
+    "end_column": 9
+  },
+  {
+    "severity": "error",
+    "summary": "Duplicate definition",
+    "detail": "The edge kind \"y\" is already defined at line 17 of this file.",
+    "file": "spec.hcl",
+    "line": 19,
+    "column": 1,
+    "end_line": 19,
+    "end_column": 14
+  },
+  {
+    "severity": "error",
+    "summary": "Duplicate port",
+    "detail": "The port \"nic0\" is listed twice.",
+    "file": "spec.hcl",
+    "line": 22,
+    "column": 40,
+    "end_line": 22,
+    "end_column": 46
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid value",
+    "detail": "\"middle\" is not one of \"top\", \"right\", \"bottom\", \"left\", \"auto\".",
+    "file": "spec.hcl",
+    "line": 23,
+    "column": 23,
+    "end_line": 23,
+    "end_column": 31
+  },
+  {
+    "severity": "error",
+    "summary": "Duplicate definition",
+    "detail": "The property \"gpu_count\" is already defined at line 24 of this file.",
+    "file": "spec.hcl",
+    "line": 28,
+    "column": 3,
+    "end_line": 28,
+    "end_column": 23
+  },
+  {
+    "severity": "error",
+    "summary": "Wrong property type",
+    "detail": "The default of property \"zone\" must be a string.",
+    "file": "spec.hcl",
+    "line": 33,
+    "column": 15,
+    "end_line": 33,
+    "end_column": 16
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid property type",
+    "detail": "A property type is string, number or bool.",
+    "file": "spec.hcl",
+    "line": 36,
+    "column": 12,
+    "end_line": 36,
+    "end_column": 19
+  },
+  {
+    "severity": "error",
+    "summary": "Missing required argument",
+    "detail": "The argument \"type\" is required.",
+    "file": "spec.hcl",
+    "line": 38,
+    "column": 3,
+    "end_line": 38,
+    "end_column": 18
+  },
+  {
+    "severity": "error",
+    "summary": "Redeclared port",
+    "detail": "Kind \"sub\" redeclares port \"nic1\" inherited from kind \"base\".",
+    "file": "spec.hcl",
+    "line": 43,
+    "column": 14,
+    "end_line": 43,
+    "end_column": 20
+  },
+  {
+    "severity": "error",
+    "summary": "Redeclared property",
+    "detail": "Kind \"sub\" redeclares property \"gpu_count\" inherited from kind \"base\".",
+    "file": "spec.hcl",
+    "line": 44,
+    "column": 3,
+    "end_line": 44,
+    "end_column": 23
+  }
+]
+exit 1

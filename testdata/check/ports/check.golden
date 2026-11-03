@@ -1,0 +1,9 @@
+model.hcl:4:3: error: Duplicate port: Node "tor" declares port "p2" twice.
+model.hcl:5:3: error: Duplicate port: Node "tor" declares port "mgmt", which its kind "switch" already has.
+model.hcl:9:12: error: Invalid value: "middle" is not one of "top", "right", "bottom", "left", "auto".
+model.hcl:14:11: error: Error in function call: Call to function "port_range" failed: to must be at least from and at most 9999 more.
+model.hcl:18:11: error: Error in function call: Call to function "port_range" failed: to must be at least from and at most 9999 more.
+model.hcl:22:27: error: Invalid function argument: Invalid value for "from" parameter: must be a whole number from -1000000000 to 1000000000.
+model.hcl:26:17: error: Duplicate port: The port "a" is listed twice.
+model.hcl:26:22: error: Invalid name: The port name "" is empty.
+exit 1

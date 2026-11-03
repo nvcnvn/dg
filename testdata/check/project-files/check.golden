@@ -1,0 +1,4 @@
+dg.hcl:2:13: error: Invalid pack: The project root is not a pack; its spec.hcl and style.hcl load after every pack.
+dg.hcl:3:33: warning: No matching files: The pattern "packs/*/*.hcl" matches no model files.
+dir.hcl:1:1: error: Not a file: dir.hcl is a directory.
+exit 1

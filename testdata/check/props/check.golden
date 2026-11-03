@@ -1,0 +1,5 @@
+model.hcl:3:13: error: Wrong property type: Property "gpu_count" of kind "gpu" is a number.
+model.hcl:3:49: error: Undefined property: Kind "gpu" declares no property "color".
+model.hcl:8:28: error: Duplicate property: The property "gpu_count" is set twice.
+model.hcl:12:12: error: Invalid expression: A static map expression is required.
+exit 1

@@ -1,4 +1,4 @@
-// Package style holds style rules and computes the style cascade (spec 8.4).
+// Package style holds style rules and custom shapes and computes the style cascade (spec 8.4).
 package style
 
 import (
@@ -10,170 +10,327 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
+	"github.com/zclconf/go-cty/cty"
 
 	"github.com/nvcnvn/dg/internal/spec"
 )
 
-// Node is the computed style of a node.
+// Node is the computed style of a node, as far as the renderer draws it.
 type Node struct {
 	Shape  string `json:"shape"`
 	Fill   string `json:"fill"`
 	Stroke string `json:"stroke"`
 }
 
-// Edge is the computed style of an edge.
+// Edge is the computed style of an edge, as far as the renderer draws it.
 type Edge struct {
 	Stroke   string `json:"stroke"`
 	ArrowEnd string `json:"arrow_end"`
 }
 
-// prop is a style property and its valid values.
-type prop struct {
-	name  string
-	valid func(string) bool
+// Setting is one property value of a rule and where it is set.
+type Setting struct {
+	Value cty.Value
+	Range hcl.Range
 }
 
-var (
-	color     = regexp.MustCompile(`^(#[0-9A-Fa-f]{3}|#[0-9A-Fa-f]{6}|none)$`).MatchString
-	nodeProps = []prop{{"shape", oneOf("rect", "rounded")}, {"fill", color}, {"stroke", color}}
-	edgeProps = []prop{{"stroke", color}, {"arrow_end", oneOf("none", "arrow")}}
-)
-
-func oneOf(values ...string) func(string) bool {
-	return func(v string) bool { return slices.Contains(values, v) }
+// Rule is a style, edge_style or overlay_style block.
+type Rule struct {
+	Label string
+	Range hcl.Range
+	Props map[string]Setting
 }
 
-type rule struct {
-	label string
-	rng   hcl.Range
-	props map[string]string
+// Shape is a custom shape block.
+type Shape struct {
+	Name         string
+	Anchors      []string
+	AnchorsRange hcl.Range
+	Range        hcl.Range
 }
 
-// Styles is the ordered list of style rules from packs and the project; later rules win.
+// Styles is the ordered list of rules from packs and the project; later rules win.
 type Styles struct {
-	node []rule
-	edge []rule
+	Node      []Rule
+	Edge      []Rule
+	Overlay   []Rule
+	Shapes    map[string]*Shape
+	Overrides []spec.Override
 }
 
-type block struct {
+// New returns empty Styles.
+func New() *Styles {
+	return &Styles{Shapes: map[string]*Shape{}}
+}
+
+// Block is a style block as decoded by gohcl; views.hcl reuses it for view rules.
+type Block struct {
 	Label string    `hcl:"label,label"`
 	Body  hcl.Body  `hcl:",remain"`
 	Range hcl.Range `hcl:",def_range"`
 }
 
-type file struct {
-	Node []block `hcl:"style,block"`
-	Edge []block `hcl:"edge_style,block"`
+type shapeBlock struct {
+	Name    string         `hcl:"name,label"`
+	SVG     *hcl.Attribute `hcl:"svg"`
+	TextBox *hcl.Attribute `hcl:"text_box,optional"`
+	Anchors *hcl.Attribute `hcl:"anchors,optional"`
+	Stretch *hcl.Attribute `hcl:"stretch,optional"`
+	Range   hcl.Range      `hcl:",def_range"`
 }
 
-// Decode appends the style and edge_style blocks of body to s.
-func (s *Styles) Decode(body hcl.Body) hcl.Diagnostics {
+type file struct {
+	Node    []Block      `hcl:"style,block"`
+	Edge    []Block      `hcl:"edge_style,block"`
+	Overlay []Block      `hcl:"overlay_style,block"`
+	Shapes  []shapeBlock `hcl:"shape,block"`
+}
+
+// Decode appends the style, edge_style, overlay_style and shape blocks of body to s. A label
+// defined in an earlier file is reported as information; one defined twice in a file is an error.
+func (s *Styles) Decode(body hcl.Body, ctx *hcl.EvalContext) hcl.Diagnostics {
 	var f file
-	diags := gohcl.DecodeBody(body, nil, &f)
-	node, d := decodeRules(f.Node, nodeProps)
-	diags = append(diags, d...)
-	edge, d := decodeRules(f.Edge, edgeProps)
-	diags = append(diags, d...)
-	s.node = append(s.node, node...)
-	s.edge = append(s.edge, edge...)
+	diags := gohcl.DecodeBody(body, ctx, &f)
+	for _, set := range []struct {
+		what   string
+		blocks []Block
+		props  map[string]Prop
+		rules  *[]Rule
+	}{{"style", f.Node, NodeProps, &s.Node}, {"edge_style", f.Edge, EdgeProps, &s.Edge}, {"overlay_style", f.Overlay, OverlayProps, &s.Overlay}} {
+		rules, d := DecodeRules(set.what, set.blocks, set.props, ctx)
+		diags = append(diags, d...)
+		for _, r := range rules {
+			if set.what == "overlay_style" {
+				diags = append(diags, spec.CheckSimple("overlay style", r.Label, r.Range)...)
+			}
+			if i := slices.IndexFunc(*set.rules, func(prev Rule) bool { return prev.Label == r.Label }); i >= 0 {
+				s.Overrides = append(s.Overrides, spec.Override{What: set.what, Name: r.Label, Range: r.Range, Prev: (*set.rules)[i].Range})
+			}
+		}
+		*set.rules = append(*set.rules, rules...)
+	}
+	seen := map[string]hcl.Range{}
+	for _, b := range f.Shapes {
+		if prev, ok := seen[b.Name]; ok {
+			diags = append(diags, duplicate("shape", b.Name, b.Range, prev))
+			continue
+		}
+		seen[b.Name] = b.Range
+		sh, d := decodeShape(b, ctx)
+		diags = append(diags, d...)
+		if prev := s.Shapes[b.Name]; prev != nil {
+			s.Overrides = append(s.Overrides, spec.Override{What: "shape", Name: b.Name, Range: b.Range, Prev: prev.Range})
+		}
+		s.Shapes[b.Name] = sh
+	}
 	return diags
 }
 
-func decodeRules(blocks []block, props []prop) ([]rule, hcl.Diagnostics) {
+// DecodeRules decodes blocks whose attributes are the properties in props.
+func DecodeRules(what string, blocks []Block, props map[string]Prop, ctx *hcl.EvalContext) ([]Rule, hcl.Diagnostics) {
 	schema := &hcl.BodySchema{}
-	for _, p := range props {
-		schema.Attributes = append(schema.Attributes, hcl.AttributeSchema{Name: p.name})
+	for _, name := range slices.Sorted(maps.Keys(props)) {
+		schema.Attributes = append(schema.Attributes, hcl.AttributeSchema{Name: name})
 	}
-	var rules []rule
+	var rules []Rule
 	var diags hcl.Diagnostics
+	seen := map[string]hcl.Range{}
 	for _, b := range blocks {
+		if prev, ok := seen[b.Label]; ok {
+			diags = append(diags, duplicate(what, b.Label, b.Range, prev))
+			continue
+		}
+		seen[b.Label] = b.Range
 		content, d := b.Body.Content(schema)
 		diags = append(diags, d...)
-		r := rule{label: b.Label, rng: b.Range, props: map[string]string{}}
-		for _, p := range props {
-			attr := content.Attributes[p.name]
-			if attr == nil {
-				continue
-			}
-			var v string
-			if d := gohcl.DecodeExpression(attr.Expr, nil, &v); d.HasErrors() {
+		r := Rule{Label: b.Label, Range: b.Range, Props: map[string]Setting{}}
+		for _, name := range slices.Sorted(maps.Keys(content.Attributes)) {
+			attr := content.Attributes[name]
+			v, d := attr.Expr.Value(ctx)
+			if d.HasErrors() {
 				diags = append(diags, d...)
 				continue
 			}
-			if !p.valid(v) {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "Invalid style value",
-					Detail:   fmt.Sprintf("%q is not a valid value for %s.", v, p.name),
-					Subject:  attr.Expr.Range().Ptr(),
-				})
+			if problem := props[name].check(v); problem != "" {
+				diags = append(diags, spec.Errorf(attr.Expr.Range(), "Invalid style value", "The value of %s %s.", name, problem))
 				continue
 			}
-			r.props[p.name] = v
+			r.Props[name] = Setting{Value: v, Range: attr.Expr.Range()}
 		}
 		rules = append(rules, r)
 	}
 	return rules, diags
 }
 
-// Validate reports rules whose label is not a kind, the only label form supported so far.
-func (s *Styles) Validate(sp *spec.Spec) hcl.Diagnostics {
+func decodeShape(b shapeBlock, ctx *hcl.EvalContext) (*Shape, hcl.Diagnostics) {
 	var diags hcl.Diagnostics
-	check := func(label string, rng hcl.Range, known bool) {
-		switch {
-		case strings.Contains(label, "."):
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  "Unsupported style label",
-				Detail:   fmt.Sprintf("Style label %q: only kind labels are supported.", label),
-				Subject:  rng.Ptr(),
-			})
-		case !known:
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagWarning,
-				Summary:  "Undefined kind",
-				Detail:   fmt.Sprintf("Style label %q names no defined kind.", label),
-				Subject:  rng.Ptr(),
-			})
+	diags = append(diags, spec.CheckSimple("shape", b.Name, b.Range)...)
+	if slices.Contains(BuiltinShapes, b.Name) {
+		diags = append(diags, spec.Errorf(b.Range, "Invalid ID", "The shape %q is a built-in shape.", b.Name))
+	}
+	sh := &Shape{Name: b.Name, Range: b.Range}
+	check := func(attr *hcl.Attribute, valid func(cty.Value) string) {
+		if attr == nil {
+			return
+		}
+		v, d := attr.Expr.Value(ctx)
+		diags = append(diags, d...)
+		if !d.HasErrors() {
+			if problem := valid(v); problem != "" {
+				diags = append(diags, spec.Errorf(attr.Expr.Range(), "Invalid style value", "The value of %s %s.", attr.Name, problem))
+			}
 		}
 	}
-	for _, r := range s.node {
-		check(r.label, r.rng, sp.Kinds[r.label] != nil)
+	check(b.SVG, isString)
+	check(b.TextBox, numbers(4, 0, 1))
+	check(b.Stretch, enum("nine-slice", "uniform", "none"))
+	if b.Anchors != nil {
+		sh.AnchorsRange = b.Anchors.Expr.Range()
+		check(b.Anchors, func(v cty.Value) string {
+			if !v.Type().IsObjectType() && !v.Type().IsMapType() {
+				return "must be an object of [x, y] fractions"
+			}
+			anchors := v.AsValueMap()
+			for _, k := range slices.Sorted(maps.Keys(anchors)) {
+				if p := numbers(2, 0, 1)(anchors[k]); p != "" {
+					return fmt.Sprintf("for anchor %q %s", k, p)
+				}
+				sh.Anchors = append(sh.Anchors, k)
+			}
+			return ""
+		})
 	}
-	for _, r := range s.edge {
-		check(r.label, r.rng, sp.EdgeKinds[r.label] != nil)
+	return sh, diags
+}
+
+func duplicate(what, label string, rng, prev hcl.Range) *hcl.Diagnostic {
+	return spec.Errorf(rng, "Duplicate definition", "The %s %q is already defined at line %d of this file.", what, label, prev.Start.Line)
+}
+
+// Validate reports invalid labels, styles of undefined kinds, unknown shapes, and custom shape
+// anchors that name no port of a kind drawn with that shape.
+func (s *Styles) Validate(sp *spec.Spec) hcl.Diagnostics {
+	var diags hcl.Diagnostics
+	for _, r := range s.Node {
+		diags = append(diags, CheckLabel(r, false, sp, nil)...)
+		diags = append(diags, s.CheckShape(r)...)
+	}
+	for _, r := range s.Edge {
+		diags = append(diags, CheckLabel(r, true, sp, nil)...)
+	}
+	for _, kind := range slices.Sorted(maps.Keys(sp.Kinds)) {
+		set, ok := s.ForNode(sp, kind, nil)["shape"]
+		if !ok || s.Shapes[set.Value.AsString()] == nil {
+			continue
+		}
+		sh := s.Shapes[set.Value.AsString()]
+		ports := sp.Ports(kind)
+		for _, a := range sh.Anchors {
+			if !slices.Contains(ports, a) {
+				diags = append(diags, spec.Errorf(sh.AnchorsRange, "Anchor without port", "Shape %q has anchor %q, but kind %q, drawn with it, has no such port.", sh.Name, a, kind))
+			}
+		}
 	}
 	return diags
 }
 
-// ForNode returns the style of a node of kind: its kinds' styles from the root down.
-func (s *Styles) ForNode(sp *spec.Spec, kind string) Node {
-	var names []string
+// CheckShape reports a shape property naming neither a built-in nor a custom shape.
+func (s *Styles) CheckShape(r Rule) hcl.Diagnostics {
+	set, ok := r.Props["shape"]
+	if !ok {
+		return nil
+	}
+	name := set.Value.AsString()
+	if slices.Contains(BuiltinShapes, name) || s.Shapes[name] != nil {
+		return nil
+	}
+	return hcl.Diagnostics{spec.Errorf(set.Range, "Invalid style value", "The shape %q is neither a built-in shape nor defined by a shape block.", name)}
+}
+
+// CheckLabel reports an invalid label, or one naming an undefined kind (a warning). Outside a
+// view nodeExists is nil, and node.<id> and edge.<id> labels are errors.
+func CheckLabel(r Rule, edge bool, sp *spec.Spec, exists func(string) bool) hcl.Diagnostics {
+	elem := "node"
+	if edge {
+		elem = "edge"
+	}
+	if tag, ok := strings.CutPrefix(r.Label, "tag."); ok {
+		return spec.CheckSimple("tag", tag, r.Range)
+	}
+	if id, ok := strings.CutPrefix(r.Label, elem+"."); ok {
+		switch {
+		case exists == nil:
+			return hcl.Diagnostics{spec.Errorf(r.Range, "Invalid style label", "The label %q names one %s; such rules are only allowed in a view.", r.Label, elem)}
+		case !exists(id):
+			return hcl.Diagnostics{spec.Errorf(r.Range, "Undefined "+elem, "The style label %q names an undefined %s.", r.Label, elem)}
+		}
+		return nil
+	}
+	if !spec.IsSimpleID(r.Label) {
+		return hcl.Diagnostics{spec.Errorf(r.Range, "Invalid style label", "The label %q is not a kind, tag.<tag> or %s.<id>.", r.Label, elem)}
+	}
+	if (edge && sp.EdgeKinds[r.Label] == nil) || (!edge && sp.Kinds[r.Label] == nil) {
+		return hcl.Diagnostics{spec.Warnf(r.Range, "Undefined kind", "Style label %q names no defined kind.", r.Label)}
+	}
+	return nil
+}
+
+// ForNode returns the settings for a node of kind with tags: its kinds' styles from the root
+// down, then its tags' styles in order.
+func (s *Styles) ForNode(sp *spec.Spec, kind string, tags []string) map[string]Setting {
+	var labels []string
 	for _, k := range sp.Lineage(kind) {
-		names = append(names, k.Name)
+		labels = append(labels, k.Name)
 	}
-	p := cascade(s.node, names)
-	return Node{Shape: p["shape"], Fill: p["fill"], Stroke: p["stroke"]}
+	return Cascade(s.Node, append(labels, tagLabels(tags)...))
 }
 
-// ForEdge returns the style of an edge of kind: the default edge kind's style, then its own.
-func (s *Styles) ForEdge(sp *spec.Spec, kind string) Edge {
-	var names []string
+// ForEdge returns the settings for an edge of kind with tags: the default edge kind's style,
+// its own kind's, then its tags' styles in order.
+func (s *Styles) ForEdge(sp *spec.Spec, kind string, tags []string) map[string]Setting {
+	var labels []string
 	for _, k := range sp.EdgeLineage(kind) {
-		names = append(names, k.Name)
+		labels = append(labels, k.Name)
 	}
-	p := cascade(s.edge, names)
-	return Edge{Stroke: p["stroke"], ArrowEnd: p["arrow_end"]}
+	return Cascade(s.Edge, append(labels, tagLabels(tags)...))
 }
 
-func cascade(rules []rule, labels []string) map[string]string {
-	props := map[string]string{}
+func tagLabels(tags []string) []string {
+	labels := make([]string, len(tags))
+	for i, t := range tags {
+		labels[i] = "tag." + t
+	}
+	return labels
+}
+
+// Cascade applies the rules matching each label in turn, later settings winning.
+func Cascade(rules []Rule, labels []string) map[string]Setting {
+	props := map[string]Setting{}
 	for _, label := range labels {
 		for _, r := range rules {
-			if r.label == label {
-				maps.Copy(props, r.props)
+			if r.Label == label {
+				maps.Copy(props, r.Props)
 			}
 		}
 	}
 	return props
 }
+
+// DrawnNode returns the drawn part of a node's settings.
+func DrawnNode(props map[string]Setting) Node {
+	return Node{Shape: str(props, "shape"), Fill: str(props, "fill"), Stroke: str(props, "stroke")}
+}
+
+// DrawnEdge returns the drawn part of an edge's settings.
+func DrawnEdge(props map[string]Setting) Edge {
+	return Edge{Stroke: str(props, "stroke"), ArrowEnd: str(props, "arrow_end")}
+}
+
+func str(props map[string]Setting, name string) string {
+	if set, ok := props[name]; ok {
+		return set.Value.AsString()
+	}
+	return ""
+}
+
+var colorRE = regexp.MustCompile(`^(#[0-9A-Fa-f]{3}|#[0-9A-Fa-f]{6}|none)$`)

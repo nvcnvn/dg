@@ -1,0 +1,10 @@
+dg.hcl:2:28: error: Pack not found: The pack directory "packs/missing" does not exist.
+dg.hcl:2:45: error: Invalid path: "../outside" is not a slash-separated path inside the project.
+dg.hcl:3:30: warning: No matching files: The pattern "generated/*.hcl" matches no model files.
+dg.hcl:3:49: error: Invalid pattern: "[bad": syntax error in pattern.
+dg.hcl:4:36: error: Invalid pattern: "[bad": syntax error in pattern.
+dg.hcl:5:16: error: Invalid grid: The grid must be a whole number of at least 1.
+dg.hcl:6:16: error: File not found: The font file "fonts/missing.ttf" does not exist.
+dg.hcl:7:16: error: Invalid path: "/abs" is not a slash-separated path inside the project.
+dg.hcl:10:1: error: Duplicate project block: dg.hcl holds at most one project block.
+exit 1

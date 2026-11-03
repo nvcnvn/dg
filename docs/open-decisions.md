@@ -70,3 +70,20 @@ the decision in `docs/spec.md`).
 - **Default:** (a); libavoid's nudging distance is 20 pixels so parallel arrowheads (10 wide) do not
   touch.
 - **Milestone:** M1; revisit in M3 with label wrapping.
+
+## PNG pictures through `file()`
+
+- **Question:** spec 4.3 had `icon` and `image` take an SVG or a PNG through `file("…")`, but
+  `file()` returns text, and a PNG is not UTF-8.
+- **Options:** (a) SVG only; (b) `file()` returns a `data:` URI for non-text files; (c) a second
+  function such as `image("…")` that returns a `data:` URI for SVG and PNG alike.
+- **Default:** (a); `file()` fails on a file that is not UTF-8 text.
+- **Milestone:** M2; decide by M3, which draws icons.
+
+## Layout coordinates off the grid
+
+- **Question:** a hand-edited layout file can hold `x`, `y`, `w` or `h` that are not multiples of
+  the project `grid` (or become so when `grid` changes). Should `dg check` warn?
+- **Options:** (a) no diagnostic; (b) a warning; (c) `dg fmt` snaps them to the grid.
+- **Default:** (a).
+- **Milestone:** M2; revisit with layout editing (M10).

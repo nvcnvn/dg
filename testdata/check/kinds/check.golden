@@ -1,0 +1,14 @@
+spec.hcl:1:1: error: Extends cycle: Kind "a" extends itself through its ancestors.
+spec.hcl:5:1: error: Extends cycle: Kind "b" extends itself through its ancestors.
+spec.hcl:9:1: error: Undefined kind: Kind "c" extends undefined kind "zzz".
+spec.hcl:15:1: error: Duplicate definition: The kind "x" is already defined at line 13 of this file.
+spec.hcl:19:1: error: Duplicate definition: The edge kind "y" is already defined at line 17 of this file.
+spec.hcl:22:40: error: Duplicate port: The port "nic0" is listed twice.
+spec.hcl:23:23: error: Invalid value: "middle" is not one of "top", "right", "bottom", "left", "auto".
+spec.hcl:28:3: error: Duplicate definition: The property "gpu_count" is already defined at line 24 of this file.
+spec.hcl:33:15: error: Wrong property type: The default of property "zone" must be a string.
+spec.hcl:36:12: error: Invalid property type: A property type is string, number or bool.
+spec.hcl:38:3: error: Missing required argument: The argument "type" is required.
+spec.hcl:43:14: error: Redeclared port: Kind "sub" redeclares port "nic1" inherited from kind "base".
+spec.hcl:44:3: error: Redeclared property: Kind "sub" redeclares property "gpu_count" inherited from kind "base".
+exit 1

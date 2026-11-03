@@ -1,0 +1,3 @@
+model.hcl:9:3: error: Conflicting arguments: Edge "both" sets both label and labels; label is shorthand for labels = { mid = ... }.
+model.hcl:15:12: error: Invalid label position: "middle" is not start, mid or end.
+exit 1

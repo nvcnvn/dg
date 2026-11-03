@@ -1,0 +1,14 @@
+a.hcl:8:1: error: Invalid ID: The node ID "all" is reserved.
+a.hcl:10:1: error: Invalid ID: The node ID "a\tb" contains a control character.
+a.hcl:12:1: error: Invalid ID: The node ID "" is empty.
+a.hcl:14:1: error: Invalid ID: The edge ID "lift" is reserved.
+a.hcl:20:17: error: Invalid ID: The tag ID "not ok" is not a simple ID (letters, digits, _ and -, starting with a letter or _).
+b.hcl:1:1: error: Duplicate ID: The node ID "x" is already defined at a.hcl:1:1.
+b.hcl:3:1: error: Duplicate ID: The edge ID "e" is already defined at a.hcl:3:1.
+spec.hcl:1:1: error: Invalid ID: The kind ID "bad kind" is not a simple ID (letters, digits, _ and -, starting with a letter or _).
+spec.hcl:3:1: error: Invalid ID: The edge kind ID "bad/edge" is not a simple ID (letters, digits, _ and -, starting with a letter or _).
+views.hcl:3:1: error: Duplicate ID: The view ID "main" is already defined at line 1.
+views.hcl:5:1: error: Invalid ID: The view ID "bad view" is not a simple ID (letters, digits, _ and -, starting with a letter or _).
+views.hcl:11:3: error: Duplicate ID: View "o" has two overlays "hull".
+views.hcl:14:3: error: Invalid ID: The overlay ID "bad overlay" is not a simple ID (letters, digits, _ and -, starting with a letter or _).
+exit 1

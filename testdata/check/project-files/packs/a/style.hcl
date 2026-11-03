@@ -1,0 +1,3 @@
+style "widget" {
+  fill = "#EEEEEE"
+}

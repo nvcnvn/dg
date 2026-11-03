@@ -1,0 +1,8 @@
+[
+  {
+    "severity": "warning",
+    "summary": "No model files",
+    "detail": "The project has no model files."
+  }
+]
+exit 0

@@ -1,0 +1,133 @@
+[
+  {
+    "severity": "error",
+    "summary": "Invalid ID",
+    "detail": "The node ID \"all\" is reserved.",
+    "file": "a.hcl",
+    "line": 8,
+    "column": 1,
+    "end_line": 8,
+    "end_column": 11
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid ID",
+    "detail": "The node ID \"a\\tb\" contains a control character.",
+    "file": "a.hcl",
+    "line": 10,
+    "column": 1,
+    "end_line": 10,
+    "end_column": 12
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid ID",
+    "detail": "The node ID \"\" is empty.",
+    "file": "a.hcl",
+    "line": 12,
+    "column": 1,
+    "end_line": 12,
+    "end_column": 8
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid ID",
+    "detail": "The edge ID \"lift\" is reserved.",
+    "file": "a.hcl",
+    "line": 14,
+    "column": 1,
+    "end_line": 14,
+    "end_column": 12
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid ID",
+    "detail": "The tag ID \"not ok\" is not a simple ID (letters, digits, _ and -, starting with a letter or _).",
+    "file": "a.hcl",
+    "line": 20,
+    "column": 17,
+    "end_line": 20,
+    "end_column": 25
+  },
+  {
+    "severity": "error",
+    "summary": "Duplicate ID",
+    "detail": "The node ID \"x\" is already defined at a.hcl:1:1.",
+    "file": "b.hcl",
+    "line": 1,
+    "column": 1,
+    "end_line": 1,
+    "end_column": 9
+  },
+  {
+    "severity": "error",
+    "summary": "Duplicate ID",
+    "detail": "The edge ID \"e\" is already defined at a.hcl:3:1.",
+    "file": "b.hcl",
+    "line": 3,
+    "column": 1,
+    "end_line": 3,
+    "end_column": 9
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid ID",
+    "detail": "The kind ID \"bad kind\" is not a simple ID (letters, digits, _ and -, starting with a letter or _).",
+    "file": "spec.hcl",
+    "line": 1,
+    "column": 1,
+    "end_line": 1,
+    "end_column": 16
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid ID",
+    "detail": "The edge kind ID \"bad/edge\" is not a simple ID (letters, digits, _ and -, starting with a letter or _).",
+    "file": "spec.hcl",
+    "line": 3,
+    "column": 1,
+    "end_line": 3,
+    "end_column": 21
+  },
+  {
+    "severity": "error",
+    "summary": "Duplicate ID",
+    "detail": "The view ID \"main\" is already defined at line 1.",
+    "file": "views.hcl",
+    "line": 3,
+    "column": 1,
+    "end_line": 3,
+    "end_column": 12
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid ID",
+    "detail": "The view ID \"bad view\" is not a simple ID (letters, digits, _ and -, starting with a letter or _).",
+    "file": "views.hcl",
+    "line": 5,
+    "column": 1,
+    "end_line": 5,
+    "end_column": 16
+  },
+  {
+    "severity": "error",
+    "summary": "Duplicate ID",
+    "detail": "View \"o\" has two overlays \"hull\".",
+    "file": "views.hcl",
+    "line": 11,
+    "column": 3,
+    "end_line": 11,
+    "end_column": 17
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid ID",
+    "detail": "The overlay ID \"bad overlay\" is not a simple ID (letters, digits, _ and -, starting with a letter or _).",
+    "file": "views.hcl",
+    "line": 14,
+    "column": 3,
+    "end_line": 14,
+    "end_column": 24
+  }
+]
+exit 1

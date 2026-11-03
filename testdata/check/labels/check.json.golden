@@ -1,0 +1,23 @@
+[
+  {
+    "severity": "error",
+    "summary": "Conflicting arguments",
+    "detail": "Edge \"both\" sets both label and labels; label is shorthand for labels = { mid = ... }.",
+    "file": "model.hcl",
+    "line": 9,
+    "column": 3,
+    "end_line": 9,
+    "end_column": 9
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid label position",
+    "detail": "\"middle\" is not start, mid or end.",
+    "file": "model.hcl",
+    "line": 15,
+    "column": 12,
+    "end_line": 15,
+    "end_column": 60
+  }
+]
+exit 1

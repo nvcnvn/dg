@@ -1,0 +1,7 @@
+model.hcl:2:3: error: Rows not allowed: Node "plain" declares rows, but its kind "node" does not set rows = true.
+model.hcl:11:3: error: Duplicate row: Node "t" declares row "id" twice.
+model.hcl:12:3: error: Rows outside compartments: Node "t" declares rows both inside and outside compartments.
+model.hcl:22:3: error: Duplicate compartment: Node "class" declares compartment "fields" twice.
+model.hcl:24:5: error: Duplicate row: Node "class" declares row "name" twice.
+model.hcl:26:7: error: Unsupported argument: An argument named "size" is not expected here.
+exit 1

@@ -1,0 +1,63 @@
+[
+  {
+    "severity": "error",
+    "summary": "Rows not allowed",
+    "detail": "Node \"plain\" declares rows, but its kind \"node\" does not set rows = true.",
+    "file": "model.hcl",
+    "line": 2,
+    "column": 3,
+    "end_line": 2,
+    "end_column": 11
+  },
+  {
+    "severity": "error",
+    "summary": "Duplicate row",
+    "detail": "Node \"t\" declares row \"id\" twice.",
+    "file": "model.hcl",
+    "line": 11,
+    "column": 3,
+    "end_line": 11,
+    "end_column": 11
+  },
+  {
+    "severity": "error",
+    "summary": "Rows outside compartments",
+    "detail": "Node \"t\" declares rows both inside and outside compartments.",
+    "file": "model.hcl",
+    "line": 12,
+    "column": 3,
+    "end_line": 12,
+    "end_column": 18
+  },
+  {
+    "severity": "error",
+    "summary": "Duplicate compartment",
+    "detail": "Node \"class\" declares compartment \"fields\" twice.",
+    "file": "model.hcl",
+    "line": 22,
+    "column": 3,
+    "end_line": 22,
+    "end_column": 23
+  },
+  {
+    "severity": "error",
+    "summary": "Duplicate row",
+    "detail": "Node \"class\" declares row \"name\" twice.",
+    "file": "model.hcl",
+    "line": 24,
+    "column": 5,
+    "end_line": 24,
+    "end_column": 15
+  },
+  {
+    "severity": "error",
+    "summary": "Unsupported argument",
+    "detail": "An argument named \"size\" is not expected here.",
+    "file": "model.hcl",
+    "line": 26,
+    "column": 7,
+    "end_line": 26,
+    "end_column": 11
+  }
+]
+exit 1

@@ -1,0 +1,2 @@
+model.hcl:2:11: error: Invalid expression: Expected the start of an expression, but found an invalid expression token.
+exit 1

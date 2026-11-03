@@ -1,0 +1,12 @@
+version: 1
+place:
+  kube-system/coredns: {x: 0, y: 0}
+  tor-1:
+    x: 200
+    y: 0
+    ports:
+      p1: {side: bottom, offset: 0.40}
+edge_hints:
+  dns: {from_side: right, to_side: left, via: [[100, 0]], label_pos: 0.50}
+decorations:
+  - {id: title, type: text, x: 0, y: -60, text: "Fabric"}

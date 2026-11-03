@@ -1,0 +1,303 @@
+[
+  {
+    "severity": "info",
+    "summary": "Overridden definition",
+    "detail": "The style \"node\" overrides the properties it sets of the one defined at \u003cgeneric\u003e/style.hcl:1:1.",
+    "file": "style.hcl",
+    "line": 1,
+    "column": 1,
+    "end_line": 1,
+    "end_column": 13
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid style value",
+    "detail": "The shape \"blob\" is neither a built-in shape nor defined by a shape block.",
+    "file": "style.hcl",
+    "line": 2,
+    "column": 11,
+    "end_line": 2,
+    "end_column": 17
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid style value",
+    "detail": "The value of fill must be \"#RGB\", \"#RRGGBB\" or \"none\".",
+    "file": "style.hcl",
+    "line": 3,
+    "column": 11,
+    "end_line": 3,
+    "end_column": 16
+  },
+  {
+    "severity": "info",
+    "summary": "Overridden definition",
+    "detail": "The style \"service\" overrides the properties it sets of the one defined at \u003cgeneric\u003e/style.hcl:7:1.",
+    "file": "style.hcl",
+    "line": 6,
+    "column": 1,
+    "end_line": 6,
+    "end_column": 16
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid style value",
+    "detail": "The value of stroke_width must be a number of at least 0.",
+    "file": "style.hcl",
+    "line": 7,
+    "column": 18,
+    "end_line": 7,
+    "end_column": 20
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid style value",
+    "detail": "The value of stroke_dash must be a list of numbers of at least 0.",
+    "file": "style.hcl",
+    "line": 8,
+    "column": 18,
+    "end_line": 8,
+    "end_column": 26
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid style value",
+    "detail": "The value of opacity must be a number from 0 to 1.",
+    "file": "style.hcl",
+    "line": 9,
+    "column": 18,
+    "end_line": 9,
+    "end_column": 19
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid style value",
+    "detail": "The value of font_weight must be 100, 200, … or 900.",
+    "file": "style.hcl",
+    "line": 10,
+    "column": 18,
+    "end_line": 10,
+    "end_column": 21
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid style value",
+    "detail": "The value of z must be a whole number.",
+    "file": "style.hcl",
+    "line": 11,
+    "column": 18,
+    "end_line": 11,
+    "end_column": 21
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid style value",
+    "detail": "The value of layout must be one of \"free\", \"stack\", \"grid\".",
+    "file": "style.hcl",
+    "line": 12,
+    "column": 18,
+    "end_line": 12,
+    "end_column": 24
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid style value",
+    "detail": "The value of columns must be a whole number of at least 1.",
+    "file": "style.hcl",
+    "line": 13,
+    "column": 18,
+    "end_line": 13,
+    "end_column": 19
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid style value",
+    "detail": "The value of stretch must be true or false.",
+    "file": "style.hcl",
+    "line": 14,
+    "column": 18,
+    "end_line": 14,
+    "end_column": 23
+  },
+  {
+    "severity": "error",
+    "summary": "Unsupported argument",
+    "detail": "An argument named \"colour\" is not expected here.",
+    "file": "style.hcl",
+    "line": 15,
+    "column": 3,
+    "end_line": 15,
+    "end_column": 9
+  },
+  {
+    "severity": "error",
+    "summary": "Duplicate definition",
+    "detail": "The style \"service\" is already defined at line 6 of this file.",
+    "file": "style.hcl",
+    "line": 18,
+    "column": 1,
+    "end_line": 18,
+    "end_column": 16
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid ID",
+    "detail": "The tag ID \"bad tag\" is not a simple ID (letters, digits, _ and -, starting with a letter or _).",
+    "file": "style.hcl",
+    "line": 20,
+    "column": 1,
+    "end_line": 20,
+    "end_column": 20
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid style label",
+    "detail": "The label \"node.api\" names one node; such rules are only allowed in a view.",
+    "file": "style.hcl",
+    "line": 22,
+    "column": 1,
+    "end_line": 22,
+    "end_column": 17
+  },
+  {
+    "severity": "warning",
+    "summary": "Undefined kind",
+    "detail": "Style label \"ghost\" names no defined kind.",
+    "file": "style.hcl",
+    "line": 24,
+    "column": 1,
+    "end_line": 24,
+    "end_column": 14
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid style label",
+    "detail": "The label \"a.b\" is not a kind, tag.\u003ctag\u003e or node.\u003cid\u003e.",
+    "file": "style.hcl",
+    "line": 26,
+    "column": 1,
+    "end_line": 26,
+    "end_column": 12
+  },
+  {
+    "severity": "info",
+    "summary": "Overridden definition",
+    "detail": "The edge_style \"default\" overrides the properties it sets of the one defined at \u003cgeneric\u003e/style.hcl:18:1.",
+    "file": "style.hcl",
+    "line": 32,
+    "column": 1,
+    "end_line": 32,
+    "end_column": 21
+  },
+  {
+    "severity": "error",
+    "summary": "Unsupported argument",
+    "detail": "An argument named \"fill\" is not expected here.",
+    "file": "style.hcl",
+    "line": 33,
+    "column": 3,
+    "end_line": 33,
+    "end_column": 7
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid style value",
+    "detail": "The value of arrow_end must be one of \"none\", \"arrow\", \"triangle\", \"triangle-open\", \"diamond\", \"diamond-open\", \"circle\", \"circle-open\", \"crow-one\", \"crow-zero-one\", \"crow-many\", \"crow-one-many\", \"crow-zero-many\".",
+    "file": "style.hcl",
+    "line": 34,
+    "column": 15,
+    "end_line": 34,
+    "end_column": 22
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid style value",
+    "detail": "The value of routing must be one of \"orthogonal\", \"polyline\", \"straight\".",
+    "file": "style.hcl",
+    "line": 35,
+    "column": 15,
+    "end_line": 35,
+    "end_column": 22
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid style label",
+    "detail": "The label \"edge.e\" names one edge; such rules are only allowed in a view.",
+    "file": "style.hcl",
+    "line": 39,
+    "column": 1,
+    "end_line": 39,
+    "end_column": 20
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid ID",
+    "detail": "The overlay style ID \"bad name\" is not a simple ID (letters, digits, _ and -, starting with a letter or _).",
+    "file": "style.hcl",
+    "line": 41,
+    "column": 1,
+    "end_line": 41,
+    "end_column": 25
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid style value",
+    "detail": "The value of padding must be a number of at least 0.",
+    "file": "style.hcl",
+    "line": 42,
+    "column": 13,
+    "end_line": 42,
+    "end_column": 15
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid style value",
+    "detail": "The value of text_box must be a list of 4 numbers from 0 to 1.",
+    "file": "style.hcl",
+    "line": 47,
+    "column": 14,
+    "end_line": 47,
+    "end_column": 29
+  },
+  {
+    "severity": "error",
+    "summary": "Anchor without port",
+    "detail": "Shape \"gpu\" has anchor \"nic9\", but kind \"gpu\", drawn with it, has no such port.",
+    "file": "style.hcl",
+    "line": 48,
+    "column": 14,
+    "end_line": 48,
+    "end_column": 50
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid ID",
+    "detail": "The shape \"rect\" is a built-in shape.",
+    "file": "style.hcl",
+    "line": 52,
+    "column": 1,
+    "end_line": 52,
+    "end_column": 13
+  },
+  {
+    "severity": "error",
+    "summary": "Error in function call",
+    "detail": "Call to function \"file\" failed: \"../outside.svg\" is not a relative path inside the project.",
+    "file": "style.hcl",
+    "line": 53,
+    "column": 9,
+    "end_line": 53,
+    "end_column": 14
+  },
+  {
+    "severity": "error",
+    "summary": "Error in function call",
+    "detail": "Call to function \"file\" failed: cannot read \"shapes/missing.svg\".",
+    "file": "style.hcl",
+    "line": 57,
+    "column": 9,
+    "end_line": 57,
+    "end_column": 14
+  }
+]
+exit 1

@@ -1,0 +1,15 @@
+model.hcl:5:1: error: Undefined kind: Node "a" has undefined kind "nope".
+model.hcl:11:12: error: Invalid node reference: Expected node.<id> or node["<id>"].
+model.hcl:15:12: error: Undefined node: Parent "missing" of node "c" is not defined.
+model.hcl:19:12: error: Parent is not a container: Parent "c" of node "d" has kind "node", which is not a container.
+model.hcl:24:12: error: Containment cycle: Node "loop1" contains itself through its parents.
+model.hcl:29:12: error: Containment cycle: Node "loop2" contains itself through its parents.
+model.hcl:45:10: error: Undefined port: Edge "bad-ends" references port "nope", which node "t" does not have.
+model.hcl:46:10: error: Undefined row: Edge "bad-ends" references row "nope", which node "t" does not have.
+model.hcl:49:1: error: Undefined edge kind: Edge "undefined" has undefined edge kind "nope".
+model.hcl:50:10: error: Undefined node: Edge "undefined" references undefined node "missing".
+model.hcl:51:10: error: Undefined node: Edge "undefined" references undefined node "missing/too".
+model.hcl:56:10: error: Invalid node reference: Expected node.<id>, node.<id>.port.<port> or node.<id>.row.<row>, with index form node["<id>"] for IDs that are not simple.
+model.hcl:57:10: error: Invalid node reference: Expected node.<id>, node.<id>.port.<port> or node.<id>.row.<row>, with index form node["<id>"] for IDs that are not simple.
+model.hcl:60:1: error: Missing required argument: The argument "to" is required.
+exit 1

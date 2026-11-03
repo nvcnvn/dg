@@ -1,0 +1,43 @@
+[
+  {
+    "severity": "error",
+    "summary": "Wrong property type",
+    "detail": "Property \"gpu_count\" of kind \"gpu\" is a number.",
+    "file": "model.hcl",
+    "line": 3,
+    "column": 13,
+    "end_line": 3,
+    "end_column": 22
+  },
+  {
+    "severity": "error",
+    "summary": "Undefined property",
+    "detail": "Kind \"gpu\" declares no property \"color\".",
+    "file": "model.hcl",
+    "line": 3,
+    "column": 49,
+    "end_line": 3,
+    "end_column": 54
+  },
+  {
+    "severity": "error",
+    "summary": "Duplicate property",
+    "detail": "The property \"gpu_count\" is set twice.",
+    "file": "model.hcl",
+    "line": 8,
+    "column": 28,
+    "end_line": 8,
+    "end_column": 37
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid expression",
+    "detail": "A static map expression is required.",
+    "file": "model.hcl",
+    "line": 12,
+    "column": 12,
+    "end_line": 12,
+    "end_column": 21
+  }
+]
+exit 1

@@ -1,0 +1,31 @@
+# Hand-edited; dg fmt regenerates this file.
+edge_hints:
+  gw-ctl:
+    to_side: top
+    label_pos: 0.5
+    from_side: bottom
+    via:
+      - [10, 20]
+  "lift:sys%3actl:gateway": {to_side: left}
+version: 1
+place:
+  sys%3Actl:
+    y: 100
+    x: 300
+    ports:
+      p2: {offset: 0.4, side: right}
+      p1: {side: left, offset: 0.25}
+  gateway: {y: 0,   x: 0}
+  kube-system/coredns: {w: 120, h: 60, x: 0, y: 200}
+decorations:
+  - {text: "Fabric: 100G", type: text, id: title, y: -60, x: 0}
+  - id: band
+    type: band
+    x: -20
+    y: -20
+    w: 400
+    h: 300
+    z: -1
+    fill: "#F1F3F4"
+    stroke_dash: [4, 2]
+    opacity: 0.5

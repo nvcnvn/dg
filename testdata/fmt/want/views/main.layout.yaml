@@ -1,0 +1,16 @@
+version: 1
+place:
+  gateway: {x: 0, y: 0}
+  kube-system/coredns: {x: 0, y: 200, w: 120, h: 60}
+  sys%3Actl:
+    x: 300
+    y: 100
+    ports:
+      p1: {side: left, offset: 0.25}
+      p2: {side: right, offset: 0.40}
+edge_hints:
+  gw-ctl: {from_side: bottom, to_side: top, via: [[10, 20]], label_pos: 0.50}
+  lift:sys%3Actl:gateway: {to_side: left}
+decorations:
+  - {id: title, type: text, x: 0, y: -60, text: 'Fabric: 100G'}
+  - {id: band, type: band, x: -20, y: -20, w: 400, h: 300, z: -1, fill: '#F1F3F4', stroke_dash: [4, 2], opacity: 0.5}

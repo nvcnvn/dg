@@ -10,6 +10,7 @@ import (
 
 	"github.com/chromedp/chromedp"
 
+	"github.com/nvcnvn/dg/internal/diag"
 	"github.com/nvcnvn/dg/internal/project"
 	"github.com/nvcnvn/dg/internal/view"
 )
@@ -20,16 +21,8 @@ func TestExamples(t *testing.T) {
 	if testing.Short() {
 		t.Skip("starts Chromium")
 	}
-	for _, name := range []string{"hello"} {
+	for name, v := range exampleViews(t) {
 		t.Run(name, func(t *testing.T) {
-			p, diags, err := project.Load(filepath.Join("..", "..", "examples", name))
-			if err != nil || diags.HasErrors() {
-				t.Fatalf("load: %v %v", err, diags)
-			}
-			v, err := view.Resolve(p, view.DefaultView)
-			if err != nil {
-				t.Fatal(err)
-			}
 			first, err := Render(context.Background(), v)
 			if err != nil {
 				t.Fatal(err)
@@ -45,6 +38,46 @@ func TestExamples(t *testing.T) {
 			golden(t, filepath.Join("..", "..", "testdata", "export", name+".json"), first.JSON)
 		})
 	}
+}
+
+// exampleViews resolves every view of every example project, keyed by golden file name: the
+// example's name, followed by "-<view>" for views other than main.
+func exampleViews(t *testing.T) map[string]*view.Resolved {
+	dirs, err := filepath.Glob(filepath.Join("..", "..", "examples", "*"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	views := map[string]*view.Resolved{}
+	for _, dir := range dirs {
+		p, diags, err := project.Load(dir)
+		if err != nil || diags.HasErrors() {
+			t.Fatalf("load %s: %v %v", dir, err, diags)
+		}
+		for id := range p.Views {
+			v, diags := p.Resolve(id)
+			if notYet(t, dir, id, diags) {
+				continue
+			}
+			name := filepath.Base(dir)
+			if id != view.DefaultView {
+				name += "-" + id
+			}
+			views[name] = v
+		}
+	}
+	return views
+}
+
+// notYet reports whether a view is refused only for features later milestones draw, and fails
+// the test for any other error.
+func notYet(t *testing.T, dir, id string, diags diag.Diagnostics) bool {
+	t.Helper()
+	for _, d := range diags {
+		if d.Severity == diag.Error && d.Summary != "Not supported yet" {
+			t.Fatalf("resolve %s view %s: %v", dir, id, diags)
+		}
+	}
+	return diags.HasErrors()
 }
 
 func TestAppIsOffline(t *testing.T) {

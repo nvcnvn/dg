@@ -3,12 +3,13 @@
 Every workaround, version pin and pre-release dependency, with why it exists and what must be true
 to remove it.
 
-## Go toolchain pinned to go1.27.2
+## Go toolchain pinned to go1.27.3
 
-- **Where:** `toolchain go1.27.2` in `go.mod`.
+- **Where:** `toolchain go1.27.3` in `go.mod`.
 - **Why:** go1.27.0 has `net/http` vulnerabilities that `govulncheck` reports (GO-2026-6603,
-  GO-2026-6609, GO-2026-6611, GO-2026-6612, GO-2026-6613, GO-2026-6617), fixed in go1.27.2.
-- **Remove when:** the `go` directive is raised to 1.27.2 or later.
+  GO-2026-6609, GO-2026-6611, GO-2026-6612, GO-2026-6613, GO-2026-6617), fixed in go1.27.2, and
+  go1.27.2 has a `crypto/x509` one (GO-2026-6809), fixed in go1.27.3.
+- **Remove when:** the `go` directive is raised to 1.27.3 or later.
 
 ## Pre-release `github.com/go-json-experiment/json`
 
@@ -28,8 +29,9 @@ to remove it.
 
 ## Edges that M1 cannot route
 
-- **Where:** `internal/model` rejects self-loops and edges between a container and its own
-  descendant with an "Unsupported edge" error. An edge between a node and an unrelated container is
+- **Where:** `view.Sources.Resolve` refuses self-loops and edges between a container and its own
+  descendant with a "Not supported yet" error, so `dg export` fails on them while `dg check`
+  accepts them. An edge between a node and an unrelated container is
   accepted, but `web/src/canvas/avoid.ts` gives it router-avoid's right-angle fallback route, which
   ignores obstacles: containers are not libavoid obstacles (spec 7.5), and libavoid connects only
   shapes it tracks.
