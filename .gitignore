@@ -151,3 +151,6 @@ vite.config.ts.timestamp-*
 # dg
 /bin/
 /dg
+/vscode/bin/
+/vscode/LICENSE
+/vscode/THIRD_PARTY_NOTICES

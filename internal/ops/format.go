@@ -48,23 +48,9 @@ func Format(p *project.Project, check bool) ([]string, diag.Diagnostics, error) 
 		if err != nil {
 			return nil, nil, err
 		}
-		var formatted []byte
-		if f.Role == project.RoleLayout {
-			l, d := view.DecodeLayout(src, f.Path)
-			hdiags = append(hdiags, d...)
-			if d.HasErrors() {
-				continue
-			}
-			formatted = l.Encode()
-		} else {
-			_, d := hclsyntax.ParseConfig(src, f.Path, hcl.InitialPos)
-			if d.HasErrors() {
-				hdiags = append(hdiags, d...)
-				continue
-			}
-			formatted = hclwrite.Format(src)
-		}
-		if bytes.Equal(formatted, src) {
+		formatted, d := FormatFile(f, src)
+		hdiags = append(hdiags, d...)
+		if formatted == nil || bytes.Equal(formatted, src) {
 			continue
 		}
 		path := filepath.Join(p.Dir, filepath.FromSlash(f.Path))
@@ -84,4 +70,21 @@ func Format(p *project.Project, check bool) ([]string, diag.Diagnostics, error) 
 		return changed, diags, nil
 	}
 	return changed, diags, WriteFiles(out)
+}
+
+// FormatFile returns src, the content of project file f, in canonical form (FR-3): an HCL file
+// formatted with hclwrite.Format, a layout file regenerated. It returns nil, with the errors,
+// for a file that does not parse, and warnings of a layout file that does.
+func FormatFile(f project.File, src []byte) ([]byte, hcl.Diagnostics) {
+	if f.Role == project.RoleLayout {
+		l, d := view.DecodeLayout(src, f.Path)
+		if d.HasErrors() {
+			return nil, d
+		}
+		return l.Encode(), d
+	}
+	if _, d := hclsyntax.ParseConfig(src, f.Path, hcl.InitialPos); d.HasErrors() {
+		return nil, d
+	}
+	return hclwrite.Format(src), nil
 }

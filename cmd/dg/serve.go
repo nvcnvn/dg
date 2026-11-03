@@ -18,12 +18,16 @@ import (
 	"github.com/nvcnvn/dg/internal/server"
 )
 
+// stdin is standard input, which a test replaces.
+var stdin io.Reader = os.Stdin
+
 func runServe(args []string, stdout, stderr io.Writer) error {
 	var addr string
-	var open bool
+	var open, untilEOF bool
 	dir, err := flags("serve", args, stderr, func(fl *flag.FlagSet) {
 		fl.StringVar(&addr, "addr", "127.0.0.1:0", "address to listen on")
 		fl.BoolVar(&open, "open", true, "open the editor in the browser")
+		fl.BoolVar(&untilEOF, "stdin", false, "stop when standard input closes, as when the editor that started dg serve exits")
 	})
 	if err != nil {
 		return err
@@ -43,6 +47,12 @@ func runServe(args []string, stdout, stderr io.Writer) error {
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	if untilEOF {
+		go func() {
+			_, _ = io.Copy(io.Discard, stdin)
+			stop()
+		}()
+	}
 	s := server.New(dir)
 	watchErr := make(chan error, 1)
 	go func() {

@@ -1,0 +1,4 @@
+version: 1
+place:
+  api: {x: 0, y: 0}
+  db: {x: 0, y: 100}

@@ -1,0 +1,11 @@
+src/**
+test/**
+out/test/**
+tsconfig.json
+node_modules/.bin/**
+node_modules/**/*.d.ts
+node_modules/**/*.map
+node_modules/**/*.md
+!node_modules/**/LICENSE.md
+node_modules/**/.eslintrc*
+node_modules/**/tsconfig*.json

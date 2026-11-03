@@ -71,3 +71,10 @@ to remove it.
 - **Remove when:** `hclwrite` writes tokens without formatting, formats a range of tokens, keeps
   whitespace as written, inserts an attribute where it is asked to, and removes blocks and sets
   labels without disturbing their neighbors.
+
+## HCL grammar vendored
+
+- **Where:** `vscode/syntaxes/hcl.tmGrammar.json` and its `LICENSE`, from release v0.7.1 of
+  `github.com/hashicorp/syntax`, unmodified.
+- **Why:** the grammar is published as a release file only, with no package to depend on.
+- **Remove when:** `hashicorp/syntax` publishes the grammar as a package; then depend on it.

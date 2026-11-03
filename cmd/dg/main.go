@@ -31,6 +31,7 @@ commands:
   vocabulary  print the kinds, edge kinds, tags and views the project defines, as JSON
   op          apply an operation to the project's files (dg op --help lists them)
   mcp         serve the Model Context Protocol over standard input and output
+  lsp         serve the Language Server Protocol over standard input and output
 `
 
 // errDiagnostics marks a failure already reported as diagnostics.
@@ -69,6 +70,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		err = runVocabulary(args[1:], stdout, stderr)
 	case "mcp":
 		err = runMCP(args[1:], stdout, stderr)
+	case "lsp":
+		err = runLSP(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "dg: unknown command %q\n%s", args[0], usage)
 		return 1

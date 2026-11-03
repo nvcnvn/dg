@@ -14,6 +14,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/hashicorp/hcl/v2"
 	"go.yaml.in/yaml/v3"
@@ -154,12 +155,36 @@ func ParseLiftKey(key string) (ends [2]string, isLift bool, err error) {
 
 type decoder struct {
 	file  string
+	src   []byte
+	lines []int // the offsets where lines start, once computed
 	diags hcl.Diagnostics
 }
 
 func (d *decoder) rng(n *yaml.Node) hcl.Range {
-	pos := hcl.Pos{Line: n.Line, Column: n.Column}
+	pos := hcl.Pos{Line: n.Line, Column: n.Column, Byte: d.offset(n.Line, n.Column)}
 	return hcl.Range{Filename: d.file, Start: pos, End: pos}
+}
+
+// offset returns the byte offset of a one-based line and column, the column counting characters
+// as the yaml package does.
+func (d *decoder) offset(line, column int) int {
+	if d.lines == nil {
+		d.lines = []int{0}
+		for i, c := range d.src {
+			if c == '\n' {
+				d.lines = append(d.lines, i+1)
+			}
+		}
+	}
+	if line < 1 || line > len(d.lines) {
+		return len(d.src)
+	}
+	off := d.lines[line-1]
+	for i := 1; i < column && off < len(d.src) && d.src[off] != '\n'; i++ {
+		_, size := utf8.DecodeRune(d.src[off:])
+		off += size
+	}
+	return off
 }
 
 func (d *decoder) errorf(n *yaml.Node, format string, args ...any) {
@@ -173,7 +198,7 @@ var (
 
 // DecodeLayout decodes a layout file; file names it in diagnostics.
 func DecodeLayout(src []byte, file string) (*Layout, hcl.Diagnostics) {
-	d := &decoder{file: file}
+	d := &decoder{file: file, src: src}
 	l := &Layout{Place: map[string]*Place{}, EdgeHints: map[string]*Hint{}, LiftHints: map[[2]string]*Hint{}}
 	l.Range = hcl.Range{Filename: file, Start: hcl.InitialPos, End: hcl.InitialPos}
 	dec := yaml.NewDecoder(bytes.NewReader(src))

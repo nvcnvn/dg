@@ -12,9 +12,11 @@ import (
 	"github.com/nvcnvn/dg/internal/spec"
 )
 
-// Prop is a style property and its value check.
+// Prop is a style property: its value check and, for completion, the values it takes when it
+// takes few, as HCL expressions.
 type Prop struct {
-	check func(cty.Value) string
+	check  func(cty.Value) string
+	Values []string
 }
 
 // BuiltinShapes are the shapes a style may name without a shape block (spec 4.3).
@@ -22,54 +24,69 @@ var BuiltinShapes = []string{"rect", "rounded", "stadium", "ellipse", "diamond",
 
 var markers = []string{"none", "arrow", "triangle", "triangle-open", "diamond", "diamond-open", "circle", "circle-open", "crow-one", "crow-zero-one", "crow-many", "crow-one-many", "crow-zero-many"}
 
+var (
+	colorProp = Prop{color, []string{`"none"`}}
+	boolProp  = Prop{isBool, []string{"true", "false"}}
+)
+
+func check(f func(cty.Value) string) Prop { return Prop{check: f} }
+
+func oneOf(values ...string) Prop {
+	quoted := make([]string, len(values))
+	for i, v := range values {
+		quoted[i] = `"` + v + `"`
+	}
+	return Prop{enum(values...), quoted}
+}
+
 // NodeProps are the properties of style blocks: node properties and container properties.
 var NodeProps = map[string]Prop{
-	"shape":         {isString},
-	"fill":          {color},
-	"stroke":        {color},
-	"stroke_width":  {number(0, inf)},
-	"stroke_dash":   {dash},
-	"corner_radius": {number(0, inf)},
-	"opacity":       {number(0, 1)},
-	"text_color":    {color},
-	"font_size":     {number(1, inf)},
-	"font_weight":   {weight},
-	"icon":          {picture},
-	"image":         {picture},
-	"padding":       {number(0, inf)},
-	"min_w":         {number(0, inf)},
-	"min_h":         {number(0, inf)},
-	"max_w":         {number(0, inf)},
-	"z":             {integer(-inf, inf)},
-	"layout":        {enum("free", "stack", "grid")},
-	"direction":     {enum("horizontal", "vertical")},
-	"gap":           {number(0, inf)},
-	"stretch":       {isBool},
-	"columns":       {integer(1, inf)},
-	"align":         {enum("start", "center", "end")},
-	"label_side":    {enum("top", "left")},
+	"shape":         {isString, oneOf(BuiltinShapes...).Values},
+	"fill":          colorProp,
+	"stroke":        colorProp,
+	"stroke_width":  check(number(0, inf)),
+	"stroke_dash":   check(dash),
+	"corner_radius": check(number(0, inf)),
+	"opacity":       check(number(0, 1)),
+	"text_color":    colorProp,
+	"font_size":     check(number(1, inf)),
+	"font_weight":   {weight, []string{"100", "200", "300", "400", "500", "600", "700", "800", "900"}},
+	"icon":          check(picture),
+	"image":         check(picture),
+	"padding":       check(number(0, inf)),
+	"min_w":         check(number(0, inf)),
+	"min_h":         check(number(0, inf)),
+	"max_w":         check(number(0, inf)),
+	"z":             check(integer(-inf, inf)),
+	"layout":        oneOf("free", "stack", "grid"),
+	"direction":     oneOf("horizontal", "vertical"),
+	"gap":           check(number(0, inf)),
+	"stretch":       boolProp,
+	"columns":       check(integer(1, inf)),
+	"align":         oneOf("start", "center", "end"),
+	"label_side":    oneOf("top", "left"),
 }
 
 // EdgeProps are the properties of edge_style blocks.
 var EdgeProps = map[string]Prop{
-	"stroke":       {color},
-	"stroke_width": {number(0, inf)},
-	"stroke_dash":  {dash},
-	"arrow_start":  {enum(markers...)},
-	"arrow_end":    {enum(markers...)},
-	"routing":      {enum("orthogonal", "polyline", "straight")},
-	"font_size":    {number(1, inf)},
-	"animate":      {enum("none", "flow")},
+	"stroke":       colorProp,
+	"stroke_width": check(number(0, inf)),
+	"stroke_dash":  check(dash),
+	"arrow_start":  oneOf(markers...),
+	"arrow_end":    oneOf(markers...),
+	"routing":      oneOf("orthogonal", "polyline", "straight"),
+	"font_size":    check(number(1, inf)),
+	"animate":      oneOf("none", "flow"),
 }
 
 // OverlayProps are the properties of overlay_style blocks.
 var OverlayProps = map[string]Prop{
-	"fill":         {color},
-	"stroke":       {color},
-	"stroke_width": {number(0, inf)},
-	"stroke_dash":  {dash},
-	"opacity":      {number(0, 1)},
-	"padding":      {number(0, inf)},
+	"fill":         colorProp,
+	"stroke":       colorProp,
+	"stroke_width": check(number(0, inf)),
+	"stroke_dash":  check(dash),
+	"opacity":      check(number(0, 1)),
+	"padding":      check(number(0, inf)),
 }
 
 const inf = 1e18

@@ -8,6 +8,7 @@ view "pool" {
   ]
 }
 
+# Calls from the gateway.
 view "calls" {
   include = [ node.gateway,node["worker-1"], node.pool ]
   edges   = [edge.gw-w1] /* only the call */

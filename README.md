@@ -14,7 +14,7 @@ build the web app before any `go` command:
 make web     # npm ci and vite build into web/dist
 make build   # bin/dg
 make test    # go test ./... and the web unit tests
-make lint    # gofmt, go vet, staticcheck, govulncheck, tsc --noEmit
+make lint    # gofmt, go vet, staticcheck, govulncheck, tsc --noEmit (web app and extension)
 ```
 
 After `make web`, plain `go build ./...` and `go test ./...` work. `go test -short ./...` skips the
@@ -25,11 +25,38 @@ view of every example (PNG and GIF exports are not golden: the tests compare two
 `go test ./internal/ops -update` rewrites the operation goldens in `testdata/ops/want` (the files
 each operation writes to a copy of `testdata/ops/in`). `testdata/lift` has a view for each case of
 edge lifting and merging; its resolved views are goldens like the examples'.
-`go test ./internal/project -bench Load1000` times `dg check` at 1,000 nodes; the fuzz targets
+`go test ./internal/lsp -update` rewrites the language server's recorded sessions'
+goldens: each `testdata/lsp/*.jsonl` names a project on its first line and holds the client's
+messages, and its `.golden` file what the server answered.
+`go test ./internal/project -bench Load1000` times `dg check` at 1,000 nodes, and
+`go test ./internal/lsp -bench Keystroke` one keystroke in the language server at 1,000 nodes; the
+fuzz targets
 are `FuzzLoad` (`internal/project`), `FuzzDecodeLayout` (`internal/view`),
 `FuzzDecodeMessage` (`internal/server`, the WebSocket protocol), `FuzzOp` (`internal/ops`,
-operations as JSON), `FuzzOpArgs` (`cmd/dg`, `dg op` command lines) and `FuzzTools`
-(`internal/mcp`, MCP tool calls).
+operations as JSON), `FuzzOpArgs` (`cmd/dg`, `dg op` command lines), `FuzzTools`
+(`internal/mcp`, MCP tool calls), and `FuzzMessage` and `FuzzBuffer` (`internal/lsp`, any message,
+and every request at any position of any buffer).
+
+### VS Code extension
+
+`vscode/` is the extension. It bundles `dg`, so each package is built for one platform:
+
+```sh
+make vsix                 # bin/dg-<this platform>.vsix, such as bin/dg-darwin-arm64.vsix
+make vsix-linux-x64       # one target: darwin-arm64, darwin-x64, linux-arm64, linux-x64,
+make vsix-all             #   win32-arm64 or win32-x64; or all of them
+make test-vscode          # starts VS Code on a copy of examples/c4 with the extension from vscode/
+make test-vsix            # the same test on the package for this platform, installed
+code --install-extension bin/dg-darwin-arm64.vsix
+make notices              # regenerate THIRD_PARTY_NOTICES after a dependency changes
+```
+
+Each package holds `LICENSE` and `THIRD_PARTY_NOTICES`, the licenses of the Go modules, npm packages
+and grammar that the binary and the extension hold; `make lint` fails while the file is out of
+date.
+
+The tests use VS Code Insiders where macOS installs it, else the VS Code that `DG_VSCODE` names,
+else a build `@vscode/test-electron` downloads.
 
 ## Use
 
@@ -60,6 +87,7 @@ bin/dg op add_decoration -C my-diagram --view main \
 bin/dg op batch -C my-diagram < ops.json   # a JSON list of operations, applied as one change
 bin/dg vocabulary -C my-diagram            # kinds, edge kinds, tags and views, as JSON
 bin/dg mcp -C my-diagram                   # MCP server over stdio: check, vocabulary, op, export
+bin/dg lsp -C my-diagram                   # language server over stdio, for editors
 ```
 
 An operation that would add a validation error, or change a `read_only` file, is refused and
@@ -73,7 +101,15 @@ and its position `rel` in it, which `move` takes; a node a stack or grid contain
 milliseconds of a save, and while the project has errors it lists them and keeps the last good
 drawing. A view is chosen from the switcher, from a node's drill-down badge (the views whose `of`
 is that node; a menu when there are several) or from the breadcrumbs of a view with `of`. `-addr`
-sets the address (default a free loopback port), `-open=false` skips opening the browser.
+sets the address (default a free loopback port), `-open=false` skips opening the browser, and
+`-stdin` stops `dg serve` when its standard input closes, as when the editor that started it exits.
+
+`dg lsp` serves the Language Server Protocol for a project's HCL files, on the editor's unsaved
+buffers: the diagnostics of `dg check`, completion of kinds, IDs, ports, rows, selectors and
+styles, hover, go to definition and find references, rename through `rename_id` (layout files
+included), and formatting as `dg fmt`. The VS Code extension runs it in a folder with `dg.hcl`;
+its command "dg: Open diagram" shows the views from `dg serve` in a panel beside the text,
+redrawn when a file is saved.
 
 `dg export --format` is `svg` (edge animation kept as CSS), `png` (animation at time 0), `gif`
 (one half-second animation period in 10 frames, looping) or `json` (geometry).

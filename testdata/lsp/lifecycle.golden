@@ -1,0 +1,58 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "error": {
+    "code": -32002,
+    "message": "the server is not initialized"
+  }
+}
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "capabilities": {
+      "completionProvider": {
+        "triggerCharacters": [
+          ".",
+          "\""
+        ]
+      },
+      "definitionProvider": true,
+      "documentFormattingProvider": true,
+      "hoverProvider": true,
+      "referencesProvider": true,
+      "renameProvider": {
+        "prepareProvider": true
+      },
+      "textDocumentSync": {
+        "change": 2,
+        "openClose": true,
+        "save": true
+      }
+    },
+    "serverInfo": {
+      "name": "dg"
+    }
+  }
+}
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "error": {
+    "code": -32601,
+    "message": "method \"workspace/symbol\" is not supported"
+  }
+}
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "result": null
+}
+{
+  "jsonrpc": "2.0",
+  "id": 5,
+  "error": {
+    "code": -32600,
+    "message": "the server is shut down"
+  }
+}

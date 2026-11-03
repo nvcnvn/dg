@@ -1,0 +1,36 @@
+{"project": "examples/c4"}
+{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"processId": null, "rootUri": "$ROOT", "capabilities": {}}}
+{"jsonrpc": "2.0", "method": "initialized", "params": {}}
+{"jsonrpc": "2.0", "method": "textDocument/didOpen", "params": {"textDocument": {"uri": "$ROOT/model.hcl", "languageId": "hcl", "version": 1, "text": "$FILE"}}}
+{"jsonrpc": "2.0", "method": "textDocument/didOpen", "params": {"textDocument": {"uri": "$ROOT/views.hcl", "languageId": "hcl", "version": 1, "text": "$FILE"}}}
+// A node's kind.
+{"jsonrpc": "2.0", "id": 2, "method": "textDocument/completion", "params": {"textDocument": {"uri": "$ROOT/model.hcl"}, "position": {"line": 28, "character": 12}}}
+// The start of a reference, then a node ID after node.
+{"jsonrpc": "2.0", "id": 3, "method": "textDocument/completion", "params": {"textDocument": {"uri": "$ROOT/model.hcl"}, "position": {"line": 29, "character": 11}}}
+{"jsonrpc": "2.0", "id": 4, "method": "textDocument/completion", "params": {"textDocument": {"uri": "$ROOT/model.hcl"}, "position": {"line": 29, "character": 16}}}
+// Selectors: the forms, kinds after kind., containers after descendants.
+{"jsonrpc": "2.0", "id": 5, "method": "textDocument/completion", "params": {"textDocument": {"uri": "$ROOT/views.hcl"}, "position": {"line": 4, "character": 14}}}
+{"jsonrpc": "2.0", "id": 6, "method": "textDocument/completion", "params": {"textDocument": {"uri": "$ROOT/views.hcl"}, "position": {"line": 4, "character": 19}}}
+{"jsonrpc": "2.0", "id": 7, "method": "textDocument/completion", "params": {"textDocument": {"uri": "$ROOT/views.hcl"}, "position": {"line": 12, "character": 26}}}
+// A view style rule's label, a property name and a property value.
+{"jsonrpc": "2.0", "id": 8, "method": "textDocument/completion", "params": {"textDocument": {"uri": "$ROOT/views.hcl"}, "position": {"line": 15, "character": 9}}}
+{"jsonrpc": "2.0", "id": 9, "method": "textDocument/completion", "params": {"textDocument": {"uri": "$ROOT/views.hcl"}, "position": {"line": 16, "character": 4}}}
+{"jsonrpc": "2.0", "id": 10, "method": "textDocument/completion", "params": {"textDocument": {"uri": "$ROOT/views.hcl"}, "position": {"line": 16, "character": 19}}}
+// A style label in a pack's style.hcl.
+{"jsonrpc": "2.0", "id": 11, "method": "textDocument/completion", "params": {"textDocument": {"uri": "$ROOT/packs/c4/style.hcl"}, "position": {"line": 3, "character": 7}}}
+// Hover, definition and references of a node, in reference and index form.
+{"jsonrpc": "2.0", "id": 12, "method": "textDocument/hover", "params": {"textDocument": {"uri": "$ROOT/model.hcl"}, "position": {"line": 29, "character": 18}}}
+{"jsonrpc": "2.0", "id": 13, "method": "textDocument/hover", "params": {"textDocument": {"uri": "$ROOT/model.hcl"}, "position": {"line": 111, "character": 17}}}
+{"jsonrpc": "2.0", "id": 14, "method": "textDocument/definition", "params": {"textDocument": {"uri": "$ROOT/views.hcl"}, "position": {"line": 11, "character": 20}}}
+{"jsonrpc": "2.0", "id": 15, "method": "textDocument/references", "params": {"textDocument": {"uri": "$ROOT/views.hcl"}, "position": {"line": 11, "character": 20}, "context": {"includeDeclaration": true}}}
+// A kind: its definition in the pack, its style, the nodes of it and the selectors naming it.
+{"jsonrpc": "2.0", "id": 16, "method": "textDocument/definition", "params": {"textDocument": {"uri": "$ROOT/views.hcl"}, "position": {"line": 4, "character": 20}}}
+{"jsonrpc": "2.0", "id": 17, "method": "textDocument/references", "params": {"textDocument": {"uri": "$ROOT/views.hcl"}, "position": {"line": 4, "character": 20}, "context": {"includeDeclaration": false}}}
+// Renames: a kind is refused; a node renames its references in the model, views and layout; a view renames its layout file.
+{"jsonrpc": "2.0", "id": 18, "method": "textDocument/prepareRename", "params": {"textDocument": {"uri": "$ROOT/views.hcl"}, "position": {"line": 4, "character": 20}}}
+{"jsonrpc": "2.0", "id": 19, "method": "textDocument/prepareRename", "params": {"textDocument": {"uri": "$ROOT/views.hcl"}, "position": {"line": 11, "character": 20}}}
+{"jsonrpc": "2.0", "id": 20, "method": "textDocument/rename", "params": {"textDocument": {"uri": "$ROOT/views.hcl"}, "position": {"line": 11, "character": 20}, "newName": "bank-system"}}
+{"jsonrpc": "2.0", "id": 21, "method": "textDocument/rename", "params": {"textDocument": {"uri": "$ROOT/views.hcl"}, "position": {"line": 2, "character": 7}, "newName": "context"}}
+{"jsonrpc": "2.0", "id": 22, "method": "textDocument/formatting", "params": {"textDocument": {"uri": "$ROOT/views.hcl"}, "options": {"tabSize": 2, "insertSpaces": true}}}
+{"jsonrpc": "2.0", "id": 23, "method": "shutdown"}
+{"jsonrpc": "2.0", "method": "exit"}

@@ -201,6 +201,13 @@ type state struct {
 	out       []Result
 }
 
+// Plan applies op to the project whose files fsys holds, as Apply would but writing nothing, and
+// returns the change it would make. dir is recorded as the project's directory.
+func Plan(fsys fs.FS, dir string, op Op) (*Change, error) {
+	c, _, err := plan(fsys, dir, op, NewSession())
+	return c, err
+}
+
 // plan applies op to the project in base without writing, returning the change and the files
 // it read.
 func plan(base fs.FS, dir string, op Op, sess *Session) (*Change, *files, error) {

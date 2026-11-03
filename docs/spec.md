@@ -101,6 +101,7 @@ Layout files are YAML, because they are machine-owned and rarely edited by hand.
 | MCP server | `github.com/modelcontextprotocol/go-sdk` (Apache-2.0 for new code, MIT for code not yet relicensed) |
 | Project lock on Windows | `golang.org/x/sys/windows` (BSD-3-Clause) |
 | Embedding the web app in the binary | standard library `embed` |
+| Language Server Protocol | none: `internal/lsp` frames JSON-RPC and declares the few protocol types it uses with the standard library |
 
 **TypeScript (browser)**
 
@@ -118,7 +119,10 @@ Layout files are YAML, because they are machine-owned and rarely edited by hand.
 | Purpose | Library |
 |---|---|
 | Language client | `vscode-languageclient` (MIT) |
-| HCL highlighting | HCL TextMate grammar from `github.com/hashicorp/syntax` (MPL-2.0) |
+| HCL highlighting | HCL TextMate grammar from `github.com/hashicorp/syntax` (MPL-2.0), vendored unmodified with its license in `vscode/syntaxes` |
+| Type checking and compiling | `tsc` from TypeScript 7 (Apache-2.0) |
+| Packaging, one VSIX per platform (build time only) | `@vscode/vsce` (MIT) |
+| Extension tests in VS Code (test time only) | `@vscode/test-electron` (MIT), which may download a VS Code build for a test, never at runtime |
 
 ### 3.4 Fonts
 
@@ -763,7 +767,7 @@ Information: a kind, edge kind, shape or style overridden by a later pack or the
 When a model file does not parse, references, selectors and layout entries are not checked: what they name may be in that file, and each would be reported again.
 
 - AC: exit code 0 if no errors, 1 if errors, 2 on internal failure (such as an unreadable project directory); `--strict` makes warnings errors.
-- AC: `--json` prints a JSON array of diagnostics, each with `severity` (`error`, `warning` or `info`), `summary`, `detail`, and, when it has a position, `file`, `line`, `column`, `end_line` and `end_column`. `dg serve` (FR-10) and the language server send the same shape.
+- AC: `--json` prints a JSON array of diagnostics, each with `severity` (`error`, `warning` or `info`), `summary`, `detail`, and, when it has a position, `file`, `line`, `column`, `end_line` and `end_column`. `dg serve` (FR-10) sends the same shape, the language server the same diagnostics in the protocol's (FR-17).
 - AC: `file` is the project-relative slash path, the same whatever `-C` and the working directory are; files of the built-in pack are `<generic>/spec.hcl` and `<generic>/style.hcl`, which no project path can be. A diagnostic about one element of a list (a pattern, port, tag or selector) points at that element.
 - AC: diagnostics are sorted by file, line and column.
 
@@ -877,17 +881,17 @@ Writers of one project are serialized: an operation, undo or redo holds a lock f
 **FR-16 MCP server (`dg mcp [-C dir]`).** A Model Context Protocol server over stdio with four tools: `check` (FR-2 diagnostics, as `dg check --json`), `vocabulary` (as `dg vocabulary`), `op` (any FR-12 operation as a JSON object, including `batch`; the result is `dg op --json`'s, an error result when refused), and `export` (FR-14, `{view?, format?}`; PNG, the default, and GIF are returned as image content so the agent sees the drawing, SVG and JSON as text).
 - AC: every tool gives the same result as the matching `dg` command.
 
-**FR-17 Language server (`dg lsp`).** Language Server Protocol over stdio for model files and `views.hcl`, working on unsaved editor buffers:
-- diagnostics from FR-2, with the same positions as `dg check`;
-- completion of kinds, edge kinds, node IDs in references, ports after `.port.`, rows after `.row.`, selectors, style labels, and style property names and values;
-- hover showing a referenced node's kind and label; go to definition and find references for node, edge, kind and view IDs;
-- rename through `rename_id`: the server returns the files the operation would write, including layout files, as one workspace edit, and refuses as the operation does for read-only files;
-- formatting through `dg fmt`.
+**FR-17 Language server (`dg lsp [-C dir]`).** Language Server Protocol over stdio for the HCL files of the project in `dir`, working on unsaved editor buffers: the project is loaded from its files with the open buffers in their place, again after a change to a buffer or a file the editor reports (`workspace/didChangeWatchedFiles`), once no more changes are waiting or a request needs it, so a burst of changes loads it once. Requests before `initialize` and after `shutdown` are refused as the protocol says.
+- diagnostics from FR-2 for every file of the project, layout files included, with the same positions as `dg check` (converted from byte offsets to the protocol's zero-based UTF-16 positions) and the message `summary: detail`. After a change the server sends the diagnostics of each file whose diagnostics changed, an empty list for a file that has none any more. A diagnostic without a file, or about the built-in pack, which an editor cannot open, is put at the start of `dg.hcl`.
+- completion, on text that does not parse too: kinds (a node's `kind`, a kind's `extends`), edge kinds (an edge's `kind`), node IDs in references (after `node.`, quoted IDs in index form), ports after `.port.`, rows after `.row.`, selectors (`all` and the forms of section 4.5, then the kinds, tags, nodes, containers, edge kinds or edges after them), style labels (kinds or edge kinds, `tag.<tag>`, and in a view `node.<id>` or `edge.<id>`), style property names, and the values of the properties that take few (choices, booleans, `none` for colors, shapes with the custom ones). While a file does not parse, the names come from the project as last loaded with every file parsed.
+- hover showing a referenced node's kind and label; go to definition and find references for node, edge, kind, edge kind and view IDs: block labels, references and selectors, `kind` and `extends` values, style labels, and the `place` and `edge_hints` keys of layout files; a view's layout file is a reference to it. The kinds of the built-in pack have no definition to go to.
+- rename of node, edge and view IDs through `rename_id`: the operation is planned on the buffers over the files and writes nothing; the server returns the files it would write, including layout files, as one workspace edit, a layout file renamed with a view as a file rename, and edits only where the text changes. It refuses as the operation does, naming a read-only file, and refuses to start renaming an ID defined in one.
+- formatting through `dg fmt`'s code of a writable file the project loads: an HCL file with `hclwrite.Format`, a layout file regenerated; nothing for a read-only file or one that does not parse, and refused while `dg.hcl` has errors, as `dg fmt` refuses.
 - AC: diagnostics match `dg check` on the same files.
 
-**FR-18 VS Code extension.** Bundles the `dg` binary (one VSIX per platform) and activates in a folder that contains `dg.hcl`. It runs `dg lsp` for the project's HCL files and highlights them with the HCL TextMate grammar. The command "Open diagram" opens a panel beside the text editor showing the embedded app from `dg serve` on a loopback port, so the panel has every editor feature that the browser has.
+**FR-18 VS Code extension (`vscode/`).** Activates in a workspace with a folder that holds `dg.hcl`, and runs its bundled `dg lsp -C <folder>` for the `.hcl` files of each such folder, which it highlights with the HCL TextMate grammar as the language `hcl`. The command "dg: Open diagram" starts `dg serve -C <folder> -open=false -stdin` on a free loopback port and opens a panel beside the text editor: a webview whose only content is a frame of the served app, so the panel has every editor feature that the browser has. Closing the panel stops the server, and `-stdin` stops it when its standard input closes, however the extension host ends. Each VSIX is built for one VS Code platform target with `dg` built for it (`make vsix-<target>`), and holds dg's `LICENSE` and `THIRD_PARTY_NOTICES`, the licenses of every component the binary and the VSIX hold (`make notices` regenerates it; `make lint` fails while it is out of date).
 - AC: saving a model file updates the panel within 300 milliseconds (FR-10).
-- AC: no network access at runtime (section 11).
+- AC: no network access at runtime (section 11): the panel loads only from the loopback server, and the extension needs nothing it does not bundle.
 
 ---
 
@@ -1012,4 +1016,8 @@ The order follows two rules. First, export comes before editing: once `dg export
 | First layout of the free containers in a stack (swimlanes) | one elk run over the steps of all lanes, layers across the stack, then rows packed per lane | One elk run per lane: steps start at the left of every lane whatever the edges between lanes, so cross-lane flows zigzag. The whole view in one elk run with lanes as compound nodes: elk places compound nodes side by side in layers, not stacked, and has no swimlane support. |
 | Cycles in the first layout | dg reverses the back edges of a depth-first search from the nodes no edge enters; cycles no such node leads to are left to elk | elk's greedy cycle breaking alone: a decision with more edges out than in goes first, so a flowchart with a loop back can be drawn upside down. elk's `DEPTH_FIRST`: starts from the first node by ID when a cycle has no source, which drew `examples/c4-container`'s customer at the bottom. |
 | Rotated container label | `label_side = "left"`, centered along the left edge with a line between label and content | Label at the top of each lane: lanes stacked vertically read as rows of boxes, not swimlanes. Unrotated text on the left: a long label makes a wide strip in every lane. |
+| Language server protocol layer | JSON-RPC framing, dispatch and the protocol types dg uses, written in `internal/lsp` on the standard library | A library (`go.lsp.dev/protocol` with `go.lsp.dev/jsonrpc2`, `github.com/tliron/glsp`): dependencies and generated types for the whole protocol, to save about a hundred lines. |
+| Rename in the language server | `rename_id` planned on the buffers, its files returned as one workspace edit | Renaming the occurrences the server's index finds: a second implementation of section 6.4 that would drift from the operation, and misses the layout files' values and the read-only refusal. |
+| Diagram panel in VS Code | a webview framing `dg serve`'s page on a loopback port | The embedded app served as webview resources, with a message bridge to the extension: a second transport beside `dg serve`'s WebSocket for the editor of M10 and M11 to keep equal. |
+| Extension JavaScript | compiled by `tsc`, packaged with its production `node_modules` | Bundled by esbuild: one more build dependency for a faster start of an extension of one file (`vsce` warns about the number of files). |
 | Spiral clearance | four grid units | Two grid units: with libavoid's buffer around each box no edge fits between two neighbors, and libavoid draws a straight line through them. |

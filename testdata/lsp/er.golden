@@ -1,0 +1,121 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "capabilities": {
+      "completionProvider": {
+        "triggerCharacters": [
+          ".",
+          "\""
+        ]
+      },
+      "definitionProvider": true,
+      "documentFormattingProvider": true,
+      "hoverProvider": true,
+      "referencesProvider": true,
+      "renameProvider": {
+        "prepareProvider": true
+      },
+      "textDocumentSync": {
+        "change": 2,
+        "openClose": true,
+        "save": true
+      }
+    },
+    "serverInfo": {
+      "name": "dg"
+    }
+  }
+}
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": [
+    {
+      "label": "row.",
+      "kind": 14,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 104,
+            "character": 24
+          },
+          "end": {
+            "line": 104,
+            "character": 27
+          }
+        },
+        "newText": "row."
+      },
+      "command": {
+        "title": "Complete",
+        "command": "editor.action.triggerSuggest"
+      }
+    }
+  ]
+}
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": [
+    {
+      "label": "city",
+      "kind": 5,
+      "detail": "row",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 104,
+            "character": 28
+          },
+          "end": {
+            "line": 104,
+            "character": 39
+          }
+        },
+        "newText": "city"
+      }
+    },
+    {
+      "label": "customer_id",
+      "kind": 5,
+      "detail": "row",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 104,
+            "character": 28
+          },
+          "end": {
+            "line": 104,
+            "character": 39
+          }
+        },
+        "newText": "customer_id"
+      }
+    },
+    {
+      "label": "id",
+      "kind": 5,
+      "detail": "row",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 104,
+            "character": 28
+          },
+          "end": {
+            "line": 104,
+            "character": 39
+          }
+        },
+        "newText": "id"
+      }
+    }
+  ]
+}
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "result": null
+}

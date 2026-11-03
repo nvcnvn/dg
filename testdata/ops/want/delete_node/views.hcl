@@ -10,6 +10,7 @@ view "pool" {
   ]
 }
 
+# Calls from the gateway.
 view "calls" {
   include = [ node.gateway, node.pool ]
   edges   = [] /* only the call */

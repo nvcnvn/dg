@@ -1,0 +1,9 @@
+{"project": "testdata/lsp/unicode"}
+{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"processId": null, "rootUri": "$ROOT", "capabilities": {}}}
+{"jsonrpc": "2.0", "method": "initialized", "params": {}}
+{"jsonrpc": "2.0", "method": "textDocument/didOpen", "params": {"textDocument": {"uri": "$ROOT/model.hcl", "languageId": "hcl", "version": 1, "text": "$FILE"}}}
+// A node whose ID is a flag, after a tab, on CRLF lines: hover and references in UTF-16 columns.
+{"jsonrpc": "2.0", "id": 2, "method": "textDocument/hover", "params": {"textDocument": {"uri": "$ROOT/model.hcl"}, "position": {"line": 7, "character": 16}}}
+{"jsonrpc": "2.0", "id": 3, "method": "textDocument/references", "params": {"textDocument": {"uri": "$ROOT/model.hcl"}, "position": {"line": 7, "character": 16}, "context": {"includeDeclaration": true}}}
+{"jsonrpc": "2.0", "id": 4, "method": "shutdown"}
+{"jsonrpc": "2.0", "method": "exit"}

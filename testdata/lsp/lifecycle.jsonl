@@ -1,0 +1,14 @@
+{"project": "testdata/lsp/buffers"}
+// A request before initialize is refused; a notification then is dropped.
+{"jsonrpc": "2.0", "id": 1, "method": "textDocument/hover", "params": {"textDocument": {"uri": "$ROOT/model.hcl"}, "position": {"line": 9, "character": 14}}}
+{"jsonrpc": "2.0", "method": "textDocument/didOpen", "params": {"textDocument": {"uri": "$ROOT/model.hcl", "languageId": "hcl", "version": 1, "text": "broken {"}}}
+{"jsonrpc": "2.0", "id": 2, "method": "initialize", "params": {"processId": null, "rootUri": "$ROOT", "capabilities": {}}}
+{"jsonrpc": "2.0", "method": "initialized", "params": {}}
+// A response from the client, a message with a null id, and an unknown method.
+{"jsonrpc": "2.0", "id": 99, "result": null}
+{"jsonrpc": "2.0", "id": null, "method": "textDocument/hover", "params": {}}
+{"jsonrpc": "2.0", "id": 3, "method": "workspace/symbol", "params": {"query": ""}}
+{"jsonrpc": "2.0", "id": 4, "method": "shutdown"}
+// After shutdown, requests are invalid.
+{"jsonrpc": "2.0", "id": 5, "method": "textDocument/hover", "params": {"textDocument": {"uri": "$ROOT/model.hcl"}, "position": {"line": 9, "character": 14}}}
+{"jsonrpc": "2.0", "method": "exit"}

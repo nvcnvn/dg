@@ -1,0 +1,66 @@
+{
+  "name": "dg",
+  "displayName": "dg",
+  "description": "Language server and diagram panel for dg projects.",
+  "version": "0.0.1",
+  "publisher": "nvcnvn",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nvcnvn/dg"
+  },
+  "engines": {
+    "vscode": "^1.91.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Visualization"
+  ],
+  "activationEvents": [
+    "workspaceContains:dg.hcl"
+  ],
+  "main": "./out/src/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "hcl",
+        "aliases": [
+          "HCL"
+        ],
+        "extensions": [
+          ".hcl"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "hcl",
+        "scopeName": "source.hcl",
+        "path": "./syntaxes/hcl.tmGrammar.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "dg.openDiagram",
+        "title": "Open diagram",
+        "category": "dg"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "typecheck": "tsc -p . --noEmit",
+    "test": "tsc -p . && node out/test/run.js"
+  },
+  "dependencies": {
+    "vscode-languageclient": "11.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "@types/vscode": "1.91.0",
+    "@vscode/test-electron": "3.1.0",
+    "@vscode/vsce": "4.1.0",
+    "typescript": "7.0.2"
+  }
+}

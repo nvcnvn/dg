@@ -46,7 +46,6 @@ const CENTER_PIN = 1;
 // UNIFY_MAX_EDGES bounds the views libavoid's unifying nudging step runs for. The step keeps
 // parallel segments of different edges apart, but its cost grows steeply: about 20 ms at 50
 // edges, 3 seconds at 100 and minutes at 400.
-// ponytail: edge-count threshold; separate overlapping segments ourselves if large views need it.
 const UNIFY_MAX_EDGES = 60;
 
 let loaded: Promise<void> | undefined;

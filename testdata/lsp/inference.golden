@@ -1,0 +1,697 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "capabilities": {
+      "completionProvider": {
+        "triggerCharacters": [
+          ".",
+          "\""
+        ]
+      },
+      "definitionProvider": true,
+      "documentFormattingProvider": true,
+      "hoverProvider": true,
+      "referencesProvider": true,
+      "renameProvider": {
+        "prepareProvider": true
+      },
+      "textDocumentSync": {
+        "change": 2,
+        "openClose": true,
+        "save": true
+      }
+    },
+    "serverInfo": {
+      "name": "dg"
+    }
+  }
+}
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": [
+    {
+      "label": "nic0",
+      "kind": 5,
+      "detail": "port",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 51,
+            "character": 29
+          },
+          "end": {
+            "line": 51,
+            "character": 33
+          }
+        },
+        "newText": "nic0"
+      }
+    },
+    {
+      "label": "nic1",
+      "kind": 5,
+      "detail": "port",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 51,
+            "character": 29
+          },
+          "end": {
+            "line": 51,
+            "character": 33
+          }
+        },
+        "newText": "nic1"
+      }
+    }
+  ]
+}
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": [
+    {
+      "label": "p1",
+      "kind": 5,
+      "detail": "port",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 52,
+            "character": 26
+          },
+          "end": {
+            "line": 52,
+            "character": 28
+          }
+        },
+        "newText": "p1"
+      }
+    },
+    {
+      "label": "p2",
+      "kind": 5,
+      "detail": "port",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 52,
+            "character": 26
+          },
+          "end": {
+            "line": 52,
+            "character": 28
+          }
+        },
+        "newText": "p2"
+      }
+    },
+    {
+      "label": "p3",
+      "kind": 5,
+      "detail": "port",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 52,
+            "character": 26
+          },
+          "end": {
+            "line": 52,
+            "character": 28
+          }
+        },
+        "newText": "p3"
+      }
+    },
+    {
+      "label": "p4",
+      "kind": 5,
+      "detail": "port",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 52,
+            "character": 26
+          },
+          "end": {
+            "line": 52,
+            "character": 28
+          }
+        },
+        "newText": "p4"
+      }
+    },
+    {
+      "label": "p5",
+      "kind": 5,
+      "detail": "port",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 52,
+            "character": 26
+          },
+          "end": {
+            "line": 52,
+            "character": 28
+          }
+        },
+        "newText": "p5"
+      }
+    },
+    {
+      "label": "p6",
+      "kind": 5,
+      "detail": "port",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 52,
+            "character": 26
+          },
+          "end": {
+            "line": 52,
+            "character": 28
+          }
+        },
+        "newText": "p6"
+      }
+    },
+    {
+      "label": "p7",
+      "kind": 5,
+      "detail": "port",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 52,
+            "character": 26
+          },
+          "end": {
+            "line": 52,
+            "character": 28
+          }
+        },
+        "newText": "p7"
+      }
+    },
+    {
+      "label": "p8",
+      "kind": 5,
+      "detail": "port",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 52,
+            "character": 26
+          },
+          "end": {
+            "line": 52,
+            "character": 28
+          }
+        },
+        "newText": "p8"
+      }
+    }
+  ]
+}
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "result": [
+    {
+      "label": "gateway",
+      "kind": 6,
+      "detail": "service",
+      "documentation": "label: Inference Gateway",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 41,
+            "character": 14
+          },
+          "end": {
+            "line": 41,
+            "character": 21
+          }
+        },
+        "newText": "gateway"
+      }
+    },
+    {
+      "label": "kube-system/coredns",
+      "kind": 6,
+      "detail": "service",
+      "documentation": "label: CoreDNS",
+      "filterText": ".kube-system/coredns",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 41,
+            "character": 13
+          },
+          "end": {
+            "line": 41,
+            "character": 21
+          }
+        },
+        "newText": "[\"kube-system/coredns\"]"
+      }
+    },
+    {
+      "label": "kube-system/router:v2",
+      "kind": 6,
+      "detail": "service",
+      "documentation": "label: Router v2",
+      "filterText": ".kube-system/router:v2",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 41,
+            "character": 13
+          },
+          "end": {
+            "line": 41,
+            "character": 21
+          }
+        },
+        "newText": "[\"kube-system/router:v2\"]"
+      }
+    },
+    {
+      "label": "pool",
+      "kind": 6,
+      "detail": "group",
+      "documentation": "label: GPU Pool",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 41,
+            "character": 14
+          },
+          "end": {
+            "line": 41,
+            "character": 21
+          }
+        },
+        "newText": "pool"
+      }
+    },
+    {
+      "label": "tor-1",
+      "kind": 6,
+      "detail": "switch",
+      "documentation": "label: ToR 1",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 41,
+            "character": 14
+          },
+          "end": {
+            "line": 41,
+            "character": 21
+          }
+        },
+        "newText": "tor-1"
+      }
+    },
+    {
+      "label": "weights",
+      "kind": 6,
+      "detail": "storage",
+      "documentation": "label: Model weights",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 41,
+            "character": 14
+          },
+          "end": {
+            "line": 41,
+            "character": 21
+          }
+        },
+        "newText": "weights"
+      }
+    },
+    {
+      "label": "worker-1",
+      "kind": 6,
+      "detail": "gpu-node",
+      "documentation": "label: Worker 1",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 41,
+            "character": 14
+          },
+          "end": {
+            "line": 41,
+            "character": 21
+          }
+        },
+        "newText": "worker-1"
+      }
+    },
+    {
+      "label": "worker-2",
+      "kind": 6,
+      "detail": "gpu-node",
+      "documentation": "label: Worker 2",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 41,
+            "character": 14
+          },
+          "end": {
+            "line": 41,
+            "character": 21
+          }
+        },
+        "newText": "worker-2"
+      }
+    }
+  ]
+}
+{
+  "jsonrpc": "2.0",
+  "id": 5,
+  "result": [
+    {
+      "label": "edge.",
+      "kind": 14,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 13
+          },
+          "end": {
+            "line": 3,
+            "character": 22
+          }
+        },
+        "newText": "edge."
+      },
+      "command": {
+        "title": "Complete",
+        "command": "editor.action.triggerSuggest"
+      }
+    },
+    {
+      "label": "edge_kind.",
+      "kind": 14,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 13
+          },
+          "end": {
+            "line": 3,
+            "character": 22
+          }
+        },
+        "newText": "edge_kind."
+      },
+      "command": {
+        "title": "Complete",
+        "command": "editor.action.triggerSuggest"
+      }
+    },
+    {
+      "label": "tag.",
+      "kind": 14,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 13
+          },
+          "end": {
+            "line": 3,
+            "character": 22
+          }
+        },
+        "newText": "tag."
+      },
+      "command": {
+        "title": "Complete",
+        "command": "editor.action.triggerSuggest"
+      }
+    }
+  ]
+}
+{
+  "jsonrpc": "2.0",
+  "id": 6,
+  "result": [
+    {
+      "label": "aggregation",
+      "kind": 8,
+      "detail": "edge kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 23
+          },
+          "end": {
+            "line": 3,
+            "character": 30
+          }
+        },
+        "newText": "aggregation"
+      }
+    },
+    {
+      "label": "association",
+      "kind": 8,
+      "detail": "edge kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 23
+          },
+          "end": {
+            "line": 3,
+            "character": 30
+          }
+        },
+        "newText": "association"
+      }
+    },
+    {
+      "label": "async",
+      "kind": 8,
+      "detail": "edge kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 23
+          },
+          "end": {
+            "line": 3,
+            "character": 30
+          }
+        },
+        "newText": "async"
+      }
+    },
+    {
+      "label": "composition",
+      "kind": 8,
+      "detail": "edge kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 23
+          },
+          "end": {
+            "line": 3,
+            "character": 30
+          }
+        },
+        "newText": "composition"
+      }
+    },
+    {
+      "label": "default",
+      "kind": 8,
+      "detail": "edge kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 23
+          },
+          "end": {
+            "line": 3,
+            "character": 30
+          }
+        },
+        "newText": "default"
+      }
+    },
+    {
+      "label": "dependency",
+      "kind": 8,
+      "detail": "edge kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 23
+          },
+          "end": {
+            "line": 3,
+            "character": 30
+          }
+        },
+        "newText": "dependency"
+      }
+    },
+    {
+      "label": "inherits",
+      "kind": 8,
+      "detail": "edge kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 23
+          },
+          "end": {
+            "line": 3,
+            "character": 30
+          }
+        },
+        "newText": "inherits"
+      }
+    },
+    {
+      "label": "rdma",
+      "kind": 8,
+      "detail": "edge kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 23
+          },
+          "end": {
+            "line": 3,
+            "character": 30
+          }
+        },
+        "newText": "rdma"
+      }
+    },
+    {
+      "label": "realizes",
+      "kind": 8,
+      "detail": "edge kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 23
+          },
+          "end": {
+            "line": 3,
+            "character": 30
+          }
+        },
+        "newText": "realizes"
+      }
+    }
+  ]
+}
+{
+  "jsonrpc": "2.0",
+  "id": 7,
+  "error": {
+    "code": -32803,
+    "message": "generated/k8s.hcl is read-only (read_only in dg.hcl); the operation would change it"
+  }
+}
+{
+  "jsonrpc": "2.0",
+  "id": 8,
+  "result": [
+    {
+      "uri": "$ROOT/generated/k8s.hcl",
+      "range": {
+        "start": {
+          "line": 19,
+          "character": 15
+        },
+        "end": {
+          "line": 19,
+          "character": 22
+        }
+      }
+    },
+    {
+      "uri": "$ROOT/model.hcl",
+      "range": {
+        "start": {
+          "line": 0,
+          "character": 6
+        },
+        "end": {
+          "line": 0,
+          "character": 13
+        }
+      }
+    },
+    {
+      "uri": "$ROOT/model.hcl",
+      "range": {
+        "start": {
+          "line": 41,
+          "character": 14
+        },
+        "end": {
+          "line": 41,
+          "character": 21
+        }
+      }
+    },
+    {
+      "uri": "$ROOT/model.hcl",
+      "range": {
+        "start": {
+          "line": 46,
+          "character": 14
+        },
+        "end": {
+          "line": 46,
+          "character": 21
+        }
+      }
+    }
+  ]
+}
+{
+  "jsonrpc": "2.0",
+  "id": 10,
+  "error": {
+    "code": -32803,
+    "message": "node \"kube-system/coredns\" is defined in generated/k8s.hcl, which is read-only (read_only in dg.hcl)"
+  }
+}
+{
+  "jsonrpc": "2.0",
+  "id": 9,
+  "result": null
+}

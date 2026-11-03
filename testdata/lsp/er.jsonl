@@ -1,0 +1,9 @@
+{"project": "examples/er"}
+{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"processId": null, "rootUri": "$ROOT", "capabilities": {}}}
+{"jsonrpc": "2.0", "method": "initialized", "params": {}}
+{"jsonrpc": "2.0", "method": "textDocument/didOpen", "params": {"textDocument": {"uri": "$ROOT/model.hcl", "languageId": "hcl", "version": 1, "text": "$FILE"}}}
+// row. after a node with rows, then its rows.
+{"jsonrpc": "2.0", "id": 2, "method": "textDocument/completion", "params": {"textDocument": {"uri": "$ROOT/model.hcl"}, "position": {"line": 104, "character": 24}}}
+{"jsonrpc": "2.0", "id": 3, "method": "textDocument/completion", "params": {"textDocument": {"uri": "$ROOT/model.hcl"}, "position": {"line": 104, "character": 28}}}
+{"jsonrpc": "2.0", "id": 4, "method": "shutdown"}
+{"jsonrpc": "2.0", "method": "exit"}

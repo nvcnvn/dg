@@ -1,0 +1,19 @@
+{"project": "testdata/lsp/buffers"}
+{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"processId": null, "rootUri": "$ROOT", "capabilities": {}}}
+{"jsonrpc": "2.0", "method": "initialized", "params": {}}
+{"jsonrpc": "2.0", "method": "textDocument/didOpen", "params": {"textDocument": {"uri": "$ROOT/model.hcl", "languageId": "hcl", "version": 1, "text": "$FILE"}}}
+// The references of an edge: its block and a selector.
+{"jsonrpc": "2.0", "id": 7, "method": "textDocument/references", "params": {"textDocument": {"uri": "$ROOT/model.hcl"}, "position": {"line": 8, "character": 8}, "context": {"includeDeclaration": true}}}
+// An unsaved edit: an undefined node and an unformatted attribute.
+{"jsonrpc": "2.0", "method": "textDocument/didChange", "params": {"textDocument": {"uri": "$ROOT/model.hcl", "version": 2}, "contentChanges": [{"text": "node \"api\" {\n  kind=\"service\"\n}\n\nnode \"db\" {\n  kind = \"database\"\n}\n\nedge \"api-db\" {\n  from = node.api\n  to   = node.dbx\n}\n"}]}}
+{"jsonrpc": "2.0", "id": 2, "method": "textDocument/formatting", "params": {"textDocument": {"uri": "$ROOT/model.hcl"}, "options": {"tabSize": 2, "insertSpaces": true}}}
+{"jsonrpc": "2.0", "id": 3, "method": "textDocument/completion", "params": {"textDocument": {"uri": "$ROOT/model.hcl"}, "position": {"line": 10, "character": 14}}}
+// A rename planned on the buffer: the edits apply to version 2, and the layout file on disk changes too.
+{"jsonrpc": "2.0", "id": 4, "method": "textDocument/rename", "params": {"textDocument": {"uri": "$ROOT/model.hcl"}, "position": {"line": 9, "character": 14}, "newName": "gateway"}}
+// An incremental edit that does not parse; completion still works.
+{"jsonrpc": "2.0", "method": "textDocument/didChange", "params": {"textDocument": {"uri": "$ROOT/model.hcl", "version": 3}, "contentChanges": [{"range": {"start": {"line": 1, "character": 16}, "end": {"line": 1, "character": 16}}, "text": "\n  parent = node."}]}}
+{"jsonrpc": "2.0", "id": 5, "method": "textDocument/completion", "params": {"textDocument": {"uri": "$ROOT/model.hcl"}, "position": {"line": 2, "character": 16}}}
+// Closing the buffer goes back to the file on disk, which has no diagnostics.
+{"jsonrpc": "2.0", "method": "textDocument/didClose", "params": {"textDocument": {"uri": "$ROOT/model.hcl"}}}
+{"jsonrpc": "2.0", "id": 6, "method": "shutdown"}
+{"jsonrpc": "2.0", "method": "exit"}

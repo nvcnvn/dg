@@ -1,0 +1,4504 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "capabilities": {
+      "completionProvider": {
+        "triggerCharacters": [
+          ".",
+          "\""
+        ]
+      },
+      "definitionProvider": true,
+      "documentFormattingProvider": true,
+      "hoverProvider": true,
+      "referencesProvider": true,
+      "renameProvider": {
+        "prepareProvider": true
+      },
+      "textDocumentSync": {
+        "change": 2,
+        "openClose": true,
+        "save": true
+      }
+    },
+    "serverInfo": {
+      "name": "dg"
+    }
+  }
+}
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": [
+    {
+      "label": "app",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "app"
+      }
+    },
+    {
+      "label": "app-host",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "app-host"
+      }
+    },
+    {
+      "label": "c4-person",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "c4-person"
+      }
+    },
+    {
+      "label": "class",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "class"
+      }
+    },
+    {
+      "label": "component",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "component"
+      }
+    },
+    {
+      "label": "database",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "database"
+      }
+    },
+    {
+      "label": "decision",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "decision"
+      }
+    },
+    {
+      "label": "external",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "external"
+      }
+    },
+    {
+      "label": "external-system",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "external-system"
+      }
+    },
+    {
+      "label": "final",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "final"
+      }
+    },
+    {
+      "label": "grid-group",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "grid-group"
+      }
+    },
+    {
+      "label": "group",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "group"
+      }
+    },
+    {
+      "label": "initial",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "initial"
+      }
+    },
+    {
+      "label": "junction",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "junction"
+      }
+    },
+    {
+      "label": "lane",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "lane"
+      }
+    },
+    {
+      "label": "lane-set",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "lane-set"
+      }
+    },
+    {
+      "label": "node",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "node"
+      }
+    },
+    {
+      "label": "note",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "note"
+      }
+    },
+    {
+      "label": "person",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "person"
+      }
+    },
+    {
+      "label": "queue",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "queue"
+      }
+    },
+    {
+      "label": "service",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "service"
+      }
+    },
+    {
+      "label": "simple-state",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "simple-state"
+      }
+    },
+    {
+      "label": "state",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "state"
+      }
+    },
+    {
+      "label": "storage",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "storage"
+      }
+    },
+    {
+      "label": "store",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "store"
+      }
+    },
+    {
+      "label": "system",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "system"
+      }
+    },
+    {
+      "label": "table",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "table"
+      }
+    },
+    {
+      "label": "terminal",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 28,
+            "character": 12
+          },
+          "end": {
+            "line": 28,
+            "character": 15
+          }
+        },
+        "newText": "terminal"
+      }
+    }
+  ]
+}
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": [
+    {
+      "label": "node.",
+      "kind": 14,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 29,
+            "character": 11
+          },
+          "end": {
+            "line": 29,
+            "character": 15
+          }
+        },
+        "newText": "node."
+      },
+      "command": {
+        "title": "Complete",
+        "command": "editor.action.triggerSuggest"
+      }
+    }
+  ]
+}
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "result": [
+    {
+      "label": "accounts",
+      "kind": 6,
+      "detail": "component",
+      "documentation": "label: Accounts Summary Controller\n[Component: Spring MVC Rest Controller]\n\nProvides customers with a summary of their bank accounts.",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 29,
+            "character": 16
+          },
+          "end": {
+            "line": 29,
+            "character": 23
+          }
+        },
+        "newText": "accounts"
+      }
+    },
+    {
+      "label": "api",
+      "kind": 6,
+      "detail": "app-host",
+      "documentation": "label: API Application\n[Container: Java and Spring MVC]\n\nProvides Internet banking functionality via a JSON/HTTPS API.",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 29,
+            "character": 16
+          },
+          "end": {
+            "line": 29,
+            "character": 23
+          }
+        },
+        "newText": "api"
+      }
+    },
+    {
+      "label": "banking",
+      "kind": 6,
+      "detail": "system",
+      "documentation": "label: Internet Banking System\n[Software System]\n\nAllows customers to view information about their bank accounts, and make payments.",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 29,
+            "character": 16
+          },
+          "end": {
+            "line": 29,
+            "character": 23
+          }
+        },
+        "newText": "banking"
+      }
+    },
+    {
+      "label": "core",
+      "kind": 6,
+      "detail": "app",
+      "documentation": "label: Core Banking\n[Container: COBOL]",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 29,
+            "character": 16
+          },
+          "end": {
+            "line": 29,
+            "character": 23
+          }
+        },
+        "newText": "core"
+      }
+    },
+    {
+      "label": "customer",
+      "kind": 6,
+      "detail": "c4-person",
+      "documentation": "label: Personal Banking Customer\n[Person]\n\nA customer of the bank, with personal bank accounts.",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 29,
+            "character": 16
+          },
+          "end": {
+            "line": 29,
+            "character": 23
+          }
+        },
+        "newText": "customer"
+      }
+    },
+    {
+      "label": "database",
+      "kind": 6,
+      "detail": "store",
+      "documentation": "label: Database\n[Container: Oracle Database Schema]\n\nStores user registration information, hashed authentication credentials, access logs, etc.",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 29,
+            "character": 16
+          },
+          "end": {
+            "line": 29,
+            "character": 23
+          }
+        },
+        "newText": "database"
+      }
+    },
+    {
+      "label": "email",
+      "kind": 6,
+      "detail": "external-system",
+      "documentation": "label: E-mail System\n[Software System]\n\nThe internal Microsoft Exchange e-mail system.",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 29,
+            "character": 16
+          },
+          "end": {
+            "line": 29,
+            "character": 23
+          }
+        },
+        "newText": "email"
+      }
+    },
+    {
+      "label": "facade",
+      "kind": 6,
+      "detail": "component",
+      "documentation": "label: Mainframe Banking System Facade\n[Component: Spring Bean]\n\nA facade onto the mainframe banking system.",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 29,
+            "character": 16
+          },
+          "end": {
+            "line": 29,
+            "character": 23
+          }
+        },
+        "newText": "facade"
+      }
+    },
+    {
+      "label": "ledger",
+      "kind": 6,
+      "detail": "store",
+      "documentation": "label: Ledger\n[Container: DB2]",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 29,
+            "character": 16
+          },
+          "end": {
+            "line": 29,
+            "character": 23
+          }
+        },
+        "newText": "ledger"
+      }
+    },
+    {
+      "label": "mailer",
+      "kind": 6,
+      "detail": "component",
+      "documentation": "label: E-mail Component\n[Component: Spring Bean]\n\nSends e-mails to users.",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 29,
+            "character": 16
+          },
+          "end": {
+            "line": 29,
+            "character": 23
+          }
+        },
+        "newText": "mailer"
+      }
+    },
+    {
+      "label": "mainframe",
+      "kind": 6,
+      "detail": "system",
+      "documentation": "label: Mainframe Banking System\n[Software System]\n\nStores all of the core banking information about customers, accounts, transactions, etc.",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 29,
+            "character": 16
+          },
+          "end": {
+            "line": 29,
+            "character": 23
+          }
+        },
+        "newText": "mainframe"
+      }
+    },
+    {
+      "label": "mobile-app",
+      "kind": 6,
+      "detail": "app",
+      "documentation": "label: Mobile App\n[Container: Xamarin]\n\nProvides a limited subset of the Internet banking functionality to customers via their mobile device.",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 29,
+            "character": 16
+          },
+          "end": {
+            "line": 29,
+            "character": 23
+          }
+        },
+        "newText": "mobile-app"
+      }
+    },
+    {
+      "label": "reset",
+      "kind": 6,
+      "detail": "component",
+      "documentation": "label: Reset Password Controller\n[Component: Spring MVC Rest Controller]\n\nAllows users to reset their passwords with a single use URL.",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 29,
+            "character": 16
+          },
+          "end": {
+            "line": 29,
+            "character": 23
+          }
+        },
+        "newText": "reset"
+      }
+    },
+    {
+      "label": "security",
+      "kind": 6,
+      "detail": "component",
+      "documentation": "label: Security Component\n[Component: Spring Bean]\n\nProvides functionality related to signing in, changing passwords, etc.",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 29,
+            "character": 16
+          },
+          "end": {
+            "line": 29,
+            "character": 23
+          }
+        },
+        "newText": "security"
+      }
+    },
+    {
+      "label": "signin",
+      "kind": 6,
+      "detail": "component",
+      "documentation": "label: Sign In Controller\n[Component: Spring MVC Rest Controller]\n\nAllows users to sign in to the Internet Banking System.",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 29,
+            "character": 16
+          },
+          "end": {
+            "line": 29,
+            "character": 23
+          }
+        },
+        "newText": "signin"
+      }
+    },
+    {
+      "label": "spa",
+      "kind": 6,
+      "detail": "app",
+      "documentation": "label: Single-Page Application\n[Container: JavaScript and Angular]\n\nProvides all of the Internet banking functionality to customers via their web browser.",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 29,
+            "character": 16
+          },
+          "end": {
+            "line": 29,
+            "character": 23
+          }
+        },
+        "newText": "spa"
+      }
+    }
+  ]
+}
+{
+  "jsonrpc": "2.0",
+  "id": 5,
+  "result": [
+    {
+      "label": "all",
+      "kind": 14,
+      "detail": "every node",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 14
+          },
+          "end": {
+            "line": 4,
+            "character": 18
+          }
+        },
+        "newText": "all"
+      }
+    },
+    {
+      "label": "children.",
+      "kind": 14,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 14
+          },
+          "end": {
+            "line": 4,
+            "character": 18
+          }
+        },
+        "newText": "children."
+      },
+      "command": {
+        "title": "Complete",
+        "command": "editor.action.triggerSuggest"
+      }
+    },
+    {
+      "label": "descendants.",
+      "kind": 14,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 14
+          },
+          "end": {
+            "line": 4,
+            "character": 18
+          }
+        },
+        "newText": "descendants."
+      },
+      "command": {
+        "title": "Complete",
+        "command": "editor.action.triggerSuggest"
+      }
+    },
+    {
+      "label": "kind.",
+      "kind": 14,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 14
+          },
+          "end": {
+            "line": 4,
+            "character": 18
+          }
+        },
+        "newText": "kind."
+      },
+      "command": {
+        "title": "Complete",
+        "command": "editor.action.triggerSuggest"
+      }
+    },
+    {
+      "label": "node.",
+      "kind": 14,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 14
+          },
+          "end": {
+            "line": 4,
+            "character": 18
+          }
+        },
+        "newText": "node."
+      },
+      "command": {
+        "title": "Complete",
+        "command": "editor.action.triggerSuggest"
+      }
+    },
+    {
+      "label": "tag.",
+      "kind": 14,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 14
+          },
+          "end": {
+            "line": 4,
+            "character": 18
+          }
+        },
+        "newText": "tag."
+      },
+      "command": {
+        "title": "Complete",
+        "command": "editor.action.triggerSuggest"
+      }
+    }
+  ]
+}
+{
+  "jsonrpc": "2.0",
+  "id": 6,
+  "result": [
+    {
+      "label": "app",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "app"
+      }
+    },
+    {
+      "label": "app-host",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "app-host"
+      }
+    },
+    {
+      "label": "c4-person",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "c4-person"
+      }
+    },
+    {
+      "label": "class",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "class"
+      }
+    },
+    {
+      "label": "component",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "component"
+      }
+    },
+    {
+      "label": "database",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "database"
+      }
+    },
+    {
+      "label": "decision",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "decision"
+      }
+    },
+    {
+      "label": "external",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "external"
+      }
+    },
+    {
+      "label": "external-system",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "external-system"
+      }
+    },
+    {
+      "label": "final",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "final"
+      }
+    },
+    {
+      "label": "grid-group",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "grid-group"
+      }
+    },
+    {
+      "label": "group",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "group"
+      }
+    },
+    {
+      "label": "initial",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "initial"
+      }
+    },
+    {
+      "label": "junction",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "junction"
+      }
+    },
+    {
+      "label": "lane",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "lane"
+      }
+    },
+    {
+      "label": "lane-set",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "lane-set"
+      }
+    },
+    {
+      "label": "node",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "node"
+      }
+    },
+    {
+      "label": "note",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "note"
+      }
+    },
+    {
+      "label": "person",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "person"
+      }
+    },
+    {
+      "label": "queue",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "queue"
+      }
+    },
+    {
+      "label": "service",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "service"
+      }
+    },
+    {
+      "label": "simple-state",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "simple-state"
+      }
+    },
+    {
+      "label": "state",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "state"
+      }
+    },
+    {
+      "label": "storage",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "storage"
+      }
+    },
+    {
+      "label": "store",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "store"
+      }
+    },
+    {
+      "label": "system",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "system"
+      }
+    },
+    {
+      "label": "table",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "table"
+      }
+    },
+    {
+      "label": "terminal",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 4,
+            "character": 19
+          },
+          "end": {
+            "line": 4,
+            "character": 25
+          }
+        },
+        "newText": "terminal"
+      }
+    }
+  ]
+}
+{
+  "jsonrpc": "2.0",
+  "id": 7,
+  "result": [
+    {
+      "label": "api",
+      "kind": 6,
+      "detail": "app-host",
+      "documentation": "label: API Application\n[Container: Java and Spring MVC]\n\nProvides Internet banking functionality via a JSON/HTTPS API.",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 12,
+            "character": 26
+          },
+          "end": {
+            "line": 12,
+            "character": 33
+          }
+        },
+        "newText": "api"
+      }
+    },
+    {
+      "label": "banking",
+      "kind": 6,
+      "detail": "system",
+      "documentation": "label: Internet Banking System\n[Software System]\n\nAllows customers to view information about their bank accounts, and make payments.",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 12,
+            "character": 26
+          },
+          "end": {
+            "line": 12,
+            "character": 33
+          }
+        },
+        "newText": "banking"
+      }
+    },
+    {
+      "label": "mainframe",
+      "kind": 6,
+      "detail": "system",
+      "documentation": "label: Mainframe Banking System\n[Software System]\n\nStores all of the core banking information about customers, accounts, transactions, etc.",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 12,
+            "character": 26
+          },
+          "end": {
+            "line": 12,
+            "character": 33
+          }
+        },
+        "newText": "mainframe"
+      }
+    }
+  ]
+}
+{
+  "jsonrpc": "2.0",
+  "id": 8,
+  "result": [
+    {
+      "label": "app",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "app"
+      }
+    },
+    {
+      "label": "app-host",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "app-host"
+      }
+    },
+    {
+      "label": "c4-person",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "c4-person"
+      }
+    },
+    {
+      "label": "class",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "class"
+      }
+    },
+    {
+      "label": "component",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "component"
+      }
+    },
+    {
+      "label": "database",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "database"
+      }
+    },
+    {
+      "label": "decision",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "decision"
+      }
+    },
+    {
+      "label": "external",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "external"
+      }
+    },
+    {
+      "label": "external-system",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "external-system"
+      }
+    },
+    {
+      "label": "final",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "final"
+      }
+    },
+    {
+      "label": "grid-group",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "grid-group"
+      }
+    },
+    {
+      "label": "group",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "group"
+      }
+    },
+    {
+      "label": "initial",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "initial"
+      }
+    },
+    {
+      "label": "junction",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "junction"
+      }
+    },
+    {
+      "label": "lane",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "lane"
+      }
+    },
+    {
+      "label": "lane-set",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "lane-set"
+      }
+    },
+    {
+      "label": "node",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "node"
+      }
+    },
+    {
+      "label": "node.accounts",
+      "kind": 6,
+      "detail": "component",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "node.accounts"
+      }
+    },
+    {
+      "label": "node.api",
+      "kind": 6,
+      "detail": "app-host",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "node.api"
+      }
+    },
+    {
+      "label": "node.banking",
+      "kind": 6,
+      "detail": "system",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "node.banking"
+      }
+    },
+    {
+      "label": "node.core",
+      "kind": 6,
+      "detail": "app",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "node.core"
+      }
+    },
+    {
+      "label": "node.customer",
+      "kind": 6,
+      "detail": "c4-person",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "node.customer"
+      }
+    },
+    {
+      "label": "node.database",
+      "kind": 6,
+      "detail": "store",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "node.database"
+      }
+    },
+    {
+      "label": "node.email",
+      "kind": 6,
+      "detail": "external-system",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "node.email"
+      }
+    },
+    {
+      "label": "node.facade",
+      "kind": 6,
+      "detail": "component",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "node.facade"
+      }
+    },
+    {
+      "label": "node.ledger",
+      "kind": 6,
+      "detail": "store",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "node.ledger"
+      }
+    },
+    {
+      "label": "node.mailer",
+      "kind": 6,
+      "detail": "component",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "node.mailer"
+      }
+    },
+    {
+      "label": "node.mainframe",
+      "kind": 6,
+      "detail": "system",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "node.mainframe"
+      }
+    },
+    {
+      "label": "node.mobile-app",
+      "kind": 6,
+      "detail": "app",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "node.mobile-app"
+      }
+    },
+    {
+      "label": "node.reset",
+      "kind": 6,
+      "detail": "component",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "node.reset"
+      }
+    },
+    {
+      "label": "node.security",
+      "kind": 6,
+      "detail": "component",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "node.security"
+      }
+    },
+    {
+      "label": "node.signin",
+      "kind": 6,
+      "detail": "component",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "node.signin"
+      }
+    },
+    {
+      "label": "node.spa",
+      "kind": 6,
+      "detail": "app",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "node.spa"
+      }
+    },
+    {
+      "label": "node.web-app",
+      "kind": 6,
+      "detail": "app",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "node.web-app"
+      }
+    },
+    {
+      "label": "note",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "note"
+      }
+    },
+    {
+      "label": "person",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "person"
+      }
+    },
+    {
+      "label": "queue",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "queue"
+      }
+    },
+    {
+      "label": "service",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "service"
+      }
+    },
+    {
+      "label": "simple-state",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "simple-state"
+      }
+    },
+    {
+      "label": "state",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "state"
+      }
+    },
+    {
+      "label": "storage",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "storage"
+      }
+    },
+    {
+      "label": "store",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "store"
+      }
+    },
+    {
+      "label": "system",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "system"
+      }
+    },
+    {
+      "label": "table",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "table"
+      }
+    },
+    {
+      "label": "tag.end-many",
+      "kind": 20,
+      "detail": "tag",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "tag.end-many"
+      }
+    },
+    {
+      "label": "tag.end-one",
+      "kind": 20,
+      "detail": "tag",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "tag.end-one"
+      }
+    },
+    {
+      "label": "tag.end-one-many",
+      "kind": 20,
+      "detail": "tag",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "tag.end-one-many"
+      }
+    },
+    {
+      "label": "tag.end-zero-many",
+      "kind": 20,
+      "detail": "tag",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "tag.end-zero-many"
+      }
+    },
+    {
+      "label": "tag.end-zero-one",
+      "kind": 20,
+      "detail": "tag",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "tag.end-zero-one"
+      }
+    },
+    {
+      "label": "tag.existing",
+      "kind": 20,
+      "detail": "tag",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "tag.existing"
+      }
+    },
+    {
+      "label": "tag.start-many",
+      "kind": 20,
+      "detail": "tag",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "tag.start-many"
+      }
+    },
+    {
+      "label": "tag.start-one",
+      "kind": 20,
+      "detail": "tag",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "tag.start-one"
+      }
+    },
+    {
+      "label": "tag.start-one-many",
+      "kind": 20,
+      "detail": "tag",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "tag.start-one-many"
+      }
+    },
+    {
+      "label": "tag.start-zero-many",
+      "kind": 20,
+      "detail": "tag",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "tag.start-zero-many"
+      }
+    },
+    {
+      "label": "tag.start-zero-one",
+      "kind": 20,
+      "detail": "tag",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "tag.start-zero-one"
+      }
+    },
+    {
+      "label": "terminal",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 15,
+            "character": 9
+          },
+          "end": {
+            "line": 15,
+            "character": 21
+          }
+        },
+        "newText": "terminal"
+      }
+    }
+  ]
+}
+{
+  "jsonrpc": "2.0",
+  "id": 9,
+  "result": [
+    {
+      "label": "align",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "align"
+      }
+    },
+    {
+      "label": "columns",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "columns"
+      }
+    },
+    {
+      "label": "corner_radius",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "corner_radius"
+      }
+    },
+    {
+      "label": "direction",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "direction"
+      }
+    },
+    {
+      "label": "fill",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "fill"
+      }
+    },
+    {
+      "label": "font_size",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "font_size"
+      }
+    },
+    {
+      "label": "font_weight",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "font_weight"
+      }
+    },
+    {
+      "label": "gap",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "gap"
+      }
+    },
+    {
+      "label": "icon",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "icon"
+      }
+    },
+    {
+      "label": "image",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "image"
+      }
+    },
+    {
+      "label": "label_side",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "label_side"
+      }
+    },
+    {
+      "label": "layout",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "layout"
+      }
+    },
+    {
+      "label": "max_w",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "max_w"
+      }
+    },
+    {
+      "label": "min_h",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "min_h"
+      }
+    },
+    {
+      "label": "min_w",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "min_w"
+      }
+    },
+    {
+      "label": "opacity",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "opacity"
+      }
+    },
+    {
+      "label": "padding",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "padding"
+      }
+    },
+    {
+      "label": "shape",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "shape"
+      }
+    },
+    {
+      "label": "stretch",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "stretch"
+      }
+    },
+    {
+      "label": "stroke",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "stroke"
+      }
+    },
+    {
+      "label": "stroke_dash",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "stroke_dash"
+      }
+    },
+    {
+      "label": "stroke_width",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "stroke_width"
+      }
+    },
+    {
+      "label": "text_color",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "text_color"
+      }
+    },
+    {
+      "label": "z",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "z"
+      }
+    }
+  ]
+}
+{
+  "jsonrpc": "2.0",
+  "id": 10,
+  "result": [
+    {
+      "label": "bullseye",
+      "kind": 20,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 19
+          },
+          "end": {
+            "line": 16,
+            "character": 23
+          }
+        },
+        "newText": "bullseye"
+      }
+    },
+    {
+      "label": "cloud",
+      "kind": 20,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 19
+          },
+          "end": {
+            "line": 16,
+            "character": 23
+          }
+        },
+        "newText": "cloud"
+      }
+    },
+    {
+      "label": "cylinder",
+      "kind": 20,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 19
+          },
+          "end": {
+            "line": 16,
+            "character": 23
+          }
+        },
+        "newText": "cylinder"
+      }
+    },
+    {
+      "label": "diamond",
+      "kind": 20,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 19
+          },
+          "end": {
+            "line": 16,
+            "character": 23
+          }
+        },
+        "newText": "diamond"
+      }
+    },
+    {
+      "label": "document",
+      "kind": 20,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 19
+          },
+          "end": {
+            "line": 16,
+            "character": 23
+          }
+        },
+        "newText": "document"
+      }
+    },
+    {
+      "label": "ellipse",
+      "kind": 20,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 19
+          },
+          "end": {
+            "line": 16,
+            "character": 23
+          }
+        },
+        "newText": "ellipse"
+      }
+    },
+    {
+      "label": "hexagon",
+      "kind": 20,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 19
+          },
+          "end": {
+            "line": 16,
+            "character": 23
+          }
+        },
+        "newText": "hexagon"
+      }
+    },
+    {
+      "label": "image",
+      "kind": 20,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 19
+          },
+          "end": {
+            "line": 16,
+            "character": 23
+          }
+        },
+        "newText": "image"
+      }
+    },
+    {
+      "label": "parallelogram",
+      "kind": 20,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 19
+          },
+          "end": {
+            "line": 16,
+            "character": 23
+          }
+        },
+        "newText": "parallelogram"
+      }
+    },
+    {
+      "label": "person",
+      "kind": 20,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 19
+          },
+          "end": {
+            "line": 16,
+            "character": 23
+          }
+        },
+        "newText": "person"
+      }
+    },
+    {
+      "label": "point",
+      "kind": 20,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 19
+          },
+          "end": {
+            "line": 16,
+            "character": 23
+          }
+        },
+        "newText": "point"
+      }
+    },
+    {
+      "label": "rect",
+      "kind": 20,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 19
+          },
+          "end": {
+            "line": 16,
+            "character": 23
+          }
+        },
+        "newText": "rect"
+      }
+    },
+    {
+      "label": "rounded",
+      "kind": 20,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 19
+          },
+          "end": {
+            "line": 16,
+            "character": 23
+          }
+        },
+        "newText": "rounded"
+      }
+    },
+    {
+      "label": "stadium",
+      "kind": 20,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 19
+          },
+          "end": {
+            "line": 16,
+            "character": 23
+          }
+        },
+        "newText": "stadium"
+      }
+    },
+    {
+      "label": "table",
+      "kind": 20,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 19
+          },
+          "end": {
+            "line": 16,
+            "character": 23
+          }
+        },
+        "newText": "table"
+      }
+    },
+    {
+      "label": "text",
+      "kind": 20,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 19
+          },
+          "end": {
+            "line": 16,
+            "character": 23
+          }
+        },
+        "newText": "text"
+      }
+    }
+  ]
+}
+{
+  "jsonrpc": "2.0",
+  "id": 11,
+  "result": [
+    {
+      "label": "app",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "app"
+      }
+    },
+    {
+      "label": "app-host",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "app-host"
+      }
+    },
+    {
+      "label": "c4-person",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "c4-person"
+      }
+    },
+    {
+      "label": "class",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "class"
+      }
+    },
+    {
+      "label": "component",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "component"
+      }
+    },
+    {
+      "label": "database",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "database"
+      }
+    },
+    {
+      "label": "decision",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "decision"
+      }
+    },
+    {
+      "label": "external",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "external"
+      }
+    },
+    {
+      "label": "external-system",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "external-system"
+      }
+    },
+    {
+      "label": "final",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "final"
+      }
+    },
+    {
+      "label": "grid-group",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "grid-group"
+      }
+    },
+    {
+      "label": "group",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "group"
+      }
+    },
+    {
+      "label": "initial",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "initial"
+      }
+    },
+    {
+      "label": "junction",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "junction"
+      }
+    },
+    {
+      "label": "lane",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "lane"
+      }
+    },
+    {
+      "label": "lane-set",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "lane-set"
+      }
+    },
+    {
+      "label": "node",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "node"
+      }
+    },
+    {
+      "label": "note",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "note"
+      }
+    },
+    {
+      "label": "person",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "person"
+      }
+    },
+    {
+      "label": "queue",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "queue"
+      }
+    },
+    {
+      "label": "service",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "service"
+      }
+    },
+    {
+      "label": "simple-state",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "simple-state"
+      }
+    },
+    {
+      "label": "state",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "state"
+      }
+    },
+    {
+      "label": "storage",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "storage"
+      }
+    },
+    {
+      "label": "store",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "store"
+      }
+    },
+    {
+      "label": "system",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "system"
+      }
+    },
+    {
+      "label": "table",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "table"
+      }
+    },
+    {
+      "label": "tag.end-many",
+      "kind": 20,
+      "detail": "tag",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "tag.end-many"
+      }
+    },
+    {
+      "label": "tag.end-one",
+      "kind": 20,
+      "detail": "tag",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "tag.end-one"
+      }
+    },
+    {
+      "label": "tag.end-one-many",
+      "kind": 20,
+      "detail": "tag",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "tag.end-one-many"
+      }
+    },
+    {
+      "label": "tag.end-zero-many",
+      "kind": 20,
+      "detail": "tag",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "tag.end-zero-many"
+      }
+    },
+    {
+      "label": "tag.end-zero-one",
+      "kind": 20,
+      "detail": "tag",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "tag.end-zero-one"
+      }
+    },
+    {
+      "label": "tag.existing",
+      "kind": 20,
+      "detail": "tag",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "tag.existing"
+      }
+    },
+    {
+      "label": "tag.start-many",
+      "kind": 20,
+      "detail": "tag",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "tag.start-many"
+      }
+    },
+    {
+      "label": "tag.start-one",
+      "kind": 20,
+      "detail": "tag",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "tag.start-one"
+      }
+    },
+    {
+      "label": "tag.start-one-many",
+      "kind": 20,
+      "detail": "tag",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "tag.start-one-many"
+      }
+    },
+    {
+      "label": "tag.start-zero-many",
+      "kind": 20,
+      "detail": "tag",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "tag.start-zero-many"
+      }
+    },
+    {
+      "label": "tag.start-zero-one",
+      "kind": 20,
+      "detail": "tag",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "tag.start-zero-one"
+      }
+    },
+    {
+      "label": "terminal",
+      "kind": 7,
+      "detail": "kind",
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 3,
+            "character": 7
+          },
+          "end": {
+            "line": 3,
+            "character": 16
+          }
+        },
+        "newText": "terminal"
+      }
+    }
+  ]
+}
+{
+  "jsonrpc": "2.0",
+  "id": 12,
+  "result": {
+    "contents": {
+      "kind": "plaintext",
+      "value": "node \"banking\", kind \"system\"\n\nInternet Banking System\n[Software System]\n\nAllows customers to view information about their bank accounts, and make payments."
+    },
+    "range": {
+      "start": {
+        "line": 29,
+        "character": 16
+      },
+      "end": {
+        "line": 29,
+        "character": 23
+      }
+    }
+  }
+}
+{
+  "jsonrpc": "2.0",
+  "id": 13,
+  "result": {
+    "contents": {
+      "kind": "plaintext",
+      "value": "node \"web-app\", kind \"app\"\n\nWeb Application\n[Container: Java and Spring MVC]\n\nDelivers the static content and the Internet banking single page application."
+    },
+    "range": {
+      "start": {
+        "line": 111,
+        "character": 16
+      },
+      "end": {
+        "line": 111,
+        "character": 23
+      }
+    }
+  }
+}
+{
+  "jsonrpc": "2.0",
+  "id": 14,
+  "result": {
+    "uri": "$ROOT/model.hcl",
+    "range": {
+      "start": {
+        "line": 9,
+        "character": 6
+      },
+      "end": {
+        "line": 9,
+        "character": 13
+      }
+    }
+  }
+}
+{
+  "jsonrpc": "2.0",
+  "id": 15,
+  "result": [
+    {
+      "uri": "$ROOT/model.hcl",
+      "range": {
+        "start": {
+          "line": 9,
+          "character": 6
+        },
+        "end": {
+          "line": 9,
+          "character": 13
+        }
+      }
+    },
+    {
+      "uri": "$ROOT/model.hcl",
+      "range": {
+        "start": {
+          "line": 29,
+          "character": 16
+        },
+        "end": {
+          "line": 29,
+          "character": 23
+        }
+      }
+    },
+    {
+      "uri": "$ROOT/model.hcl",
+      "range": {
+        "start": {
+          "line": 35,
+          "character": 16
+        },
+        "end": {
+          "line": 35,
+          "character": 23
+        }
+      }
+    },
+    {
+      "uri": "$ROOT/model.hcl",
+      "range": {
+        "start": {
+          "line": 41,
+          "character": 16
+        },
+        "end": {
+          "line": 41,
+          "character": 23
+        }
+      }
+    },
+    {
+      "uri": "$ROOT/model.hcl",
+      "range": {
+        "start": {
+          "line": 47,
+          "character": 16
+        },
+        "end": {
+          "line": 47,
+          "character": 23
+        }
+      }
+    },
+    {
+      "uri": "$ROOT/model.hcl",
+      "range": {
+        "start": {
+          "line": 53,
+          "character": 16
+        },
+        "end": {
+          "line": 53,
+          "character": 23
+        }
+      }
+    },
+    {
+      "uri": "$ROOT/views.hcl",
+      "range": {
+        "start": {
+          "line": 11,
+          "character": 18
+        },
+        "end": {
+          "line": 11,
+          "character": 25
+        }
+      }
+    },
+    {
+      "uri": "$ROOT/views.hcl",
+      "range": {
+        "start": {
+          "line": 12,
+          "character": 26
+        },
+        "end": {
+          "line": 12,
+          "character": 33
+        }
+      }
+    },
+    {
+      "uri": "$ROOT/views.hcl",
+      "range": {
+        "start": {
+          "line": 12,
+          "character": 40
+        },
+        "end": {
+          "line": 12,
+          "character": 47
+        }
+      }
+    },
+    {
+      "uri": "$ROOT/views.hcl",
+      "range": {
+        "start": {
+          "line": 15,
+          "character": 14
+        },
+        "end": {
+          "line": 15,
+          "character": 21
+        }
+      }
+    },
+    {
+      "uri": "$ROOT/views/main.layout.yaml",
+      "range": {
+        "start": {
+          "line": 2,
+          "character": 2
+        },
+        "end": {
+          "line": 2,
+          "character": 9
+        }
+      }
+    }
+  ]
+}
+{
+  "jsonrpc": "2.0",
+  "id": 16,
+  "result": {
+    "uri": "$ROOT/packs/c4/spec.hcl",
+    "range": {
+      "start": {
+        "line": 7,
+        "character": 6
+      },
+      "end": {
+        "line": 7,
+        "character": 12
+      }
+    }
+  }
+}
+{
+  "jsonrpc": "2.0",
+  "id": 17,
+  "result": [
+    {
+      "uri": "$ROOT/model.hcl",
+      "range": {
+        "start": {
+          "line": 10,
+          "character": 11
+        },
+        "end": {
+          "line": 10,
+          "character": 17
+        }
+      }
+    },
+    {
+      "uri": "$ROOT/model.hcl",
+      "range": {
+        "start": {
+          "line": 15,
+          "character": 11
+        },
+        "end": {
+          "line": 15,
+          "character": 17
+        }
+      }
+    },
+    {
+      "uri": "$ROOT/packs/c4/style.hcl",
+      "range": {
+        "start": {
+          "line": 10,
+          "character": 7
+        },
+        "end": {
+          "line": 10,
+          "character": 13
+        }
+      }
+    },
+    {
+      "uri": "$ROOT/views.hcl",
+      "range": {
+        "start": {
+          "line": 4,
+          "character": 19
+        },
+        "end": {
+          "line": 4,
+          "character": 25
+        }
+      }
+    }
+  ]
+}
+{
+  "jsonrpc": "2.0",
+  "id": 18,
+  "error": {
+    "code": -32803,
+    "message": "dg renames node, edge and view IDs; there is none here"
+  }
+}
+{
+  "jsonrpc": "2.0",
+  "id": 19,
+  "result": {
+    "range": {
+      "start": {
+        "line": 11,
+        "character": 18
+      },
+      "end": {
+        "line": 11,
+        "character": 25
+      }
+    },
+    "placeholder": "banking"
+  }
+}
+{
+  "jsonrpc": "2.0",
+  "id": 20,
+  "result": {
+    "documentChanges": [
+      {
+        "textDocument": {
+          "uri": "$ROOT/model.hcl",
+          "version": 1
+        },
+        "edits": [
+          {
+            "range": {
+              "start": {
+                "line": 9,
+                "character": 10
+              },
+              "end": {
+                "line": 9,
+                "character": 13
+              }
+            },
+            "newText": "-system"
+          },
+          {
+            "range": {
+              "start": {
+                "line": 29,
+                "character": 20
+              },
+              "end": {
+                "line": 29,
+                "character": 23
+              }
+            },
+            "newText": "-system"
+          },
+          {
+            "range": {
+              "start": {
+                "line": 35,
+                "character": 20
+              },
+              "end": {
+                "line": 35,
+                "character": 23
+              }
+            },
+            "newText": "-system"
+          },
+          {
+            "range": {
+              "start": {
+                "line": 41,
+                "character": 20
+              },
+              "end": {
+                "line": 41,
+                "character": 23
+              }
+            },
+            "newText": "-system"
+          },
+          {
+            "range": {
+              "start": {
+                "line": 47,
+                "character": 20
+              },
+              "end": {
+                "line": 47,
+                "character": 23
+              }
+            },
+            "newText": "-system"
+          },
+          {
+            "range": {
+              "start": {
+                "line": 53,
+                "character": 20
+              },
+              "end": {
+                "line": 53,
+                "character": 23
+              }
+            },
+            "newText": "-system"
+          }
+        ]
+      },
+      {
+        "textDocument": {
+          "uri": "$ROOT/views.hcl",
+          "version": 1
+        },
+        "edits": [
+          {
+            "range": {
+              "start": {
+                "line": 11,
+                "character": 22
+              },
+              "end": {
+                "line": 11,
+                "character": 25
+              }
+            },
+            "newText": "-system"
+          },
+          {
+            "range": {
+              "start": {
+                "line": 12,
+                "character": 30
+              },
+              "end": {
+                "line": 12,
+                "character": 47
+              }
+            },
+            "newText": "-system, node.bank-system"
+          },
+          {
+            "range": {
+              "start": {
+                "line": 15,
+                "character": 18
+              },
+              "end": {
+                "line": 15,
+                "character": 21
+              }
+            },
+            "newText": "-system"
+          }
+        ]
+      },
+      {
+        "textDocument": {
+          "uri": "$ROOT/views/main.layout.yaml",
+          "version": null
+        },
+        "edits": [
+          {
+            "range": {
+              "start": {
+                "line": 2,
+                "character": 6
+              },
+              "end": {
+                "line": 2,
+                "character": 9
+              }
+            },
+            "newText": "-system"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "jsonrpc": "2.0",
+  "id": 21,
+  "result": {
+    "documentChanges": [
+      {
+        "kind": "rename",
+        "oldUri": "$ROOT/views/main.layout.yaml",
+        "newUri": "$ROOT/views/context.layout.yaml"
+      },
+      {
+        "textDocument": {
+          "uri": "$ROOT/views.hcl",
+          "version": 1
+        },
+        "edits": [
+          {
+            "range": {
+              "start": {
+                "line": 2,
+                "character": 6
+              },
+              "end": {
+                "line": 2,
+                "character": 10
+              }
+            },
+            "newText": "context"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "jsonrpc": "2.0",
+  "id": 22,
+  "result": []
+}
+{
+  "jsonrpc": "2.0",
+  "id": 23,
+  "result": null
+}

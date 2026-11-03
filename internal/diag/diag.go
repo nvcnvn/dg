@@ -31,6 +31,11 @@ type Diagnostic struct {
 	Column    int      `json:"column,omitempty"`
 	EndLine   int      `json:"end_line,omitempty"`
 	EndColumn int      `json:"end_column,omitempty"`
+	// Byte and EndByte are the offsets in the file of the start and end, which the language
+	// server converts to its positions: columns count grapheme clusters in HCL files and
+	// characters in layout files.
+	Byte    int `json:"-"`
+	EndByte int `json:"-"`
 }
 
 // Diagnostics is a list of diagnostics.
@@ -41,6 +46,7 @@ func At(sev Severity, rng hcl.Range, summary, detail string) Diagnostic {
 	return Diagnostic{
 		Severity: sev, Summary: summary, Detail: detail, File: rng.Filename,
 		Line: rng.Start.Line, Column: rng.Start.Column, EndLine: rng.End.Line, EndColumn: rng.End.Column,
+		Byte: rng.Start.Byte, EndByte: rng.End.Byte,
 	}
 }
 

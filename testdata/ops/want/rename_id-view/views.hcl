@@ -10,6 +10,7 @@ view "pool" {
   ]
 }
 
+# Calls from the gateway.
 view "rpc" {
   include = [ node.gateway,node["worker-1"], node.pool ]
   edges   = [edge.gw-w1] /* only the call */

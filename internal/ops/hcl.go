@@ -299,9 +299,16 @@ func setTraversal(body *hclwrite.Body, name string, tr hcl.Traversal) {
 
 // setLabel renames block b, keeping the space before its label.
 func setLabel(b *hclwrite.Block, label string) {
-	spaces := b.BuildTokens(nil)[1].SpacesBefore
+	spaces := labelToken(b).SpacesBefore
 	b.SetLabels([]string{label})
-	b.BuildTokens(nil)[1].SpacesBefore = spaces
+	labelToken(b).SpacesBefore = spaces
+}
+
+// labelToken returns the first token of b's label, after the comments before b and its type.
+func labelToken(b *hclwrite.Block) *hclwrite.Token {
+	toks := b.BuildTokens(nil)
+	i := slices.IndexFunc(toks, func(t *hclwrite.Token) bool { return t.Type == hclsyntax.TokenIdent })
+	return toks[i+1]
 }
 
 // blocks returns the blocks of body with type typ.
