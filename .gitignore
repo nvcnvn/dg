@@ -154,3 +154,4 @@ vite.config.ts.timestamp-*
 /vscode/bin/
 /vscode/LICENSE
 /vscode/THIRD_PARTY_NOTICES
+/.sass-cache/

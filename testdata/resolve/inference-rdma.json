@@ -40,6 +40,25 @@
           "side": "auto"
         }
       ],
+      "pin": {
+        "x": 130,
+        "y": 160,
+        "w": 200,
+        "ports": {
+          "p1": {
+            "side": "top",
+            "offset": 0.25
+          },
+          "p2": {
+            "side": "top",
+            "offset": 0.75
+          },
+          "p8": {
+            "side": "bottom",
+            "offset": 0.5
+          }
+        }
+      },
       "style": {
         "shape": "rect",
         "fill": "#F1F3F4",
@@ -68,6 +87,10 @@
           "side": "left"
         }
       ],
+      "pin": {
+        "x": 0,
+        "y": 320
+      },
       "style": {
         "shape": "cylinder",
         "fill": "#FEF7E0",
@@ -100,6 +123,10 @@
           "side": "auto"
         }
       ],
+      "pin": {
+        "x": 0,
+        "y": 0
+      },
       "style": {
         "shape": "rounded",
         "fill": "#E6F4EA",
@@ -132,6 +159,10 @@
           "side": "auto"
         }
       ],
+      "pin": {
+        "x": 320,
+        "y": 0
+      },
       "style": {
         "shape": "rounded",
         "fill": "#E6F4EA",

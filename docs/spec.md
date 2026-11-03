@@ -688,46 +688,13 @@ There are no defaults outside the cascade: the built-in `generic` pack's `style 
 
 ## 9. Built-in `generic` pack
 
-| Kind | Notes |
-|---|---|
-| `node` | root kind, shape `rect` |
-| `service` | `rounded` |
-| `database` | `cylinder` |
-| `queue` | `parallelogram` |
-| `storage` | `cylinder` |
-| `person` | `person` (a head above a rounded body; the label is in the body) |
-| `external` | `rounded`, dashed |
-| `note` | `document` |
-| `group` | container, `free` |
-| `lane-set` | container, `stack` vertical, stretch, `label_side = "left"` (a pool: its lanes are stacked right of its label) |
-| `lane` | container, `free`, `label_side = "left"` |
-| `grid-group` | container, `grid`, 3 columns |
-| `decision` | `diamond` |
-| `terminal` | `stadium` |
-| `state` | container, `free`, `rounded`: a state with substates |
-| `simple-state` | `rounded`: a state without substates |
-| `initial` | `point`, no label drawn |
-| `final` | `bullseye`, no label drawn |
-| `table` | `rows = true`, shape `table`, bold label |
-| `class` | `rows = true`, shape `table` with compartments, bold label, pale yellow |
-| `junction` | shape `point`, no label drawn |
+`packs/generic/spec.hcl` and `style.hcl`, embedded in the binary and loaded before every other pack (section 4.1). The [reference](reference/styles.md#the-generic-pack) lists its kinds, edge kinds, edge tag styles and defaults, generated from those files. What the pack must provide:
 
-Edge kinds:
-
-| Edge kind | Drawn as |
-|---|---|
-| `default` | solid, `arrow` at `to` |
-| `async` | dashed, `arrow` at `to` |
-| `association` | solid, no markers |
-| `inherits` | solid, `triangle-open` at `to` |
-| `realizes` | dashed, `triangle-open` at `to` |
-| `composition` | solid, `diamond` at `from` (the whole) |
-| `aggregation` | solid, `diamond-open` at `from` (the whole) |
-| `dependency` | dashed, `arrow` at `to` |
-
-Edge tag styles for entity-relationship cardinality: `start-one`, `start-zero-one`, `start-many`, `start-one-many`, `start-zero-many` set `arrow_start` to the matching crow's-foot marker, and `end-…` the same for `arrow_end`. An edge tagged `["start-one", "end-zero-many"]` draws one-to-zero-or-many.
-
-Overlay style: `hull` (neutral).
+- the root kind `node` (shape `rect`) and edge kind `default` (solid, `arrow` at `to`), whose styles set every property that has a default, since there are no defaults outside the cascade (section 8.4);
+- kinds for the diagram types in scope (section 1): `service`, `database`, `queue`, `storage`, `person`, `external` and `note` for architecture; `group` (`free`), `grid-group` (`grid`, 3 columns) and the swimlane pair `lane-set` (a `stack` pool that stretches its lanes and draws its label on the left) and `lane` (`free`, label on the left); `decision` and `terminal` for flowcharts; `state` (a container), `simple-state`, `initial` (`point`) and `final` (`bullseye`) for state machines; `table` and `class` (`rows = true`, shape `table`, bold label) for ER and class diagrams; `junction` (`point`, section 5.6);
+- edge kinds for UML relationships: `async`, `association`, `inherits`, `realizes`, `composition` and `aggregation` (markers at `from`, the whole), `dependency`;
+- edge tag styles for entity-relationship cardinality, so an ER model needs no style of its own: `start-one`, `start-zero-one`, `start-many`, `start-one-many`, `start-zero-many` set `arrow_start` to the matching crow's-foot marker, and `end-…` the same for `arrow_end`;
+- the overlay style `hull`.
 
 ---
 
@@ -949,6 +916,8 @@ Writers of one project are serialized: an operation, undo or redo holds a lock f
 /vscode/                  # VS Code extension (FR-18)
 /testdata/                # golden files: hclwrite round-trips, layout output, resolved views
 /examples/                # example projects, one per diagram type (section 13)
+/docs/                    # this specification, and the user documentation (M12)
+/README.md, /_config.yml  # the documentation's home page, and its GitHub Pages configuration
 ```
 
 ---
@@ -984,6 +953,8 @@ The order follows two rules. First, export comes before editing: once `dg export
     *Done when:* a scripted drag in headless Chromium at 200 nodes and 400 edges holds 60 frames per second in a performance trace; each gesture sends one operation on drop and is one undo step, whose undo and redo restore the files byte for byte; two browsers of one `dg serve` share its history; a drag and Ctrl/⌘+Z in the VS Code panel edit and restore the layout file an open text editor shows.
 11. **M11 — Model editing.** The rest of FR-11: palette, add existing node, connect, labels, inspector, copy and paste, hide and delete, ports, rows, re-parent modifier, read-only lock.
     *Done when:* each FR-11 interaction has a scripted browser test asserting the files written; the VS Code panel edits the same files the open text editors show.
+12. **M12 — User documentation.** A user documentation site from `README.md` and `docs/`, published by GitHub Pages (section 15; `docs/development.md` says how it is built and checked): getting started, the VS Code extension, the examples with their pictures, and a reference for users. The reference states the rules for users; this specification keeps the reasons and the exact rules for implementers.
+    *Done when:* the pictures are export goldens; the lists that follow the code (operations and flags, commands' flags, the generic pack, style properties) are generated or checked by tests; the getting-started guide's commands other than `dg serve` run in a test that compares their output with the guide; every `dg` command the documentation shows names existing operations and flags; every link resolves on GitHub and on the site, and the site publishes no source code or test data other than the pictures.
 
 ---
 
@@ -1047,3 +1018,4 @@ The order follows two rules. First, export comes before editing: once `dg export
 | Drawing an edge | a connect mode (toolbar button or C) in which a drag from a node, port or row draws an edge | A connect handle on the selected node: an edge could not start at a port or row, whose handles drag ports to pin them. |
 | Operation types in the web app | `web/src/protocol/ops.ts`, generated from `internal/ops`' definitions and checked by a test | Written by hand: they drift from the operations. |
 | Spiral clearance | four grid units | Two grid units: with libavoid's buffer around each box no edge fits between two neighbors, and libavoid draws a straight line through them. |
+| Documentation site | GitHub Pages' built-in Jekyll, publishing the repository root of `main` with `README.md` as the home page; pictures are the export goldens; lists that follow the code are generated or checked by tests | The site in `docs/` alone: the pictures would be copies of the export goldens, kept equal by one more test, and `README.md` and `docs/index.md` would be two indexes. A static site generator (MkDocs, Hugo, VitePress) or a Pages workflow: build tooling and a toolchain in the repository for navigation the theme gives. |

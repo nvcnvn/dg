@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -20 1220 600" width="1220" height="600" font-family="Inter, sans-serif">
+<g data-node="bold">
+<rect x="780" y="480" width="150" height="50" fill="#FFFFFF" stroke="#3C4043" stroke-width="3"/>
+<text x="855" y="511" text-anchor="middle" fill="#202124" font-size="16" font-weight="700">font_weight 700</text>
+</g>
+<g data-node="bullseye">
+<circle cx="795" cy="15" r="15" fill="none" stroke="#3C4043" stroke-width="1"/>
+<circle cx="795" cy="15" r="9" fill="#202124"/>
+</g>
+<g data-node="cloud">
+<path d="M545 338 C525 338 520 355 536 359 C520 362 522 383 540 376 C545 390 590 390 595 376 C620 376 620 362 608 355 C620 341 600 327 583 334 C570 324 550 324 545 338 Z" fill="#E8F0FE" stroke="#1A73E8" stroke-width="1"/>
+<text x="570" y="360" text-anchor="middle" fill="#202124" font-size="14">cloud</text>
+</g>
+<g data-node="cylinder">
+<path d="M520 167 L520 223 A50 7 0 0 0 620 223 L620 167 A50 7 0 0 0 520 167 Z" fill="#FEF7E0" stroke="#E37400" stroke-width="1"/>
+<path d="M520 167 A50 7 0 0 0 620 167" fill="none" stroke="#E37400" stroke-width="1"/>
+<text x="570" y="204" text-anchor="middle" fill="#202124" font-size="14">cylinder</text>
+</g>
+<g data-node="diamond">
+<path d="M600 0 L680 40 L600 80 L520 40 Z" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="600" y="45" text-anchor="middle" fill="#202124" font-size="14">diamond</text>
+</g>
+<g data-node="document">
+<path d="M0 320 L240 320 L240 382 Q180 366 120 382 T0 382 Z" fill="#FEF7E0" stroke="#B06000" stroke-width="1"/>
+<text x="120" y="346" text-anchor="middle" fill="#202124" font-size="14">document: a note whose label is</text>
+<text x="120" y="366" text-anchor="middle" fill="#202124" font-size="14">long enough to wrap at max_w</text>
+</g>
+<g data-node="ellipse">
+<ellipse cx="310" cy="190" rx="50" ry="30" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="310" y="195" text-anchor="middle" fill="#202124" font-size="14">ellipse</text>
+</g>
+<g data-node="external">
+<rect x="260" y="480" width="100" height="40" rx="8" fill="#F1F3F4" stroke="#5F6368" stroke-width="1" stroke-dasharray="6 4"/>
+<text x="310" y="505" text-anchor="middle" fill="#202124" font-size="14">external</text>
+</g>
+<g data-node="faded" opacity="0.5">
+<rect x="1040" y="480" width="100" height="40" fill="#FFFFFF" stroke="#3C4043" stroke-width="1" stroke-dasharray="4 2"/>
+<text x="1090" y="505" text-anchor="middle" fill="#202124" font-size="14">opacity 0.5</text>
+</g>
+<g data-node="hexagon">
+<path d="M790 160 L870 160 L880 180 L870 200 L790 200 L780 180 Z" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="830" y="185" text-anchor="middle" fill="#202124" font-size="14">hexagon</text>
+</g>
+<g data-node="image">
+<image x="1050" y="330" width="90" height="86" preserveAspectRatio="xMidYMid meet" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2048%22%3E%3Crect%20width%3D%2264%22%20height%3D%2248%22%20rx%3D%224%22%20fill%3D%22%23E8F0FE%22%2F%3E%3Ccircle%20cx%3D%2218%22%20cy%3D%2216%22%20r%3D%226%22%20fill%3D%22%23FBBC04%22%2F%3E%3Cpath%20d%3D%22M0%2044%2022%2022l14%2014%208-8%2020%2016v4H0z%22%20fill%3D%22%2334A853%22%2F%3E%3C%2Fsvg%3E%0A"/>
+<text x="1095" y="435" text-anchor="middle" fill="#202124" font-size="14">image</text>
+</g>
+<g data-node="locked">
+<rect x="520" y="480" width="100" height="80" rx="8" fill="#E8F0FE" stroke="#1A73E8" stroke-width="1"/>
+<image x="556" y="494" width="28" height="28" preserveAspectRatio="xMidYMid meet" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Crect%20x%3D%225%22%20y%3D%2211%22%20width%3D%2214%22%20height%3D%2210%22%20rx%3D%222%22%20fill%3D%22%235F6368%22%2F%3E%3Cpath%20d%3D%22M8%2011V7a4%204%200%200%201%208%200v4%22%20fill%3D%22none%22%20stroke%3D%22%235F6368%22%20stroke-width%3D%222%22%2F%3E%3C%2Fsvg%3E%0A"/>
+<text x="570" y="541" text-anchor="middle" fill="#202124" font-size="14">icon</text>
+</g>
+<g data-node="parallelogram">
+<path d="M1050 160 L1180 160 L1170 200 L1040 200 Z" fill="#F3E8FD" stroke="#9334E6" stroke-width="1"/>
+<text x="1110" y="185" text-anchor="middle" fill="#202124" font-size="14">parallelogram</text>
+</g>
+<g data-node="person">
+<rect x="260" y="334" width="100" height="46" rx="9" fill="#E8F0FE" stroke="#1A73E8" stroke-width="1"/>
+<circle cx="310" cy="329" r="9" fill="#E8F0FE" stroke="#1A73E8" stroke-width="1"/>
+<text x="310" y="362" text-anchor="middle" fill="#202124" font-size="14">person</text>
+</g>
+<g data-node="point">
+<circle cx="10" cy="10" r="10" fill="#202124" stroke="#3C4043" stroke-width="1"/>
+</g>
+<g data-node="rect">
+<rect x="1040" y="0" width="100" height="40" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="1090" y="25" text-anchor="middle" fill="#202124" font-size="14">rect</text>
+</g>
+<g data-node="rounded">
+<rect x="260" y="0" width="100" height="40" rx="8" fill="#E8F0FE" stroke="#1A73E8" stroke-width="1"/>
+<text x="310" y="25" text-anchor="middle" fill="#202124" font-size="14">rounded</text>
+</g>
+<g data-node="stadium">
+<rect x="0" y="160" width="100" height="40" rx="20" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="50" y="185" text-anchor="middle" fill="#202124" font-size="14">stadium</text>
+</g>
+<g data-node="table">
+<rect x="0" y="480" width="100" height="40" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="50" y="505" text-anchor="middle" fill="#202124" font-size="14" font-weight="700">table</text>
+</g>
+<g data-node="text">
+<text x="840" y="345" text-anchor="middle" fill="#202124" font-size="14">text: no outline</text>
+</g>
+<g data-edge="diamond-bullseye">
+<path d="M664 32 L780 17" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<circle cx="776" cy="18" r="4" fill="#FFFFFF" stroke="#3C4043" stroke-width="1.5"/>
+<circle cx="668" cy="31" r="4" fill="#3C4043" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="diamond-cylinder">
+<path d="M600 80 L600 148 L570 148 L570 160" fill="none" stroke="#3C4043" stroke-width="1.5" stroke-dasharray="6 4"/>
+<path d="M565 150 L570 160 L575 150" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="575" y="127" width="50" height="17" fill="#FFFFFF"/>
+<text x="600" y="140" text-anchor="middle" fill="#202124" font-size="12">async</text>
+</g>
+<g data-edge="point-rounded">
+<path d="M19 15 L260 15" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M250 20 L260 15 L250 10" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="rounded-diamond">
+<path d="M360 30 L540 30" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M540 30 L528 36 L528 24 Z" fill="#3C4043" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M360 30 L368 25 L376 30 L368 35 Z" fill="#FFFFFF" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+</svg>

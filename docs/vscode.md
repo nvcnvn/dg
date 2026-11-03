@@ -1,0 +1,70 @@
+# The VS Code extension
+
+The extension brings dg's language server and its diagram editor into VS Code: errors as you
+type, completion, go to definition, rename and formatting in the HCL files, and the diagram in a
+panel beside them that you arrange and edit as in the browser.
+
+## Install
+
+The extension is not on the Marketplace. Build a package for your platform from a clone of the
+repository, as in [Getting started](getting-started.md#install), and install it:
+
+```sh
+make vsix
+code --install-extension bin/dg-darwin-arm64.vsix
+```
+
+`make vsix` writes `bin/dg-<platform>.vsix` for the machine it runs on: `darwin-arm64`,
+`darwin-x64`, `linux-arm64`, `linux-x64`, `win32-arm64` or `win32-x64`. Use the file it wrote in
+the second command. `make vsix-linux-x64` and the like build a package for another platform, and
+`make vsix-all` builds them all. `code` is VS Code's command line; you can also install the file
+from the Extensions view's "Install from VSIX…" menu item.
+
+Each package holds its own `dg` binary, so the extension needs nothing else on the machine, and
+it never uses the network.
+
+## When it starts
+
+The extension starts in a workspace with a folder that has `dg.hcl` at its top. For each such
+folder it runs `dg lsp` on the folder's `.hcl` files, which it highlights as HCL. A project
+without `dg.hcl` works with the command line but not with the extension: add one, even an empty
+`project "name" {}`.
+
+Open the project's folder itself (File > Open Folder…), not a folder above it: the extension does
+not start for the repository of dg, whose `dg.hcl` files are in `examples/`. To try it on an
+example, open `examples/c4`, or any other folder of `examples/`, which each have a `dg.hcl`.
+
+## Writing HCL
+
+The language server works on the text in your editors, saved or not, and reloads the project
+after each change:
+
+- **Diagnostics**: the errors and warnings of `dg check`, at the same places, for every file of
+  the project, layout files included. A problem that belongs to no file is shown at the start of
+  `dg.hcl`.
+- **Completion**: kinds after `kind =` and `extends =`, edge kinds, node IDs after `node.`, ports
+  after `.port.`, rows after `.row.`, selectors in views, style labels, style property names, and
+  the values of properties that take a few (shapes, markers, `true` and `false`). It works while
+  the file does not parse, from the project as last loaded.
+- **Hover** on a reference to a node shows its kind and label.
+- **Go to Definition** and **Find All References** for node, edge, kind, edge kind and view IDs,
+  across model files, `views.hcl`, styles and layout files.
+- **Rename Symbol** (F2) on a node, edge or view ID renames it everywhere, as
+  [`rename_id`](reference/operations.md#rename_id) does: every reference, every layout file, and
+  the layout file's name for a view. It is refused when the ID or a reference is in a
+  [`read_only`](reference/language.md#the-project-file) file.
+- **Format Document** formats a file as `dg fmt` does.
+
+## The diagram panel
+
+Run **dg: Open diagram** from the Command Palette. A panel opens beside the text with the
+diagram of the project of the file you are editing (or of the first project in the workspace). It
+is the same editor as `dg serve`, with every [gesture](reference/editor.md): drag to arrange,
+switch views, create and connect nodes, edit labels and the inspector.
+
+Everything the panel changes is written to the project's files, which the text editors show at
+once; Ctrl+Z (⌘Z) in the panel undoes it. Saving a file in a text editor redraws the panel. Click
+in the panel before using its keyboard shortcuts, so they reach the diagram rather than VS Code.
+
+The palette and inspector start hidden in a narrow panel; the toolbar's Palette and Inspector
+buttons show them. Closing the panel stops its server.

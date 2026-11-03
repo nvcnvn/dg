@@ -42,7 +42,8 @@ to remove it.
 
 ## Export goldens are generated on macOS Chrome
 
-- **Where:** `testdata/export/*.svg` and `*.json`.
+- **Where:** `testdata/export/*.svg` and `*.json`, whose SVG files are also the pictures of the
+  documentation site.
 - **Why:** sizes depend on Chromium's text shaping of the bundled font. Sizes snap to the grid,
   label boxes to the grid and every emitted coordinate is a whole pixel, but whether that hides
   every difference between platforms and Chromium versions is unproven.

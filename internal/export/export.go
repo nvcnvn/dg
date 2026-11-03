@@ -112,6 +112,9 @@ func openApp(ctx context.Context) (_ context.Context, stop func(), err error) {
 
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.Flag("host-resolver-rules", "MAP * ~NOTFOUND, EXCLUDE 127.0.0.1"),
+		// GPU rasterization antialiases some tiles differently from run to run when the machine
+		// is busy, so PNG and GIF exports would differ; software rasterization does not.
+		chromedp.DisableGPU,
 	)
 	if goruntime.GOOS == "linux" && os.Geteuid() == 0 {
 		// Chromium refuses to start its sandbox as root, as in most CI containers.

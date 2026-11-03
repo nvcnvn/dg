@@ -1,32 +1,32 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -10 290 310" width="290" height="310" font-family="Inter, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-40 -20 480 430" width="480" height="430" font-family="Inter, sans-serif">
 <g data-node="tor-1">
-<rect x="30" y="110" width="100" height="40" fill="#F1F3F4" stroke="#5F6368" stroke-width="1"/>
-<text x="80" y="135" text-anchor="middle" fill="#202124" font-size="14">ToR 1</text>
+<rect x="130" y="160" width="200" height="40" fill="#F1F3F4" stroke="#5F6368" stroke-width="1"/>
+<text x="230" y="185" text-anchor="middle" fill="#202124" font-size="14">ToR 1</text>
 </g>
 <g data-node="weights">
-<path d="M20 217 L20 273 A60 7 0 0 0 140 273 L140 217 A60 7 0 0 0 20 217 Z" fill="#FEF7E0" stroke="#E37400" stroke-width="1"/>
-<path d="M20 217 A60 7 0 0 0 140 217" fill="none" stroke="#E37400" stroke-width="1"/>
-<text x="80" y="254" text-anchor="middle" fill="#202124" font-size="14">Model weights</text>
+<path d="M0 327 L0 383 A60 7 0 0 0 120 383 L120 327 A60 7 0 0 0 0 327 Z" fill="#FEF7E0" stroke="#E37400" stroke-width="1"/>
+<path d="M0 327 A60 7 0 0 0 120 327" fill="none" stroke="#E37400" stroke-width="1"/>
+<text x="60" y="364" text-anchor="middle" fill="#202124" font-size="14">Model weights</text>
 </g>
 <g data-node="worker-1">
-<rect x="150" y="10" width="100" height="40" rx="8" fill="#E6F4EA" stroke="#D93025" stroke-width="1"/>
-<text x="200" y="35" text-anchor="middle" fill="#202124" font-size="14">Worker 1</text>
+<rect x="0" y="0" width="100" height="40" rx="8" fill="#E6F4EA" stroke="#D93025" stroke-width="1"/>
+<text x="50" y="25" text-anchor="middle" fill="#202124" font-size="14">Worker 1</text>
 </g>
 <g data-node="worker-2">
-<rect x="10" y="10" width="100" height="40" rx="8" fill="#E6F4EA" stroke="#188038" stroke-width="1"/>
-<text x="60" y="35" text-anchor="middle" fill="#202124" font-size="14">Worker 2</text>
+<rect x="320" y="0" width="100" height="40" rx="8" fill="#E6F4EA" stroke="#188038" stroke-width="1"/>
+<text x="370" y="25" text-anchor="middle" fill="#202124" font-size="14">Worker 2</text>
 </g>
 <g data-edge="tor-weights">
-<path d="M80 150 L80 162 L8 162 L8 245 L20 245" fill="none" stroke="#D93025" stroke-width="1.5"/>
+<path d="M230 200 L230 212 L-12 212 L-12 355 L0 355" fill="none" stroke="#D93025" stroke-width="1.5"/>
 </g>
 <g data-edge="w1-tor">
-<path d="M200 50 L200 98 L63 98 L63 110" fill="none" stroke="#D93025" stroke-width="1.5"/>
-<rect x="130" y="90" width="40" height="17" fill="#FFFFFF"/>
-<text x="150" y="103" text-anchor="middle" fill="#202124" font-size="12">400G</text>
+<path d="M50 40 L50 52 L180 52 L180 160" fill="none" stroke="#D93025" stroke-width="1.5"/>
+<rect x="143" y="44" width="40" height="17" fill="#FFFFFF"/>
+<text x="163" y="57" text-anchor="middle" fill="#202124" font-size="12">400G</text>
 </g>
 <g data-edge="w2-tor">
-<path d="M60 50 L60 62 L97 62 L97 110" fill="none" stroke="#D93025" stroke-width="1.5"/>
-<rect x="77" y="54" width="40" height="17" fill="#FFFFFF"/>
-<text x="97" y="67" text-anchor="middle" fill="#202124" font-size="12">400G</text>
+<path d="M370 40 L370 148 L280 148 L280 160" fill="none" stroke="#D93025" stroke-width="1.5"/>
+<rect x="350" y="137" width="40" height="17" fill="#FFFFFF"/>
+<text x="370" y="150" text-anchor="middle" fill="#202124" font-size="12">400G</text>
 </g>
 </svg>

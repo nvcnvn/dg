@@ -1,0 +1,13 @@
+version: 1
+place:
+  tor-1:
+    x: 130
+    y: 160
+    w: 200
+    ports:
+      p1: {side: top, offset: 0.25}
+      p2: {side: top, offset: 0.75}
+      p8: {side: bottom, offset: 0.50}
+  weights: {x: 0, y: 320}
+  worker-1: {x: 0, y: 0}
+  worker-2: {x: 320, y: 0}

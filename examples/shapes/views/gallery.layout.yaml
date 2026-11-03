@@ -1,0 +1,22 @@
+version: 1
+place:
+  bold: {x: 780, y: 480}
+  bullseye: {x: 780, y: 0}
+  cloud: {x: 520, y: 320}
+  cylinder: {x: 520, y: 160}
+  diamond: {x: 520, y: 0}
+  document: {x: 0, y: 320}
+  ellipse: {x: 260, y: 160}
+  external: {x: 260, y: 480}
+  faded: {x: 1040, y: 480}
+  hexagon: {x: 780, y: 160}
+  image: {x: 1040, y: 320}
+  locked: {x: 520, y: 480}
+  parallelogram: {x: 1040, y: 160}
+  person: {x: 260, y: 320}
+  point: {x: 0, y: 0}
+  rect: {x: 1040, y: 0}
+  rounded: {x: 260, y: 0}
+  stadium: {x: 0, y: 160}
+  table: {x: 0, y: 480}
+  text: {x: 780, y: 320}

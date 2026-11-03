@@ -1,0 +1,38 @@
+# The documentation site; docs/development.md says how it is built and checked.
+title: dg
+description: Diagram-as-code with an HCL model, a layout arranged in the browser, and arrows routed every time it draws.
+theme: minima
+titles_from_headings:
+  strip_title: true
+optional_front_matter:
+  remove_originals: true
+header_pages:
+  - docs/getting-started.md
+  - docs/vscode.md
+  - docs/examples.md
+  - docs/reference/README.md
+exclude:
+  - CLAUDE.md
+  - LICENSE
+  - THIRD_PARTY_NOTICES
+  - Makefile
+  - go.mod
+  - go.sum
+  - cmd
+  - internal
+  - web
+  - vscode
+  - packs
+  - examples
+  - docs/open-decisions.md
+  - docs/tech-debts.md
+  - testdata/check
+  - testdata/fmt
+  - testdata/gif
+  - testdata/ids
+  - testdata/lift
+  - testdata/lsp
+  - testdata/ops
+  - testdata/rebuild
+  - testdata/resolve
+  - testdata/export/*.json

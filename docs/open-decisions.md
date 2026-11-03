@@ -16,7 +16,8 @@ the decision in `docs/spec.md`).
 ## Embed the font in exported SVG?
 
 - **Question:** an exported SVG names `Inter, sans-serif` but does not contain the font, so a viewer
-  without Inter draws other glyph widths than the ones the layout was measured with.
+  without Inter draws other glyph widths than the ones the layout was measured with. The pictures
+  of the documentation site are such SVG files.
 - **Options:** (a) name only; (b) embed the used Inter subsets as base64 `@font-face` (about 30 KB
   per subset); (c) subset the font to the characters used.
 - **Default:** (a).
@@ -167,3 +168,25 @@ the decision in `docs/spec.md`).
   events, with the nodes as JSON under a dg media type, pasted into any project that has their kinds.
 - **Default:** (a).
 - **Milestone:** M11; early post-v1.
+
+## Navigation of the documentation site
+
+- **Question:** the site uses GitHub Pages' supported `minima` theme, whose header links four
+  pages (Getting started, VS Code, Examples, Reference); the long reference pages start with a
+  generated table of contents, and there is no sidebar or search.
+- **Options:** (a) `minima` with header links and tables of contents, as now; (b) a documentation
+  theme with a sidebar and search, such as Just the Docs, loaded with `remote_theme`, which the
+  built-in Pages build supports without a workflow; it needs front matter (title, order) on each
+  page, which GitHub's file view shows as a table; (c) a static site generator built by a Pages
+  workflow.
+- **Default:** (a); (b) is the likely choice once the reference outgrows the header.
+- **Milestone:** M12.
+
+## Versions of the documentation
+
+- **Question:** the site follows `main`, so once there are releases it may describe features a
+  released binary does not have.
+- **Options:** (a) one site that follows `main`; (b) publish from a release branch or tag; (c)
+  versioned copies of the site per release.
+- **Default:** (a), while there are no releases.
+- **Milestone:** first release.
