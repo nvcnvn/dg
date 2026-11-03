@@ -1,7 +1,6 @@
 import { center, type Box, type Point, type Size } from '../geometry/geometry';
 import type { CustomShape, Side, ViewNode } from '../protocol/view';
-
-export const ARROW_SIZE = 10;
+import { MARKER_HALF } from './markers';
 
 export interface PortPos extends Point {
   side: Side;
@@ -14,6 +13,15 @@ export function sideFacing(b: Box, p: Point): Side {
   const dy = (p.y - c.y) / Math.max(b.h, 1);
   if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? 'right' : 'left';
   return dy >= 0 ? 'bottom' : 'top';
+}
+
+// rowSide returns the end of a row line of box b that faces the other endpoint, whose box is o (a
+// point for a port): the side o lies on, or, when the two overlap horizontally, the side where
+// their edges are closer, so both ends of an edge between two rows take the same side.
+export function rowSide(b: Box, o: Box): 'left' | 'right' {
+  if (o.x >= b.x + b.w) return 'right';
+  if (o.x + o.w <= b.x) return 'left';
+  return Math.abs(o.x - b.x) < Math.abs(o.x + o.w - b.x - b.w) ? 'left' : 'right';
 }
 
 // onSide returns the point at fraction f along side of b, from its top or left end.
@@ -142,23 +150,6 @@ export function pointAlong(route: Point[], t: number): Point & { horizontal: boo
   return { ...route[route.length - 1], horizontal: true };
 }
 
-// openArrow returns the two barb ends of an open arrowhead at the route's end.
-export function openArrow(route: Point[]): [Point, Point] | undefined {
-  const tip = route[route.length - 1];
-  const tail = route[route.length - 2];
-  if (!tip || !tail) return undefined;
-  const len = Math.hypot(tip.x - tail.x, tip.y - tail.y);
-  if (len === 0) return undefined;
-  const ux = (tip.x - tail.x) / len;
-  const uy = (tip.y - tail.y) / len;
-  const back = { x: tip.x - ux * ARROW_SIZE, y: tip.y - uy * ARROW_SIZE };
-  const half = ARROW_SIZE / 2;
-  return [
-    { x: back.x - uy * half, y: back.y + ux * half },
-    { x: back.x + uy * half, y: back.y - ux * half },
-  ];
-}
-
 // segmentHitsBox reports whether the segment from a to b passes through box r.
 export function segmentHitsBox(a: Point, b: Point, r: Box): boolean {
   let t0 = 0;
@@ -181,6 +172,52 @@ export function segmentHitsBox(a: Point, b: Point, r: Box): boolean {
 const LABEL_TRIES = [0.5, 0.4, 0.6, 0.3, 0.7, 0.2, 0.8];
 const LABEL_GAP = 4;
 
+// overlapScore scores how much box b overlaps the boxes in avoid, plus how many route segments
+// cross it.
+export function overlapScore(b: Box, avoid: Box[], routes: Point[][]): number {
+  return (
+    avoid.reduce((sum, a) => sum + Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y)), 0) +
+    routes.reduce((sum, r) => sum + r.slice(1).filter((p, i) => segmentHitsBox(r[i], p, b)).length, 0)
+  );
+}
+
+// placeEndLabel returns the box of a start or end label of the given size next to the end of
+// route: beside its last segment, clear of the widest marker, from LABEL_GAP outside the node
+// outward, on either side of the segment, or moved up to two labels further out along it. It
+// takes the first of these that overlaps no box in avoid, crosses no route and has no other route
+// within LABEL_GAP of it, so it is not read as another edge's label; else the one that overlaps
+// least.
+export function placeEndLabel(route: Point[], size: Size, avoid: Box[], others: Point[][]): Box {
+  const tip = route[route.length - 1];
+  let i = route.length - 2;
+  while (i > 0 && route[i].x === tip.x && route[i].y === tip.y) i--;
+  const tail = route[Math.max(0, i)];
+  const off = MARKER_HALF + 1;
+  const horizontal = Math.abs(tip.x - tail.x) >= Math.abs(tip.y - tail.y);
+  const out = horizontal ? Math.sign(tail.x - tip.x) || 1 : Math.sign(tail.y - tip.y) || 1;
+  const at = (side: number, step: number): Box => {
+    const along = LABEL_GAP + step * ((horizontal ? size.w : size.h) + LABEL_GAP);
+    const across = side < 0 ? -off - (horizontal ? size.h : size.w) : off;
+    const near = out > 0 ? along : -along - (horizontal ? size.w : size.h);
+    return horizontal
+      ? { x: Math.round(tip.x + near), y: Math.round(tip.y + across), ...size }
+      : { x: Math.round(tip.x + across), y: Math.round(tip.y + near), ...size };
+  };
+  const score = (b: Box) =>
+    overlapScore(b, avoid, [route, ...others]) + overlapScore({ x: b.x - LABEL_GAP, y: b.y - LABEL_GAP, w: b.w + 2 * LABEL_GAP, h: b.h + 2 * LABEL_GAP }, [], others);
+  let best = at(-1, 0);
+  let least = Infinity;
+  for (const step of [0, 1, 2]) {
+    for (const side of [-1, 1]) {
+      const b = at(side, step);
+      const o = score(b);
+      if (o === 0) return b;
+      if (o < least) [best, least] = [b, o];
+    }
+  }
+  return best;
+}
+
 // placeLabel returns the box of a middle label of the given size: centered on the route at pos
 // when the layout pins it; otherwise the first clear one of a few points around the middle,
 // first on the route and then beside it (beside it first when the route is too short to hold
@@ -194,9 +231,6 @@ export function placeLabel(route: Point[], size: Size, pos: number | undefined, 
     return { x: Math.round(c.x + dx - size.w / 2), y: Math.round(c.y + dy - size.h / 2), ...size };
   };
   if (pos !== undefined) return at(pos, 0);
-  const overlap = (b: Box) =>
-    avoid.reduce((sum, a) => sum + Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y)), 0) +
-    others.reduce((sum, r) => sum + r.slice(1).filter((p, i) => segmentHitsBox(r[i], p, b)).length, 0);
   const length = route.slice(1).reduce((sum, p, i) => sum + Math.hypot(p.x - route[i].x, p.y - route[i].y), 0);
   const mid = pointAlong(route, 0.5);
   const short = length < (mid.horizontal ? size.w : size.h) + 2 * LABEL_GAP;
@@ -205,7 +239,7 @@ export function placeLabel(route: Point[], size: Size, pos: number | undefined, 
   for (const side of short ? [1, -1, 0] : [0, -1, 1]) {
     for (const t of LABEL_TRIES) {
       const b = at(t, side);
-      const o = overlap(b);
+      const o = overlapScore(b, avoid, others);
       if (o === 0) return b;
       if (o < least) {
         best = b;

@@ -42,15 +42,30 @@ type Font struct {
 
 // Node is a node drawn in a view.
 type Node struct {
-	ID        string     `json:"id"`
-	Kind      string     `json:"kind"`
-	Label     string     `json:"label"`
-	Frame     string     `json:"frame,omitempty"`
-	Container bool       `json:"container,omitempty"`
-	ReadOnly  bool       `json:"read_only,omitempty"`
-	Ports     []Port     `json:"ports,omitempty"`
-	Pin       *Pin       `json:"pin,omitempty"`
-	Style     style.Node `json:"style"`
+	ID        string `json:"id"`
+	Kind      string `json:"kind"`
+	Label     string `json:"label"`
+	Frame     string `json:"frame,omitempty"`
+	Container bool   `json:"container,omitempty"`
+	ReadOnly  bool   `json:"read_only,omitempty"`
+	Ports     []Port `json:"ports,omitempty"`
+	// Compartments holds the node's rows; rows outside compartments are in one named "".
+	Compartments []Compartment `json:"compartments,omitempty"`
+	Pin          *Pin          `json:"pin,omitempty"`
+	Style        style.Node    `json:"style"`
+}
+
+// Compartment is a named group of a node's rows, in declaration order.
+type Compartment struct {
+	Name string `json:"name"`
+	Rows []Row  `json:"rows"`
+}
+
+// Row is a row of a table or class node.
+type Row struct {
+	Name string `json:"name"`
+	Type string `json:"type,omitempty"`
+	Key  string `json:"key,omitempty"`
 }
 
 // Port is a port of a node with its declared side, in declaration order.
@@ -79,25 +94,21 @@ type PinnedPort struct {
 
 // Edge is an edge drawn in a view.
 type Edge struct {
-	ID       string     `json:"id"`
-	Kind     string     `json:"kind"`
-	From     End        `json:"from"`
-	To       End        `json:"to"`
-	Labels   Labels     `json:"labels"`
-	ReadOnly bool       `json:"read_only,omitempty"`
-	Hint     *EdgeHint  `json:"hint,omitempty"`
-	Style    style.Edge `json:"style"`
+	ID       string       `json:"id"`
+	Kind     string       `json:"kind"`
+	From     End          `json:"from"`
+	To       End          `json:"to"`
+	Labels   model.Labels `json:"labels"`
+	ReadOnly bool         `json:"read_only,omitempty"`
+	Hint     *EdgeHint    `json:"hint,omitempty"`
+	Style    style.Edge   `json:"style"`
 }
 
 // End is the drawn endpoint of an edge.
 type End struct {
 	Node string `json:"node"`
 	Port string `json:"port,omitempty"`
-}
-
-// Labels are an edge's labels.
-type Labels struct {
-	Mid string `json:"mid,omitempty"`
+	Row  string `json:"row,omitempty"`
 }
 
 // EdgeHint is an edge's routing hint from the layout file; Via is in canvas coordinates.
@@ -146,9 +157,6 @@ func (s *Sources) Resolve(id string) (*Resolved, hcl.Diagnostics) {
 		n := m.Nodes[nid]
 		props := s.Styles.ForNode(s.Spec, n.Kind, n.Tags)
 		s.refuseUndrawn(props, style.NodeProps, notYet)
-		if len(n.Compartments) > 0 {
-			notYet(n.Compartments[0].Range, 4, "Rows are")
-		}
 		node := Node{
 			ID:        n.ID,
 			Kind:      n.Kind,
@@ -157,6 +165,13 @@ func (s *Sources) Resolve(id string) (*Resolved, hcl.Diagnostics) {
 			Container: s.Spec.IsContainer(n.Kind),
 			Ports:     s.ports(n),
 			Style:     style.DrawnNode(props),
+		}
+		for _, c := range n.Compartments {
+			rc := Compartment{Name: c.Name, Rows: []Row{}}
+			for _, row := range c.Rows {
+				rc.Rows = append(rc.Rows, Row{Name: row.Name, Type: row.Type, Key: row.Key})
+			}
+			node.Compartments = append(node.Compartments, rc)
 		}
 		if p := l.Place[nid]; p != nil {
 			if len(p.Order) > 0 {
@@ -176,23 +191,12 @@ func (s *Sources) Resolve(id string) (*Resolved, hcl.Diagnostics) {
 		e := m.Edges[eid]
 		props := s.Styles.ForEdge(s.Spec, e.Kind, e.Tags)
 		s.refuseUndrawn(props, style.EdgeProps, notYet)
-		if e.From.Node == e.To.Node {
-			notYet(e.Range, 4, "Self-loops are")
-		}
-		for _, r := range []model.Ref{e.From, e.To} {
-			if r.Row != "" {
-				notYet(r.Range, 4, "Edges ending at rows are")
-			}
-		}
-		if e.Labels.Start != "" || e.Labels.End != "" {
-			notYet(e.Range, 4, "Start and end labels are")
-		}
 		edge := Edge{
 			ID:     e.ID,
 			Kind:   e.Kind,
-			From:   End{Node: e.From.Node, Port: e.From.Port},
-			To:     End{Node: e.To.Node, Port: e.To.Port},
-			Labels: Labels{Mid: e.Labels.Mid},
+			From:   End{Node: e.From.Node, Port: e.From.Port, Row: e.From.Row},
+			To:     End{Node: e.To.Node, Port: e.To.Port, Row: e.To.Row},
+			Labels: e.Labels,
 			Style:  style.DrawnEdge(props),
 		}
 		if h := l.EdgeHints[eid]; h != nil {

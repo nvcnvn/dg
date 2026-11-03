@@ -136,13 +136,16 @@ style "state" {
 }
 
 style "table" {
-  shape   = "table"
-  padding = 8
+  shape       = "table"
+  padding     = 8
+  font_weight = 700
 }
 
 style "class" {
-  shape   = "table"
-  padding = 8
+  shape       = "table"
+  fill        = "#FFFDE7"
+  padding     = 8
+  font_weight = 700
 }
 
 edge_style "default" {

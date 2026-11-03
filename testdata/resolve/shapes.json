@@ -536,7 +536,7 @@
         "opacity": 1,
         "text_color": "#202124",
         "font_size": 14,
-        "font_weight": 400,
+        "font_weight": 700,
         "padding": 8,
         "min_w": 100,
         "min_h": 40,
@@ -606,8 +606,8 @@
         "stroke": "#3C4043",
         "stroke_width": 1.5,
         "stroke_dash": [],
-        "arrow_start": "none",
-        "arrow_end": "arrow",
+        "arrow_start": "circle",
+        "arrow_end": "circle-open",
         "routing": "straight",
         "font_size": 12
       }
@@ -717,8 +717,8 @@
         "stroke": "#3C4043",
         "stroke_width": 1.5,
         "stroke_dash": [],
-        "arrow_start": "none",
-        "arrow_end": "arrow",
+        "arrow_start": "diamond-open",
+        "arrow_end": "triangle",
         "routing": "polyline",
         "font_size": 12
       }

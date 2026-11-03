@@ -69,11 +69,15 @@ style "tag.on-top" {
 }
 
 edge_style "tag.polyline" {
-  routing = "polyline"
+  routing     = "polyline"
+  arrow_start = "diamond-open"
+  arrow_end   = "triangle"
 }
 
 edge_style "tag.straight" {
-  routing = "straight"
+  routing     = "straight"
+  arrow_start = "circle"
+  arrow_end   = "circle-open"
 }
 
 edge_style "tag.both" {

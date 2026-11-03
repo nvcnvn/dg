@@ -31,14 +31,15 @@ export function toSVG(d: Drawing): string {
   );
 }
 
-// toJSON returns every node's box and port positions and every edge route in canvas
-// coordinates, sorted by ID, with each point on its own line.
+// toJSON returns every node's box, port positions and row lines (the y both ends of a row's line
+// are at) and every edge route in canvas coordinates, sorted by ID, with each point on its own line.
 export function toJSON(d: Drawing): string {
   const nodes = [...d.nodes]
     .sort((a, b) => cmp(a.id, b.id))
     .map((n) => {
       const ports = [...n.ports].sort((a, b) => cmp(a.name, b.name)).map((p) => ({ name: p.name, side: p.side, x: Math.round(p.x), y: Math.round(p.y) }));
-      return { id: n.id, ...n.box, ...(ports.length ? { ports } : {}) };
+      const rows = n.table?.rows.map((r) => ({ name: r.name, y: Math.round(r.y) })) ?? [];
+      return { id: n.id, ...n.box, ...(ports.length ? { ports } : {}), ...(rows.length ? { rows } : {}) };
     });
   const edges = [...d.edges].sort((a, b) => cmp(a.id, b.id)).map((e) => ({ id: e.id, points: e.points.map((p) => [p.x, p.y]) }));
   const json = JSON.stringify({ view: d.view, nodes, edges }, null, 2);

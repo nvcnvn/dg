@@ -5,8 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/chromedp/chromedp"
@@ -240,4 +242,162 @@ place:
 			t.Errorf("node in a stale frame drawn at %d,%d, want 300,400 where it was stored", n.X, n.Y)
 		}
 	}
+}
+
+// TestRowEnds checks that edges ending at rows attach at the end of the row's line that faces
+// the other endpoint (spec 5.4): the side the other box lies on, or, when the boxes overlap
+// horizontally, the side where their edges are closer.
+func TestRowEnds(t *testing.T) {
+	if testing.Short() {
+		t.Skip("starts Chromium")
+	}
+	dir := t.TempDir()
+	var model strings.Builder
+	for _, id := range []string{"a", "b", "c", "d", "e", "f"} {
+		fmt.Fprintf(&model, "node %q {\n  kind = \"table\"\n  row \"id\" {}\n  row \"fk\" {}\n}\n\n", id)
+	}
+	for _, pair := range [][2]string{{"a", "b"}, {"c", "d"}, {"e", "f"}} {
+		fmt.Fprintf(&model, "edge %q {\n  from = node.%s.row.fk\n  to   = node.%s.row.id\n}\n\n", pair[0]+pair[1], pair[0], pair[1])
+	}
+	files := map[string]string{
+		"model.hcl": model.String(),
+		// a and b side by side; d overlaps c horizontally and reaches further right; f overlaps e and
+		// reaches further right.
+		"views/main.layout.yaml": `version: 1
+place:
+  a: {x: 0, y: 0, w: 100}
+  b: {x: 300, y: 0, w: 100}
+  c: {x: 0, y: 200, w: 100}
+  d: {x: 40, y: 400, w: 160}
+  e: {x: 600, y: 0, w: 200}
+  f: {x: 750, y: 200, w: 100}
+`,
+	}
+	for name, src := range files {
+		if err := os.MkdirAll(filepath.Dir(filepath.Join(dir, name)), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(src), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	ends := rowEnds(t, dir)
+	want := map[string][2]int{"ab": {100, 300}, "cd": {0, 40}, "ef": {800, 850}}
+	for id, w := range want {
+		if got := [2]int{ends[id][0].x, ends[id][1].x}; got != w {
+			t.Errorf("edge %s attaches at x %v, want %v", id, got, w)
+		}
+		for _, end := range ends[id] {
+			if end.y != end.rowY {
+				t.Errorf("edge %s attaches at y %d, want the row's line at %d", id, end.y, end.rowY)
+			}
+		}
+	}
+
+	er := rowEnds(t, filepath.Join("..", "..", "examples", "er"))
+	wantER := map[string][2]string{
+		"address-customer": {"right", "left"},
+		"category-parent":  {"right", "right"},
+		"item-order":       {"right", "left"},
+		"item-product":     {"right", "left"},
+		"order-bill-to":    {"right", "left"},
+		"order-customer":   {"right", "left"},
+		"order-ship-to":    {"right", "left"},
+		"product-category": {"right", "left"},
+	}
+	if len(er) != len(wantER) {
+		t.Errorf("examples/er has %d edges ending at rows, want %d", len(er), len(wantER))
+	}
+	for id, w := range wantER {
+		if got := [2]string{er[id][0].side, er[id][1].side}; got != w {
+			t.Errorf("examples/er edge %s attaches at %v, want %v", id, got, w)
+		}
+		for _, end := range er[id] {
+			// Ends with different markers at one row end are spread 8 pixels each way.
+			if abs(end.y-end.rowY) > 8 {
+				t.Errorf("examples/er edge %s attaches at y %d, away from its row's line at %d", id, end.y, end.rowY)
+			}
+		}
+	}
+}
+
+type rowEnd struct {
+	x, y, rowY int
+	side       string
+}
+
+// rowEnds exports the main view of the project in dir and returns the start and end of every
+// edge whose two ends are rows.
+func rowEnds(t *testing.T, dir string) map[string][2]rowEnd {
+	t.Helper()
+	p, diags, err := project.Load(dir)
+	if err != nil || diags.HasErrors() {
+		t.Fatal(err, diags)
+	}
+	v, diags := p.Resolve(view.DefaultView)
+	if diags.HasErrors() {
+		t.Fatal(diags)
+	}
+	res, err := Render(context.Background(), v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var geo struct {
+		Nodes []struct {
+			ID   string
+			X, W int
+			Rows []struct {
+				Name string
+				Y    int
+			}
+		}
+		Edges []struct {
+			ID     string
+			Points [][2]int
+		}
+	}
+	if err := json.Unmarshal(res.JSON, &geo); err != nil {
+		t.Fatal(err)
+	}
+	type node struct {
+		x, w int
+		rows map[string]int
+	}
+	nodes := map[string]node{}
+	for _, n := range geo.Nodes {
+		rows := map[string]int{}
+		for _, r := range n.Rows {
+			rows[r.Name] = r.Y
+		}
+		nodes[n.ID] = node{n.X, n.W, rows}
+	}
+	routes := map[string][][2]int{}
+	for _, e := range geo.Edges {
+		routes[e.ID] = e.Points
+	}
+	out := map[string][2]rowEnd{}
+	for _, e := range v.Edges {
+		if e.From.Row == "" || e.To.Row == "" {
+			continue
+		}
+		pts := routes[e.ID]
+		var pair [2]rowEnd
+		for i, end := range []struct {
+			at  [2]int
+			ref view.End
+		}{{pts[0], e.From}, {pts[len(pts)-1], e.To}} {
+			n := nodes[end.ref.Node]
+			side := map[int]string{n.x: "left", n.x + n.w: "right"}[end.at[0]]
+			pair[i] = rowEnd{x: end.at[0], y: end.at[1], rowY: n.rows[end.ref.Row], side: side}
+		}
+		out[e.ID] = pair
+	}
+	return out
+}
+
+func abs(v int) int {
+	if v < 0 {
+		return -v
+	}
+	return v
 }

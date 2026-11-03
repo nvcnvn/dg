@@ -1,0 +1,459 @@
+{
+  "view": "main",
+  "grid": 10,
+  "nodes": [
+    {
+      "id": "addresses",
+      "kind": "table",
+      "label": "addresses",
+      "compartments": [
+        {
+          "name": "",
+          "rows": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "key": "PK"
+            },
+            {
+              "name": "customer_id",
+              "type": "uuid",
+              "key": "FK"
+            },
+            {
+              "name": "city",
+              "type": "text"
+            }
+          ]
+        }
+      ],
+      "style": {
+        "shape": "table",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 700,
+        "padding": 8,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "categories",
+      "kind": "table",
+      "label": "categories",
+      "compartments": [
+        {
+          "name": "",
+          "rows": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "key": "PK"
+            },
+            {
+              "name": "parent_id",
+              "type": "uuid",
+              "key": "FK"
+            },
+            {
+              "name": "name",
+              "type": "text"
+            }
+          ]
+        }
+      ],
+      "style": {
+        "shape": "table",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 700,
+        "padding": 8,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "customers",
+      "kind": "table",
+      "label": "customers",
+      "compartments": [
+        {
+          "name": "",
+          "rows": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "key": "PK"
+            },
+            {
+              "name": "email",
+              "type": "text"
+            },
+            {
+              "name": "name",
+              "type": "text"
+            }
+          ]
+        }
+      ],
+      "style": {
+        "shape": "table",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 700,
+        "padding": 8,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "order_items",
+      "kind": "table",
+      "label": "order_items",
+      "compartments": [
+        {
+          "name": "",
+          "rows": [
+            {
+              "name": "order_id",
+              "type": "uuid",
+              "key": "PK FK"
+            },
+            {
+              "name": "product_id",
+              "type": "uuid",
+              "key": "PK FK"
+            },
+            {
+              "name": "quantity",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "style": {
+        "shape": "table",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 700,
+        "padding": 8,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "orders",
+      "kind": "table",
+      "label": "orders",
+      "compartments": [
+        {
+          "name": "",
+          "rows": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "key": "PK"
+            },
+            {
+              "name": "customer_id",
+              "type": "uuid",
+              "key": "FK"
+            },
+            {
+              "name": "ship_to",
+              "type": "uuid",
+              "key": "FK"
+            },
+            {
+              "name": "bill_to",
+              "type": "uuid",
+              "key": "FK"
+            },
+            {
+              "name": "placed_at",
+              "type": "timestamp"
+            }
+          ]
+        }
+      ],
+      "style": {
+        "shape": "table",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 700,
+        "padding": 8,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "products",
+      "kind": "table",
+      "label": "products",
+      "compartments": [
+        {
+          "name": "",
+          "rows": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "key": "PK"
+            },
+            {
+              "name": "category_id",
+              "type": "uuid",
+              "key": "FK"
+            },
+            {
+              "name": "name",
+              "type": "text"
+            },
+            {
+              "name": "price",
+              "type": "numeric(10,2)"
+            }
+          ]
+        }
+      ],
+      "style": {
+        "shape": "table",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 700,
+        "padding": 8,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "address-customer",
+      "kind": "default",
+      "from": {
+        "node": "addresses",
+        "row": "customer_id"
+      },
+      "to": {
+        "node": "customers",
+        "row": "id"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "crow-zero-many",
+        "arrow_end": "crow-one",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "category-parent",
+      "kind": "default",
+      "from": {
+        "node": "categories",
+        "row": "parent_id"
+      },
+      "to": {
+        "node": "categories",
+        "row": "id"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "crow-zero-many",
+        "arrow_end": "crow-zero-one",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "item-order",
+      "kind": "default",
+      "from": {
+        "node": "order_items",
+        "row": "order_id"
+      },
+      "to": {
+        "node": "orders",
+        "row": "id"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "crow-one-many",
+        "arrow_end": "crow-one",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "item-product",
+      "kind": "default",
+      "from": {
+        "node": "order_items",
+        "row": "product_id"
+      },
+      "to": {
+        "node": "products",
+        "row": "id"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "crow-many",
+        "arrow_end": "crow-one",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "order-bill-to",
+      "kind": "default",
+      "from": {
+        "node": "orders",
+        "row": "bill_to"
+      },
+      "to": {
+        "node": "addresses",
+        "row": "id"
+      },
+      "labels": {
+        "mid": "bills to"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "crow-zero-many",
+        "arrow_end": "crow-zero-one",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "order-customer",
+      "kind": "default",
+      "from": {
+        "node": "orders",
+        "row": "customer_id"
+      },
+      "to": {
+        "node": "customers",
+        "row": "id"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "crow-zero-many",
+        "arrow_end": "crow-one",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "order-ship-to",
+      "kind": "default",
+      "from": {
+        "node": "orders",
+        "row": "ship_to"
+      },
+      "to": {
+        "node": "addresses",
+        "row": "id"
+      },
+      "labels": {
+        "mid": "ships to"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "crow-zero-many",
+        "arrow_end": "crow-one",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "product-category",
+      "kind": "default",
+      "from": {
+        "node": "products",
+        "row": "category_id"
+      },
+      "to": {
+        "node": "categories",
+        "row": "id"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "crow-zero-many",
+        "arrow_end": "crow-one",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    }
+  ]
+}

@@ -1,7 +1,9 @@
 import type { Box, Point } from '../geometry/geometry';
 import { CYLINDER_RY, DOCUMENT_WAVE, outline, personBodyTop, personHead, svgSize } from '../geometry/shapes';
-import { lineHeight, type TextBlock } from '../geometry/text';
+import { lineHeight, type Font, type TextBlock } from '../geometry/text';
 import type { CustomShape, EdgeStyle, NodeStyle, Side } from '../protocol/view';
+import type { PlacedLabel } from '../route/edges';
+import type { MarkerPart } from '../route/markers';
 
 // Markup for one node or edge from its geometry. The SVG export and the editor canvas both
 // draw with these functions, so there is one drawing path (spec 15).
@@ -20,6 +22,19 @@ export interface DrawnNode {
   icon?: Box;
   picture?: Box;
   ports: DrawnPort[];
+  table?: DrawnTable;
+}
+
+// DrawnTable is the rows of a table or class node: separator lines across the box at each y in
+// lines, and each row's key at keyX, name at nameX and type ending at typeX, centered on its y.
+export interface DrawnTable {
+  lines: number[];
+  rows: { name: string; key?: string; type?: string; y: number }[];
+  keyX: number;
+  nameX: number;
+  typeX: number;
+  font: Font;
+  keyFont: Font;
 }
 
 export interface DrawnPort extends Point {
@@ -30,9 +45,8 @@ export interface DrawnPort extends Point {
 export interface DrawnEdge {
   id: string;
   points: Point[];
-  arrowStart?: [Point, Point];
-  arrowEnd?: [Point, Point];
-  label?: { text: TextBlock; box: Box };
+  markers: MarkerPart[];
+  labels: PlacedLabel[];
   style: EdgeStyle;
 }
 
@@ -89,18 +103,31 @@ export function dataURI(svg: string): string {
 function textLines(t: TextBlock, b: Box, align: 'center' | 'left', color: string, m: FontMetrics): string[] {
   const lh = lineHeight(t.font.size);
   const top = b.y + (b.h - t.h) / 2;
-  const shift = ((m.ascent - m.descent) * t.font.size) / 2;
-  return t.lines.map((line, i) => {
-    const a = attrs({
-      x: align === 'center' ? b.x + b.w / 2 : b.x,
-      y: top + i * lh + lh / 2 + shift,
-      'text-anchor': align === 'center' ? 'middle' : undefined,
-      fill: color,
-      'font-size': dec(t.font.size),
-      'font-weight': t.font.weight === 400 ? undefined : String(t.font.weight),
-    });
-    return `<text${a}>${esc(line)}</text>`;
+  return t.lines.map((line, i) => textLine(line, align === 'center' ? b.x + b.w / 2 : b.x, top + i * lh + lh / 2, align === 'center' ? 'middle' : undefined, t.font, color, m));
+}
+
+// textLine draws one line of text whose middle is at y.
+function textLine(line: string, x: number, y: number, anchor: 'middle' | 'end' | undefined, f: Font, color: string, m: FontMetrics): string {
+  const a = attrs({
+    x,
+    y: y + ((m.ascent - m.descent) * f.size) / 2,
+    'text-anchor': anchor,
+    fill: color,
+    'font-size': dec(f.size),
+    'font-weight': f.weight === 400 ? undefined : String(f.weight),
   });
+  return `<text${a}>${esc(line)}</text>`;
+}
+
+function tableMarkup(n: DrawnNode, t: DrawnTable, m: FontMetrics): string[] {
+  const st = n.style;
+  const out = t.lines.map((y) => `<path${attrs({ d: path([{ x: n.box.x, y }, { x: n.box.x + n.box.w, y }]), stroke: st.stroke, 'stroke-width': dec(st.stroke_width) })}/>`);
+  for (const r of t.rows) {
+    if (r.key) out.push(textLine(r.key, t.keyX, r.y, undefined, t.keyFont, st.text_color, m));
+    out.push(textLine(r.name, t.nameX, r.y, undefined, t.font, st.text_color, m));
+    if (r.type) out.push(textLine(r.type, t.typeX, r.y, 'end', t.font, st.text_color, m));
+  }
+  return out;
 }
 
 function picture(svg: string, b: Box, fit: 'meet' | 'none'): string {
@@ -214,6 +241,7 @@ export function nodeMarkup(n: DrawnNode, m: FontMetrics, s: Shapes): string[] {
   if (n.picture && st.image) out.push(picture(st.image, n.picture, 'meet'));
   if (n.icon && st.icon) out.push(picture(st.icon, n.icon, 'meet'));
   if (n.text) out.push(...textLines(n.text, n.textBox, n.align, st.text_color, m));
+  if (n.table) out.push(...tableMarkup(n, n.table, m));
   if (n.tooSmall) {
     const b = n.box;
     out.push(`<rect${attrs({ x: b.x - 3, y: b.y - 3, width: b.w + 6, height: b.h + 6, fill: 'none', stroke: WARNING, 'stroke-dasharray': '4 4' })}/>`);
@@ -226,12 +254,15 @@ export function edgeMarkup(e: DrawnEdge, m: FontMetrics): string[] {
   const st = e.style;
   const stroke = { fill: 'none', stroke: st.stroke, 'stroke-width': dec(st.stroke_width) };
   const out = [`<g${attrs({ 'data-edge': e.id })}>`, `<path${attrs({ d: path(e.points), ...stroke, 'stroke-dasharray': dash(st.stroke_dash) })}/>`];
-  if (e.arrowEnd) out.push(`<path${attrs({ d: path([e.arrowEnd[0], e.points[e.points.length - 1], e.arrowEnd[1]]), ...stroke })}/>`);
-  if (e.arrowStart) out.push(`<path${attrs({ d: path([e.arrowStart[0], e.points[0], e.arrowStart[1]]), ...stroke })}/>`);
-  if (e.label) {
-    const lb = e.label.box;
-    out.push(`<rect${attrs({ x: lb.x, y: lb.y, width: lb.w, height: lb.h, fill: LABEL_BACKGROUND })}/>`);
-    out.push(...textLines(e.label.text, lb, 'center', '#202124', m));
+  const paint = (filled: boolean) => ({ fill: filled ? st.stroke : LABEL_BACKGROUND, stroke: st.stroke, 'stroke-width': dec(st.stroke_width) });
+  for (const p of e.markers) {
+    if ('line' in p) out.push(`<path${attrs({ d: path(p.line), ...stroke })}/>`);
+    else if ('polygon' in p) out.push(`<path${attrs({ d: path(p.polygon) + ' Z', ...paint(p.filled) })}/>`);
+    else out.push(`<circle${attrs({ cx: p.circle.x, cy: p.circle.y, r: dec(p.r), ...paint(p.filled) })}/>`);
+  }
+  for (const l of e.labels) {
+    out.push(`<rect${attrs({ x: l.box.x, y: l.box.y, width: l.box.w, height: l.box.h, fill: LABEL_BACKGROUND })}/>`);
+    out.push(...textLines(l.text, l.box, 'center', '#202124', m));
   }
   out.push('</g>');
   return out;
@@ -247,5 +278,13 @@ export function shiftNode(n: DrawnNode, dx: number, dy: number): DrawnNode {
     icon: n.icon && mv(n.icon),
     picture: n.picture && mv(n.picture),
     ports: n.ports.map(mv),
+    table: n.table && {
+      ...n.table,
+      lines: n.table.lines.map((y) => y + dy),
+      rows: n.table.rows.map((r) => ({ ...r, y: r.y + dy })),
+      keyX: n.table.keyX + dx,
+      nameX: n.table.nameX + dx,
+      typeX: n.table.typeX + dx,
+    },
   };
 }

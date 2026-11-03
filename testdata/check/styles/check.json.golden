@@ -182,7 +182,7 @@
   {
     "severity": "info",
     "summary": "Overridden definition",
-    "detail": "The edge_style \"default\" overrides the properties it sets of the one defined at \u003cgeneric\u003e/style.hcl:148:1.",
+    "detail": "The edge_style \"default\" overrides the properties it sets of the one defined at \u003cgeneric\u003e/style.hcl:151:1.",
     "file": "style.hcl",
     "line": 32,
     "column": 1,

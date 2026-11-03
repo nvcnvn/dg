@@ -2,7 +2,7 @@
   {
     "severity": "info",
     "summary": "Overridden definition",
-    "detail": "The overlay_style \"hull\" replaces the one defined at \u003cgeneric\u003e/style.hcl:230:1.",
+    "detail": "The overlay_style \"hull\" replaces the one defined at \u003cgeneric\u003e/style.hcl:233:1.",
     "file": "style.hcl",
     "line": 1,
     "column": 1,

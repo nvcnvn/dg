@@ -1,3 +1,4 @@
+import { KEY_WEIGHT } from '../geometry/table';
 import { drawnWeight, type Font, type TextMeasure } from '../geometry/text';
 import type { ResolvedView } from '../protocol/view';
 
@@ -31,8 +32,14 @@ export async function loadFonts(view: ResolvedView): Promise<FontChoice> {
   }
   const texts = new Map<number, string>();
   const add = (weight: number, text: string) => texts.set(weight, (texts.get(weight) ?? 'A') + text);
-  for (const n of view.nodes) add(drawnWeight(n.style.font_weight), n.label);
-  for (const e of view.edges) add(400, e.labels.mid ?? '');
+  for (const n of view.nodes) {
+    add(drawnWeight(n.style.font_weight), n.label);
+    for (const r of n.compartments?.flatMap((c) => c.rows) ?? []) {
+      add(400, r.name + (r.type ?? ''));
+      add(KEY_WEIGHT, r.key ?? '');
+    }
+  }
+  for (const e of view.edges) add(400, (e.labels.start ?? '') + (e.labels.mid ?? '') + (e.labels.end ?? ''));
   for (const [weight, text] of [...texts].sort((a, b) => a[0] - b[0])) {
     const loaded = await document.fonts.load(cssFont(choice.family, { size: 16, weight }), text);
     if (loaded.length === 0) throw new Error(`font ${choice.name} did not load`);

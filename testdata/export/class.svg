@@ -1,0 +1,171 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 850 700" width="850" height="700" font-family="Inter, sans-serif">
+<g data-node="Address">
+<rect x="510" y="410" width="110" height="100" fill="#FFFDE7" stroke="#3C4043" stroke-width="1"/>
+<text x="565" y="433" text-anchor="middle" fill="#202124" font-size="14" font-weight="700">Address</text>
+<path d="M510 446 L620 446" stroke="#3C4043" stroke-width="1"/>
+<path d="M510 502 L620 502" stroke="#3C4043" stroke-width="1"/>
+<text x="518" y="467" fill="#202124" font-size="14">street</text>
+<text x="612" y="467" text-anchor="end" fill="#202124" font-size="14">String</text>
+<text x="518" y="491" fill="#202124" font-size="14">city</text>
+<text x="612" y="491" text-anchor="end" fill="#202124" font-size="14">String</text>
+</g>
+<g data-node="BankTransfer">
+<rect x="10" y="570" width="110" height="80" fill="#FFFDE7" stroke="#3C4043" stroke-width="1"/>
+<text x="65" y="593" text-anchor="middle" fill="#202124" font-size="14" font-weight="700">BankTransfer</text>
+<path d="M10 606 L120 606" stroke="#3C4043" stroke-width="1"/>
+<path d="M10 638 L120 638" stroke="#3C4043" stroke-width="1"/>
+<text x="18" y="627" fill="#202124" font-size="14">iban</text>
+<text x="112" y="627" text-anchor="end" fill="#202124" font-size="14">String</text>
+</g>
+<g data-node="CardPayment">
+<rect x="160" y="570" width="160" height="80" fill="#FFFDE7" stroke="#3C4043" stroke-width="1"/>
+<text x="240" y="593" text-anchor="middle" fill="#202124" font-size="14" font-weight="700">CardPayment</text>
+<path d="M160 606 L320 606" stroke="#3C4043" stroke-width="1"/>
+<path d="M160 638 L320 638" stroke="#3C4043" stroke-width="1"/>
+<text x="168" y="627" fill="#202124" font-size="14">cardNumber</text>
+<text x="312" y="627" text-anchor="end" fill="#202124" font-size="14">String</text>
+</g>
+<g data-node="Category">
+<rect x="670" y="430" width="110" height="80" fill="#FFFDE7" stroke="#3C4043" stroke-width="1"/>
+<text x="725" y="453" text-anchor="middle" fill="#202124" font-size="14" font-weight="700">Category</text>
+<path d="M670 466 L780 466" stroke="#3C4043" stroke-width="1"/>
+<path d="M670 498 L780 498" stroke="#3C4043" stroke-width="1"/>
+<text x="678" y="487" fill="#202124" font-size="14">name</text>
+<text x="772" y="487" text-anchor="end" fill="#202124" font-size="14">String</text>
+</g>
+<g data-node="Customer">
+<rect x="450" y="10" width="160" height="130" fill="#FFFDE7" stroke="#3C4043" stroke-width="1"/>
+<text x="530" y="33" text-anchor="middle" fill="#202124" font-size="14" font-weight="700">Customer</text>
+<path d="M450 46 L610 46" stroke="#3C4043" stroke-width="1"/>
+<path d="M450 102 L610 102" stroke="#3C4043" stroke-width="1"/>
+<text x="458" y="67" fill="#202124" font-size="14">name</text>
+<text x="602" y="67" text-anchor="end" fill="#202124" font-size="14">String</text>
+<text x="458" y="91" fill="#202124" font-size="14">email</text>
+<text x="602" y="91" text-anchor="end" fill="#202124" font-size="14">String</text>
+<text x="458" y="123" fill="#202124" font-size="14">placeOrder()</text>
+<text x="602" y="123" text-anchor="end" fill="#202124" font-size="14">Order</text>
+</g>
+<g data-node="Order">
+<rect x="460" y="200" width="140" height="150" fill="#FFFDE7" stroke="#3C4043" stroke-width="1"/>
+<text x="530" y="223" text-anchor="middle" fill="#202124" font-size="14" font-weight="700">Order</text>
+<path d="M460 236 L600 236" stroke="#3C4043" stroke-width="1"/>
+<path d="M460 292 L600 292" stroke="#3C4043" stroke-width="1"/>
+<text x="468" y="257" fill="#202124" font-size="14">placedAt</text>
+<text x="592" y="257" text-anchor="end" fill="#202124" font-size="14">Instant</text>
+<text x="468" y="281" fill="#202124" font-size="14">status</text>
+<text x="592" y="281" text-anchor="end" fill="#202124" font-size="14">Status</text>
+<text x="468" y="313" fill="#202124" font-size="14">total()</text>
+<text x="592" y="313" text-anchor="end" fill="#202124" font-size="14">Money</text>
+<text x="468" y="337" fill="#202124" font-size="14">cancel()</text>
+</g>
+<g data-node="OrderLine">
+<rect x="330" y="410" width="140" height="100" fill="#FFFDE7" stroke="#3C4043" stroke-width="1"/>
+<text x="400" y="433" text-anchor="middle" fill="#202124" font-size="14" font-weight="700">OrderLine</text>
+<path d="M330 446 L470 446" stroke="#3C4043" stroke-width="1"/>
+<path d="M330 478 L470 478" stroke="#3C4043" stroke-width="1"/>
+<text x="338" y="467" fill="#202124" font-size="14">quantity</text>
+<text x="462" y="467" text-anchor="end" fill="#202124" font-size="14">int</text>
+<text x="338" y="499" fill="#202124" font-size="14">subtotal()</text>
+<text x="462" y="499" text-anchor="end" fill="#202124" font-size="14">Money</text>
+</g>
+<g data-node="Payable">
+<rect x="140" y="260" width="120" height="90" fill="#FFFDE7" stroke="#3C4043" stroke-width="1"/>
+<text x="200" y="283" text-anchor="middle" fill="#202124" font-size="14" font-weight="700">«interface»</text>
+<text x="200" y="303" text-anchor="middle" fill="#202124" font-size="14" font-weight="700">Payable</text>
+<path d="M140 316 L260 316" stroke="#3C4043" stroke-width="1"/>
+<text x="148" y="337" fill="#202124" font-size="14">pay()</text>
+<text x="252" y="337" text-anchor="end" fill="#202124" font-size="14">Receipt</text>
+</g>
+<g data-node="Payment">
+<rect x="160" y="410" width="130" height="100" fill="#FFFDE7" stroke="#3C4043" stroke-width="1"/>
+<text x="225" y="433" text-anchor="middle" fill="#202124" font-size="14" font-weight="700">Payment</text>
+<path d="M160 446 L290 446" stroke="#3C4043" stroke-width="1"/>
+<path d="M160 478 L290 478" stroke="#3C4043" stroke-width="1"/>
+<text x="168" y="467" fill="#202124" font-size="14">amount</text>
+<text x="282" y="467" text-anchor="end" fill="#202124" font-size="14">Money</text>
+<text x="168" y="499" fill="#202124" font-size="14">pay()</text>
+<text x="282" y="499" text-anchor="end" fill="#202124" font-size="14">Receipt</text>
+</g>
+<g data-node="Product">
+<rect x="650" y="570" width="110" height="100" fill="#FFFDE7" stroke="#3C4043" stroke-width="1"/>
+<text x="705" y="593" text-anchor="middle" fill="#202124" font-size="14" font-weight="700">Product</text>
+<path d="M650 606 L760 606" stroke="#3C4043" stroke-width="1"/>
+<path d="M650 662 L760 662" stroke="#3C4043" stroke-width="1"/>
+<text x="658" y="627" fill="#202124" font-size="14">sku</text>
+<text x="752" y="627" text-anchor="end" fill="#202124" font-size="14">String</text>
+<text x="658" y="651" fill="#202124" font-size="14">price</text>
+<text x="752" y="651" text-anchor="end" fill="#202124" font-size="14">Money</text>
+</g>
+<g data-edge="bank-payment">
+<path d="M65 570 L65 558 L140 558 L140 460 L160 460" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M160 460 L148 466 L148 454 Z" fill="#FFFFFF" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="bill-to">
+<path d="M507 350 L507 362 L547 362 L547 410" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="527" y="362" width="40" height="17" fill="#FFFFFF"/>
+<text x="547" y="375" text-anchor="middle" fill="#202124" font-size="12">billTo</text>
+<rect x="509" y="389" width="30" height="17" fill="#FFFFFF"/>
+<text x="524" y="402" text-anchor="middle" fill="#202124" font-size="12">0..1</text>
+</g>
+<g data-edge="card-payment">
+<path d="M233 570 L233 510" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M233 510 L239 522 L227 522 Z" fill="#FFFFFF" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="category-products">
+<path d="M715 510 L715 570" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M715 510 L720 518 L715 526 L710 518 Z" fill="#FFFFFF" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="677" y="514" width="30" height="17" fill="#FFFFFF"/>
+<text x="692" y="527" text-anchor="middle" fill="#202124" font-size="12">0..1</text>
+<rect x="687" y="549" width="20" height="17" fill="#FFFFFF"/>
+<text x="697" y="562" text-anchor="middle" fill="#202124" font-size="12">*</text>
+</g>
+<g data-edge="line-product">
+<path d="M400 510 L400 522 L625 522 L625 620 L650 620" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="626" y="595" width="20" height="17" fill="#FFFFFF"/>
+<text x="636" y="608" text-anchor="middle" fill="#202124" font-size="12">1</text>
+</g>
+<g data-edge="lines">
+<path d="M460 250 L435 250 L435 385 L400 385 L400 410" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M460 250 L452 255 L444 250 L452 245 Z" fill="#3C4043" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="436" y="225" width="20" height="17" fill="#FFFFFF"/>
+<text x="446" y="238" text-anchor="middle" fill="#202124" font-size="12">1</text>
+<rect x="362" y="389" width="30" height="17" fill="#FFFFFF"/>
+<text x="377" y="402" text-anchor="middle" fill="#202124" font-size="12">1..*</text>
+</g>
+<g data-edge="order-payment">
+<path d="M460 300 L315 300 L315 460 L290 460" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="290" y="312" width="50" height="17" fill="#FFFFFF"/>
+<text x="315" y="325" text-anchor="middle" fill="#202124" font-size="12">paid by</text>
+<rect x="388" y="275" width="20" height="17" fill="#FFFFFF"/>
+<text x="398" y="288" text-anchor="middle" fill="#202124" font-size="12">1</text>
+<rect x="294" y="468" width="30" height="17" fill="#FFFFFF"/>
+<text x="309" y="481" text-anchor="middle" fill="#202124" font-size="12">0..1</text>
+</g>
+<g data-edge="payment-payable">
+<path d="M225 410 L225 370 L200 370 L200 350" fill="none" stroke="#3C4043" stroke-width="1.5" stroke-dasharray="6 4"/>
+<path d="M200 350 L206 362 L194 362 Z" fill="#FFFFFF" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="places">
+<path d="M530 140 L530 200" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="505" y="162" width="50" height="17" fill="#FFFFFF"/>
+<text x="530" y="175" text-anchor="middle" fill="#202124" font-size="12">places</text>
+<rect x="502" y="144" width="20" height="17" fill="#FFFFFF"/>
+<text x="512" y="157" text-anchor="middle" fill="#202124" font-size="12">1</text>
+<rect x="492" y="179" width="30" height="17" fill="#FFFFFF"/>
+<text x="507" y="192" text-anchor="middle" fill="#202124" font-size="12">0..*</text>
+</g>
+<g data-edge="ship-to">
+<path d="M553 350 L553 362 L583 362 L583 410" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="587" y="357" width="50" height="17" fill="#FFFFFF"/>
+<text x="612" y="370" text-anchor="middle" fill="#202124" font-size="12">shipTo</text>
+<rect x="555" y="389" width="20" height="17" fill="#FFFFFF"/>
+<text x="565" y="402" text-anchor="middle" fill="#202124" font-size="12">1</text>
+</g>
+<g data-edge="subcategories">
+<path d="M780 450 L800 450 L800 410 L760 410 L760 430" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="784" y="458" width="30" height="17" fill="#FFFFFF"/>
+<text x="799" y="471" text-anchor="middle" fill="#202124" font-size="12">0..1</text>
+<rect x="732" y="409" width="20" height="17" fill="#FFFFFF"/>
+<text x="742" y="422" text-anchor="middle" fill="#202124" font-size="12">*</text>
+</g>
+</svg>

@@ -1,0 +1,661 @@
+{
+  "view": "main",
+  "grid": 10,
+  "nodes": [
+    {
+      "id": "Address",
+      "kind": "class",
+      "label": "Address",
+      "compartments": [
+        {
+          "name": "fields",
+          "rows": [
+            {
+              "name": "street",
+              "type": "String"
+            },
+            {
+              "name": "city",
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "methods",
+          "rows": []
+        }
+      ],
+      "style": {
+        "shape": "table",
+        "fill": "#FFFDE7",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 700,
+        "padding": 8,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "BankTransfer",
+      "kind": "class",
+      "label": "BankTransfer",
+      "compartments": [
+        {
+          "name": "fields",
+          "rows": [
+            {
+              "name": "iban",
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "methods",
+          "rows": []
+        }
+      ],
+      "style": {
+        "shape": "table",
+        "fill": "#FFFDE7",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 700,
+        "padding": 8,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "CardPayment",
+      "kind": "class",
+      "label": "CardPayment",
+      "compartments": [
+        {
+          "name": "fields",
+          "rows": [
+            {
+              "name": "cardNumber",
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "methods",
+          "rows": []
+        }
+      ],
+      "style": {
+        "shape": "table",
+        "fill": "#FFFDE7",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 700,
+        "padding": 8,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "Category",
+      "kind": "class",
+      "label": "Category",
+      "compartments": [
+        {
+          "name": "fields",
+          "rows": [
+            {
+              "name": "name",
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "methods",
+          "rows": []
+        }
+      ],
+      "style": {
+        "shape": "table",
+        "fill": "#FFFDE7",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 700,
+        "padding": 8,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "Customer",
+      "kind": "class",
+      "label": "Customer",
+      "compartments": [
+        {
+          "name": "fields",
+          "rows": [
+            {
+              "name": "name",
+              "type": "String"
+            },
+            {
+              "name": "email",
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "methods",
+          "rows": [
+            {
+              "name": "placeOrder()",
+              "type": "Order"
+            }
+          ]
+        }
+      ],
+      "style": {
+        "shape": "table",
+        "fill": "#FFFDE7",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 700,
+        "padding": 8,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "Order",
+      "kind": "class",
+      "label": "Order",
+      "compartments": [
+        {
+          "name": "fields",
+          "rows": [
+            {
+              "name": "placedAt",
+              "type": "Instant"
+            },
+            {
+              "name": "status",
+              "type": "Status"
+            }
+          ]
+        },
+        {
+          "name": "methods",
+          "rows": [
+            {
+              "name": "total()",
+              "type": "Money"
+            },
+            {
+              "name": "cancel()"
+            }
+          ]
+        }
+      ],
+      "style": {
+        "shape": "table",
+        "fill": "#FFFDE7",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 700,
+        "padding": 8,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "OrderLine",
+      "kind": "class",
+      "label": "OrderLine",
+      "compartments": [
+        {
+          "name": "fields",
+          "rows": [
+            {
+              "name": "quantity",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "name": "methods",
+          "rows": [
+            {
+              "name": "subtotal()",
+              "type": "Money"
+            }
+          ]
+        }
+      ],
+      "style": {
+        "shape": "table",
+        "fill": "#FFFDE7",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 700,
+        "padding": 8,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "Payable",
+      "kind": "class",
+      "label": "«interface»\nPayable",
+      "compartments": [
+        {
+          "name": "methods",
+          "rows": [
+            {
+              "name": "pay()",
+              "type": "Receipt"
+            }
+          ]
+        }
+      ],
+      "style": {
+        "shape": "table",
+        "fill": "#FFFDE7",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 700,
+        "padding": 8,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "Payment",
+      "kind": "class",
+      "label": "Payment",
+      "compartments": [
+        {
+          "name": "fields",
+          "rows": [
+            {
+              "name": "amount",
+              "type": "Money"
+            }
+          ]
+        },
+        {
+          "name": "methods",
+          "rows": [
+            {
+              "name": "pay()",
+              "type": "Receipt"
+            }
+          ]
+        }
+      ],
+      "style": {
+        "shape": "table",
+        "fill": "#FFFDE7",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 700,
+        "padding": 8,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "Product",
+      "kind": "class",
+      "label": "Product",
+      "compartments": [
+        {
+          "name": "fields",
+          "rows": [
+            {
+              "name": "sku",
+              "type": "String"
+            },
+            {
+              "name": "price",
+              "type": "Money"
+            }
+          ]
+        },
+        {
+          "name": "methods",
+          "rows": []
+        }
+      ],
+      "style": {
+        "shape": "table",
+        "fill": "#FFFDE7",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 700,
+        "padding": 8,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "bank-payment",
+      "kind": "inherits",
+      "from": {
+        "node": "BankTransfer"
+      },
+      "to": {
+        "node": "Payment"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "triangle-open",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "bill-to",
+      "kind": "association",
+      "from": {
+        "node": "Order"
+      },
+      "to": {
+        "node": "Address"
+      },
+      "labels": {
+        "mid": "billTo",
+        "end": "0..1"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "none",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "card-payment",
+      "kind": "inherits",
+      "from": {
+        "node": "CardPayment"
+      },
+      "to": {
+        "node": "Payment"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "triangle-open",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "category-products",
+      "kind": "aggregation",
+      "from": {
+        "node": "Category"
+      },
+      "to": {
+        "node": "Product"
+      },
+      "labels": {
+        "start": "0..1",
+        "end": "*"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "diamond-open",
+        "arrow_end": "none",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "line-product",
+      "kind": "association",
+      "from": {
+        "node": "OrderLine"
+      },
+      "to": {
+        "node": "Product"
+      },
+      "labels": {
+        "end": "1"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "none",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "lines",
+      "kind": "composition",
+      "from": {
+        "node": "Order"
+      },
+      "to": {
+        "node": "OrderLine"
+      },
+      "labels": {
+        "start": "1",
+        "end": "1..*"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "diamond",
+        "arrow_end": "none",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "order-payment",
+      "kind": "association",
+      "from": {
+        "node": "Order"
+      },
+      "to": {
+        "node": "Payment"
+      },
+      "labels": {
+        "start": "1",
+        "mid": "paid by",
+        "end": "0..1"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "none",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "payment-payable",
+      "kind": "realizes",
+      "from": {
+        "node": "Payment"
+      },
+      "to": {
+        "node": "Payable"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [
+          6,
+          4
+        ],
+        "arrow_start": "none",
+        "arrow_end": "triangle-open",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "places",
+      "kind": "association",
+      "from": {
+        "node": "Customer"
+      },
+      "to": {
+        "node": "Order"
+      },
+      "labels": {
+        "start": "1",
+        "mid": "places",
+        "end": "0..*"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "none",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "ship-to",
+      "kind": "association",
+      "from": {
+        "node": "Order"
+      },
+      "to": {
+        "node": "Address"
+      },
+      "labels": {
+        "mid": "shipTo",
+        "end": "1"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "none",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "subcategories",
+      "kind": "association",
+      "from": {
+        "node": "Category"
+      },
+      "to": {
+        "node": "Category"
+      },
+      "labels": {
+        "start": "0..1",
+        "end": "*"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "none",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    }
+  ]
+}

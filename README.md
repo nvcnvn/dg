@@ -42,7 +42,9 @@ browser.
 
 The examples are `hello`, `inference` (packs, read-only generated files, ports), `c4-container`
 (a C4 container diagram with a local `c4` pack, laid out by elk in `main` and from a partial
-layout file in `pinned`) and `shapes` (every built-in shape, custom shapes, icons, style
-properties, ports and edge hints).
+layout file in `pinned`), `shapes` (every built-in shape, custom shapes, icons, style
+properties, arrow markers, ports and edge hints), `er` (tables with keyed rows, foreign keys from
+row to row with crow's-foot cardinality, a self-reference) and `class` (classes with
+compartments, inheritance, composition, aggregation, multiplicities, a self-association).
 
 `dg check` exits 0 without errors, 1 with errors, 2 when dg itself fails.

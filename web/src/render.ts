@@ -1,12 +1,14 @@
 import type { Drawing } from './canvas/export';
 import type { DrawnEdge, DrawnNode } from './canvas/markup';
-import { absoluteBoxes, ceilTo, cmp, contentLayout, depth, fitContainers, measureNode, type Box, type Layout, type NodeMeasure, type Point, type Size } from './geometry/geometry';
+import { absoluteBoxes, ceilTo, cmp, contentLayout, depth, fitContainers, measureNode, type Box, type Layout, type NodeMeasure, type Point } from './geometry/geometry';
+import { rowLines } from './geometry/table';
 import { textBlock, type TextMeasure } from './geometry/text';
-import { placeWithElk, type Elk } from './place/elk';
+import { placeWithElk, type EdgeLabelSizes, type Elk } from './place/elk';
 import { placeSpiral } from './place/spiral';
 import type { ResolvedView, ViewNode } from './protocol/view';
 import { LABEL_PAD, placeLabels, planPorts, routeEdges, type Router } from './route/edges';
-import { openArrow, type PortPos } from './route/route';
+import { marker } from './route/markers';
+import type { PortPos } from './route/route';
 
 const MARGIN = 20;
 
@@ -19,21 +21,19 @@ export async function draw(view: ResolvedView, text: TextMeasure, family: string
   const layout = await place(view, measures, text, elk);
   const boxes = absoluteBoxes(view, measures, layout);
   const headers = new Map(view.nodes.filter((n) => n.container && measures.get(n.id)!.content.h > 0).map((n) => [n.id, header(n, measures.get(n.id)!, boxes.get(n.id)!)]));
-  const geometry = { view, boxes, headers, grid };
+  const rows = new Map(view.nodes.filter((n) => measures.get(n.id)!.table).map((n) => [n.id, rowLines(measures.get(n.id)!.table!, boxes.get(n.id)!)]));
+  const geometry = { view, boxes, headers, rows, grid };
   const ports = planPorts(geometry);
   const routes = await routeEdges(geometry, ports, router);
-  const labels = placeLabels(geometry, routes, text);
+  const markers = new Map(view.edges.map((e) => [e.id, [marker(e.style.arrow_end, routes.get(e.id)!), marker(e.style.arrow_start, [...routes.get(e.id)!].reverse())]]));
+  const labels = placeLabels(geometry, routes, markers, text);
 
   const nodes: DrawnNode[] = view.nodes
     .map((n) => ({ n, z: n.style.z, d: depth(byId, n) }))
     .sort((a, b) => a.z - b.z || a.d - b.d || cmp(a.n.id, b.n.id))
     .map(({ n }) => drawnNode(n, measures.get(n.id)!, boxes.get(n.id)!, layout, shapes[n.style.shape] ? n.style.shape : undefined, view, ports.get(n.id)!));
   const edges: DrawnEdge[] = view.edges.map((e) => {
-    const pts = routes.get(e.id)!;
-    const drawn: DrawnEdge = { id: e.id, points: pts, style: e.style, label: labels.get(e.id) };
-    if (e.style.arrow_end === 'arrow') drawn.arrowEnd = openArrow(pts);
-    if (e.style.arrow_start === 'arrow') drawn.arrowStart = openArrow([...pts].reverse());
-    return drawn;
+    return { id: e.id, points: routes.get(e.id)!, style: e.style, markers: markers.get(e.id)!.flat(), labels: labels.get(e.id)! };
   });
 
   return {
@@ -75,6 +75,16 @@ async function place(view: ResolvedView, measures: Map<string, NodeMeasure>, tex
 
 function drawnNode(n: ViewNode, m: NodeMeasure, box: Box, layout: Layout, custom: string | undefined, view: ResolvedView, ports: Map<string, PortPos>): DrawnNode {
   const c = contentLayout(n, m, box, custom ? view.shapes![custom] : undefined);
+  const t = m.table;
+  const table = t && {
+    lines: t.lines.map((y) => Math.round(box.y + y)),
+    rows: t.rows.map((r) => ({ ...r, y: box.y + r.y })),
+    keyX: box.x + n.style.padding,
+    nameX: box.x + t.nameX,
+    typeX: box.x + box.w - n.style.padding,
+    font: t.font,
+    keyFont: t.keyFont,
+  };
   return {
     id: n.id,
     box,
@@ -86,6 +96,7 @@ function drawnNode(n: ViewNode, m: NodeMeasure, box: Box, layout: Layout, custom
     text: m.text,
     ...c,
     ports: [...ports].map(([name, p]) => ({ name, ...p })),
+    table,
   };
 }
 
@@ -96,7 +107,7 @@ function header(n: ViewNode, m: NodeMeasure, b: Box): Box {
 }
 
 function bounds(boxes: Box[], edges: DrawnEdge[], grid: number): Box {
-  const all = [...boxes, ...edges.flatMap((e) => [...e.points.map((p) => ({ ...p, w: 0, h: 0 })), ...(e.label ? [e.label.box] : [])])];
+  const all = [...boxes, ...edges.flatMap((e) => [...e.points.map((p) => ({ ...p, w: 0, h: 0 })), ...e.labels.map((l) => l.box)])];
   if (all.length === 0) return { x: 0, y: 0, w: 2 * MARGIN, h: 2 * MARGIN };
   const x = Math.floor((Math.min(...all.map((b) => b.x)) - MARGIN) / grid) * grid;
   const y = Math.floor((Math.min(...all.map((b) => b.y)) - MARGIN) / grid) * grid;
@@ -106,14 +117,19 @@ function bounds(boxes: Box[], edges: DrawnEdge[], grid: number): Box {
 }
 
 
-// edgeLabelSizes returns the size of each edge's middle label, so the first layout leaves room
-// for it.
-function edgeLabelSizes(view: ResolvedView, text: TextMeasure): Map<string, Size> {
-  const out = new Map<string, Size>();
+// edgeLabelSizes returns the sizes of each edge's labels by position, so the first layout leaves
+// room for them.
+function edgeLabelSizes(view: ResolvedView, text: TextMeasure): Map<string, EdgeLabelSizes> {
+  const out = new Map<string, EdgeLabelSizes>();
   for (const e of view.edges) {
-    if (!e.labels.mid) continue;
-    const t = textBlock(e.labels.mid, 0, { size: e.style.font_size, weight: 400 }, text);
-    out.set(e.id, { w: ceilTo(t.w + 2 * LABEL_PAD, view.grid), h: t.h });
+    const sizes: EdgeLabelSizes = {};
+    for (const pos of ['start', 'mid', 'end'] as const) {
+      const s = e.labels[pos];
+      if (!s) continue;
+      const t = textBlock(s, 0, { size: e.style.font_size, weight: 400 }, text);
+      sizes[pos] = { w: ceilTo(t.w + 2 * LABEL_PAD, view.grid), h: t.h };
+    }
+    out.set(e.id, sizes);
   }
   return out;
 }

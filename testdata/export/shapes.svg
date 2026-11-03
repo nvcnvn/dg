@@ -99,7 +99,7 @@
 </g>
 <g data-node="table">
 <rect x="1960" y="60" width="100" height="40" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
-<text x="2010" y="85" text-anchor="middle" fill="#202124" font-size="14">table</text>
+<text x="2010" y="85" text-anchor="middle" fill="#202124" font-size="14" font-weight="700">table</text>
 </g>
 <g data-node="text">
 <text x="960" y="85" text-anchor="middle" fill="#202124" font-size="14">text: no outline</text>
@@ -117,7 +117,8 @@
 </g>
 <g data-edge="diamond-bullseye">
 <path d="M1343 436 L1328 510" fill="none" stroke="#3C4043" stroke-width="1.5"/>
-<path d="M1325 499 L1328 510 L1335 501" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<circle cx="1329" cy="506" r="4" fill="#FFFFFF" stroke="#3C4043" stroke-width="1.5"/>
+<circle cx="1342" cy="440" r="4" fill="#3C4043" stroke="#3C4043" stroke-width="1.5"/>
 </g>
 <g data-edge="diamond-cylinder">
 <path d="M1350 440 L1350 452 L1368 452 L1368 545 L1380 545" fill="none" stroke="#3C4043" stroke-width="1.5" stroke-dasharray="6 4"/>
@@ -128,8 +129,8 @@
 <g data-edge="lab-bench">
 <path d="M2500 450 L2500 430" fill="none" stroke="#3C4043" stroke-width="1.5"/>
 <path d="M2505 440 L2500 430 L2495 440" fill="none" stroke="#3C4043" stroke-width="1.5"/>
-<rect x="2504" y="432" width="60" height="17" fill="#FFFFFF"/>
-<text x="2534" y="445" text-anchor="middle" fill="#202124" font-size="12">to a child</text>
+<rect x="2504" y="438" width="60" height="17" fill="#FFFFFF"/>
+<text x="2534" y="451" text-anchor="middle" fill="#202124" font-size="12">to a child</text>
 </g>
 <g data-edge="point-rounded">
 <path d="M1350 140 L1350 220" fill="none" stroke="#3C4043" stroke-width="1.5"/>
@@ -143,6 +144,7 @@
 </g>
 <g data-edge="rounded-diamond">
 <path d="M1350 260 L1350 360" fill="none" stroke="#3C4043" stroke-width="1.5"/>
-<path d="M1345 350 L1350 360 L1355 350" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M1350 360 L1344 348 L1356 348 Z" fill="#3C4043" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M1350 260 L1355 268 L1350 276 L1345 268 Z" fill="#FFFFFF" stroke="#3C4043" stroke-width="1.5"/>
 </g>
 </svg>

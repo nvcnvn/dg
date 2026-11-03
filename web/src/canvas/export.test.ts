@@ -34,8 +34,8 @@ const drawing: Drawing = {
     {
       id: 'e',
       points: [{ x: 100, y: 20 }, { x: 200, y: 20 }],
-      arrowEnd: [{ x: 190, y: 25 }, { x: 190, y: 15 }],
-      label: { text: { lines: ['x'], font, w: 8, h: 20 }, box: { x: 140, y: 10, w: 20, h: 20 } },
+      markers: [{ line: [{ x: 190, y: 25 }, { x: 200, y: 20 }, { x: 190, y: 15 }] }, { circle: { x: 104, y: 20 }, r: 4, filled: false }],
+      labels: [{ text: { lines: ['x'], font, w: 8, h: 20 }, box: { x: 140, y: 10, w: 20, h: 20 } }],
       style: edgeStyle({ stroke_dash: [6, 4] }),
     },
   ],
@@ -51,6 +51,7 @@ describe('toSVG', () => {
     expect(svg).toContain('stroke-dasharray="6 4"');
     expect(svg).toContain('d="M100 20 L200 20"');
     expect(svg).toContain('d="M190 25 L200 20 L190 15"');
+    expect(svg).toContain('<circle cx="104" cy="20" r="4" fill="#FFFFFF" stroke="#3C4043" stroke-width="1.5"/>');
     expect(svg).toContain('font-family="Inter, sans-serif"');
   });
 });
@@ -77,6 +78,17 @@ describe('nodeMarkup', () => {
     const out = nodeMarkup({ ...drawn('n'), custom: 'gpu' }, m, shapes).join('');
     expect(out.match(/<use href="#dg-shape-gpu"\/>/g)).toHaveLength(9);
     expect(toSVG({ ...drawing, nodes: [{ ...drawn('n'), custom: 'gpu' }], edges: [], ...shapes })).toContain('<image id="dg-shape-gpu"');
+  });
+});
+
+describe('tables', () => {
+  it('draws separators and each row key, name and right-aligned type', () => {
+    const table = { lines: [30], rows: [{ name: 'id', key: 'PK', type: 'uuid', y: 42 }], keyX: 8, nameX: 40, typeX: 92, font, keyFont: { ...font, weight: 700 } };
+    const out = nodeMarkup({ ...drawn('t', { shape: 'table' }), table }, { ascent: 0.9, descent: 0.2 }, { shapes: {} }).join('\n');
+    expect(out).toContain('<path d="M0 30 L100 30"');
+    expect(out).toMatch(/<text x="8" y="\d+" fill="#202124" font-size="14" font-weight="700">PK<\/text>/);
+    expect(out).toMatch(/<text x="92" y="\d+" text-anchor="end"[^>]*>uuid<\/text>/);
+    expect(JSON.parse(toJSON({ ...drawing, nodes: [{ ...drawn('t'), table }], edges: [] })).nodes[0].rows).toEqual([{ name: 'id', y: 42 }]);
   });
 });
 

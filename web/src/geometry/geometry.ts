@@ -1,5 +1,6 @@
 import type { CustomShape, ResolvedView, ViewNode } from '../protocol/view';
 import { innerBox, LABELLESS, outerSize, svgSize } from './shapes';
+import { isTable, measureTable, type TableMeasure } from './table';
 import { drawnWeight, textBlock, type TextBlock, type TextMeasure } from './text';
 
 export interface Point {
@@ -39,6 +40,7 @@ export interface NodeMeasure {
   content: Size;
   size: Size;
   origin: Point;
+  table?: TableMeasure;
 }
 
 export function iconSide(fontSize: number): number {
@@ -71,7 +73,8 @@ export function measureNode(n: ViewNode, m: TextMeasure, grid: number, custom?: 
     return { text, icon, picture, content, size, origin };
   }
 
-  const outer = LABELLESS.has(s.shape) ? { w: 0, h: 0 } : outerSize(s.shape, { w: content.w + 2 * pad, h: content.h + 2 * pad }, custom);
+  const table = isTable(n) ? measureTable(n, text, m) : undefined;
+  const outer = table ? table.size : LABELLESS.has(s.shape) ? { w: 0, h: 0 } : outerSize(s.shape, { w: content.w + 2 * pad, h: content.h + 2 * pad }, custom);
   let w = Math.max(s.min_w, outer.w);
   let h = Math.max(s.min_h, outer.h);
   if (custom?.stretch === 'none') {
@@ -89,7 +92,7 @@ export function measureNode(n: ViewNode, m: TextMeasure, grid: number, custom?: 
     size = w >= h ? { w: ceilTo(w, grid), h: Math.round(ceilTo(w, grid) / r) } : { w: Math.round(ceilTo(h, grid) * r), h: ceilTo(h, grid) };
   }
   size = { w: pin?.w ?? size.w, h: pin?.h ?? size.h };
-  return { text, icon, picture, content, size, origin: { x: 0, y: 0 } };
+  return { text, icon, picture, content, size, origin: { x: 0, y: 0 }, table };
 }
 
 // containerSize fits a container to its label and its children, whose boxes are relative to
@@ -196,6 +199,7 @@ export function contentLayout(n: ViewNode, m: NodeMeasure, b: Box, custom?: Cust
     const top = y + (icon ? m.icon + GAP : 0);
     return { textBox: { x, y: top, w: m.text?.w ?? 0, h: th }, align: 'left', icon };
   }
+  if (m.table) return { textBox: { x: b.x + pad, y: b.y + pad, w: Math.max(0, b.w - 2 * pad), h: th }, align: 'center' };
   const inner = innerBox(n.style.shape, b, custom);
   const area = { x: inner.x + pad, y: inner.y + pad, w: Math.max(0, inner.w - 2 * pad), h: Math.max(0, inner.h - 2 * pad) };
   if (m.picture) {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { node } from '../fixtures';
 import { outline } from '../geometry/shapes';
-import { clip, placeLabel, portPositions, segmentHitsBox, sideFacing } from './route';
+import { clip, placeEndLabel, placeLabel, portPositions, rowSide, segmentHitsBox, sideFacing } from './route';
 
 describe('clip', () => {
   const a = { x: 0, y: 0, w: 100, h: 40 };
@@ -79,5 +79,30 @@ describe('segmentHitsBox', () => {
     [{ x: 5, y: -5 }, { x: 5, y: -1 }, false],
   ])('%j to %j', (a, b, hit) => {
     expect(segmentHitsBox(a, b, r)).toBe(hit);
+  });
+});
+
+describe('rowSide', () => {
+  const b = { x: 0, y: 0, w: 100, h: 60 };
+  it.each([
+    ['right of it', { x: 300, y: 0, w: 100, h: 40 }, 'right'],
+    ['left of it', { x: -300, y: 0, w: 100, h: 40 }, 'left'],
+    ['overlapping, closer on the left', { x: 40, y: 200, w: 160, h: 40 }, 'left'],
+    ['overlapping, closer on the right', { x: -60, y: 200, w: 150, h: 40 }, 'right'],
+    ['a port point inside, nearer the left', { x: 30, y: 200, w: 0, h: 0 }, 'left'],
+    ['the same box', b, 'right'],
+  ])('%s', (_, o, side) => {
+    expect(rowSide(b, o)).toBe(side);
+  });
+});
+
+describe('placeEndLabel', () => {
+  const route = [{ x: 0, y: 100 }, { x: 0, y: 0 }];
+  it('goes beside the end, outside the node', () => {
+    expect(placeEndLabel(route, { w: 20, h: 17 }, [], [])).toEqual({ x: -28, y: 4, w: 20, h: 17 });
+  });
+  it('keeps away from another route, moving further out if it must', () => {
+    const others = [[{ x: -20, y: 0 }, { x: -20, y: 100 }], [{ x: 30, y: 0 }, { x: 30, y: 24 }]];
+    expect(placeEndLabel(route, { w: 20, h: 17 }, [], others)).toEqual({ x: 8, y: 46, w: 20, h: 17 });
   });
 });

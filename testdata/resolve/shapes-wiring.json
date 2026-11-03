@@ -310,8 +310,8 @@
         "stroke": "#3C4043",
         "stroke_width": 1.5,
         "stroke_dash": [],
-        "arrow_start": "none",
-        "arrow_end": "arrow",
+        "arrow_start": "circle",
+        "arrow_end": "circle-open",
         "routing": "straight",
         "font_size": 12
       }
@@ -436,8 +436,8 @@
         "stroke": "#3C4043",
         "stroke_width": 1.5,
         "stroke_dash": [],
-        "arrow_start": "none",
-        "arrow_end": "arrow",
+        "arrow_start": "diamond-open",
+        "arrow_end": "triangle",
         "routing": "polyline",
         "font_size": 12
       }

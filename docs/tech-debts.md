@@ -48,3 +48,12 @@ to remove it.
   every difference between platforms and Chromium versions is unproven.
 - **Remove when:** the goldens pass unchanged on Linux CI and macOS; otherwise keep per-platform
   goldens.
+
+## End labels where several edges converge on one side
+
+- **Where:** `examples/class` leaves out a `customer-address` dependency edge.
+- **Why:** when three edges meet one side of a node, `placeEndLabel` can still put a start or end
+  label beside the wrong line or away from every line; the example omits the edge so its golden
+  shows correct labels.
+- **Remove when:** end labels stay beside their own edge with three or more edges converging on
+  one side; then restore the edge in `examples/class` and regenerate its golden.

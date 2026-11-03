@@ -19,6 +19,7 @@ export interface ViewNode {
   container?: boolean;
   read_only?: boolean;
   ports?: Port[];
+  compartments?: Compartment[];
   pin?: Pin;
   style: NodeStyle;
 }
@@ -26,6 +27,17 @@ export interface ViewNode {
 export interface Port {
   name: string;
   side: Side | 'auto';
+}
+
+export interface Compartment {
+  name: string;
+  rows: Row[];
+}
+
+export interface Row {
+  name: string;
+  type?: string;
+  key?: string;
 }
 
 export interface Pin {
@@ -62,15 +74,22 @@ export interface ViewEdge {
   kind: string;
   from: End;
   to: End;
-  labels: { mid?: string };
+  labels: Labels;
   read_only?: boolean;
   hint?: Hint;
   style: EdgeStyle;
 }
 
+export interface Labels {
+  start?: string;
+  mid?: string;
+  end?: string;
+}
+
 export interface End {
   node: string;
   port?: string;
+  row?: string;
 }
 
 export interface Hint {

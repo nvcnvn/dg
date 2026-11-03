@@ -47,15 +47,16 @@
 <text x="670" y="75" text-anchor="middle" fill="#A50E0E" font-size="14">Bench</text>
 </g>
 <g data-edge="chip-bench">
-<path d="M450 38 L462 38 L462 100 L650 100 L650 90" fill="none" stroke="#3C4043" stroke-width="2.5"/>
+<path d="M450 38 L462 38 L462 102 L650 102 L650 90" fill="none" stroke="#3C4043" stroke-width="2.5"/>
 <path d="M655 100 L650 90 L645 100" fill="none" stroke="#3C4043" stroke-width="2.5"/>
 <path d="M460 33 L450 38 L460 43" fill="none" stroke="#3C4043" stroke-width="2.5"/>
-<rect x="444" y="92" width="160" height="17" fill="#FFFFFF"/>
-<text x="524" y="105" text-anchor="middle" fill="#202124" font-size="12">ports, arrows at both ends</text>
+<rect x="444" y="94" width="160" height="17" fill="#FFFFFF"/>
+<text x="524" y="107" text-anchor="middle" fill="#202124" font-size="12">ports, arrows at both ends</text>
 </g>
 <g data-edge="diamond-bullseye">
 <path d="M417 278 L560 275" fill="none" stroke="#3C4043" stroke-width="1.5"/>
-<path d="M550 280 L560 275 L550 270" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<circle cx="556" cy="275" r="4" fill="#FFFFFF" stroke="#3C4043" stroke-width="1.5"/>
+<circle cx="421" cy="278" r="4" fill="#3C4043" stroke="#3C4043" stroke-width="1.5"/>
 </g>
 <g data-edge="diamond-cylinder">
 <path d="M340 320 L340 332 L530 332 L530 420" fill="none" stroke="#3C4043" stroke-width="1.5" stroke-dasharray="6 4"/>
@@ -66,8 +67,8 @@
 <g data-edge="lab-bench">
 <path d="M670 110 L670 90" fill="none" stroke="#3C4043" stroke-width="1.5"/>
 <path d="M675 100 L670 90 L665 100" fill="none" stroke="#3C4043" stroke-width="1.5"/>
-<rect x="674" y="92" width="60" height="17" fill="#FFFFFF"/>
-<text x="704" y="105" text-anchor="middle" fill="#202124" font-size="12">to a child</text>
+<rect x="674" y="98" width="60" height="17" fill="#FFFFFF"/>
+<text x="704" y="111" text-anchor="middle" fill="#202124" font-size="12">to a child</text>
 </g>
 <g data-edge="point-rounded">
 <path d="M19 265 L60 265" fill="none" stroke="#3C4043" stroke-width="1.5"/>
@@ -80,7 +81,8 @@
 <text x="196" y="77" text-anchor="middle" fill="#202124" font-size="12">anchors</text>
 </g>
 <g data-edge="rounded-diamond">
-<path d="M110 240 L110 228 L340 228 L340 240" fill="none" stroke="#3C4043" stroke-width="1.5"/>
-<path d="M335 230 L340 240 L345 230" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M110 240 L110 216 L340 220 L340 240" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M340 240 L334 228 L346 228 Z" fill="#3C4043" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M110 240 L105 232 L110 224 L115 232 Z" fill="#FFFFFF" stroke="#3C4043" stroke-width="1.5"/>
 </g>
 </svg>

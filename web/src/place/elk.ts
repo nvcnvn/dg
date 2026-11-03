@@ -17,6 +17,14 @@ const spacing: Record<string, string> = {
   'elk.layered.spacing.edgeNodeBetweenLayers': '20',
 };
 
+// A view with edges between rows is laid out left to right, since rows attach at their left and
+// right ends, with room between the layers for the markers at both ends of an edge.
+const rowSpacing: Record<string, string> = {
+  'elk.direction': 'RIGHT',
+  'elk.layered.spacing.nodeNodeBetweenLayers': '100',
+  'elk.layered.spacing.edgeNodeBetweenLayers': '40',
+};
+
 const rootOptions: Record<string, string> = {
   ...spacing,
   'elk.algorithm': 'layered',
@@ -27,13 +35,21 @@ const rootOptions: Record<string, string> = {
   'elk.edgeLabels.placement': 'CENTER',
 };
 
+// EdgeLabelSizes are the sizes of an edge's labels by position.
+export type EdgeLabelSizes = Partial<Record<'start' | 'mid' | 'end', Size>>;
+
+const placement = { start: 'TAIL', mid: 'CENTER', end: 'HEAD' };
+
 // elkGraph builds the elk input for a view with nothing pinned: nodes and edges in sorted ID
 // order, containers holding their children, each edge in the innermost container holding both
-// of its ends, with its middle label's size so layers leave room for it. An edge between a container and its own descendant gives elk nothing to arrange,
-// so it is left out.
-export function elkGraph(view: ResolvedView, measures: Map<string, NodeMeasure>, labels: Map<string, Size> = new Map()): ElkNode {
+// of its ends, with its labels' sizes so layers leave room for them. An edge with an open
+// triangle at one end only (inheritance, realization) is given from that end, the general
+// element, so it is drawn above the specific one. An edge between a container and itself or its
+// own descendant gives elk nothing to arrange, so it is left out.
+export function elkGraph(view: ResolvedView, measures: Map<string, NodeMeasure>, labels: Map<string, EdgeLabelSizes> = new Map()): ElkNode {
   const elkNodes = new Map<string, ElkNode>();
-  const root: ElkNode = { id: ROOT, layoutOptions: rootOptions, children: [], edges: [] };
+  const rows = view.edges.some((e) => e.from.row || e.to.row);
+  const root: ElkNode = { id: ROOT, layoutOptions: rows ? { ...rootOptions, ...rowSpacing } : rootOptions, children: [], edges: [] };
   for (const n of view.nodes) {
     const m = measures.get(n.id)!;
     const en: ElkNode = { id: nodeKey(n.id), width: m.size.w, height: m.size.h };
@@ -43,6 +59,7 @@ export function elkGraph(view: ResolvedView, measures: Map<string, NodeMeasure>,
       en.edges = [];
       en.layoutOptions = {
         ...spacing,
+        ...(rows ? rowSpacing : {}),
         'elk.padding': `[top=${m.origin.y},left=${m.origin.x},bottom=${pad},right=${pad}]`,
         'elk.nodeSize.constraints': '[MINIMUM_SIZE]',
         'elk.nodeSize.minimum': `(${m.size.w},${m.size.h})`,
@@ -56,6 +73,7 @@ export function elkGraph(view: ResolvedView, measures: Map<string, NodeMeasure>,
   }
 
   const frameOf = new Map(view.nodes.map((n) => [n.id, n.frame]));
+  const byId = new Map(view.nodes.map((n) => [n.id, n]));
   const chain = (id: string): string[] => {
     const ids = [id];
     for (let f = frameOf.get(id); f; f = frameOf.get(f)) ids.push(f);
@@ -64,12 +82,18 @@ export function elkGraph(view: ResolvedView, measures: Map<string, NodeMeasure>,
   for (const e of view.edges) {
     const to = new Set(chain(e.to.node));
     const from = chain(e.from.node);
-    if (to.has(e.from.node) || from.includes(e.to.node)) continue;
+    const loop = e.from.node === e.to.node;
+    if (loop ? byId.get(e.from.node)!.container : to.has(e.from.node) || from.includes(e.to.node)) continue;
     const lca = from.find((f) => to.has(f) && elkNodes.get(f)?.edges);
     const holder = (lca && elkNodes.get(lca)) || root;
-    const edge: ElkExtendedEdge = { id: edgeKey(e.id), sources: [nodeKey(e.from.node)], targets: [nodeKey(e.to.node)] };
-    const label = labels.get(e.id);
-    if (label) edge.labels = [{ id: 'l:' + e.id, width: label.w, height: label.h }];
+    const up = e.style.arrow_end === 'triangle-open' && e.style.arrow_start !== 'triangle-open';
+    const [a, b] = up ? [e.to.node, e.from.node] : [e.from.node, e.to.node];
+    const edge: ElkExtendedEdge = { id: edgeKey(e.id), sources: [nodeKey(a)], targets: [nodeKey(b)] };
+    const sizes = labels.get(e.id) ?? {};
+    const elkLabels = (['mid', 'start', 'end'] as const)
+      .filter((pos) => sizes[pos])
+      .map((pos) => ({ id: `l:${pos}:${e.id}`, width: sizes[pos]!.w, height: sizes[pos]!.h, layoutOptions: { 'elk.edgeLabels.placement': placement[pos] } }));
+    if (elkLabels.length) edge.labels = elkLabels;
     holder.edges!.push(edge);
   }
   return root;
@@ -91,6 +115,6 @@ export function elkPositions(result: ElkNode, measures: Map<string, NodeMeasure>
   return out;
 }
 
-export async function placeWithElk(elk: Elk, view: ResolvedView, measures: Map<string, NodeMeasure>, labels?: Map<string, Size>): Promise<Map<string, Point>> {
+export async function placeWithElk(elk: Elk, view: ResolvedView, measures: Map<string, NodeMeasure>, labels?: Map<string, EdgeLabelSizes>): Promise<Map<string, Point>> {
   return elkPositions(await elk.layout(elkGraph(view, measures, labels)), measures, view.grid);
 }

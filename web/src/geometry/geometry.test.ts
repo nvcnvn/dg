@@ -129,3 +129,25 @@ describe('shapes', () => {
     expect(svgSize(svg)).toEqual(want);
   });
 });
+
+describe('tables', () => {
+  const t = node('orders', { compartments: [{ name: '', rows: [{ name: 'id', type: 'uuid', key: 'PK' }, { name: 'total', type: 'money' }] }] }, { shape: 'table', padding: 8 });
+  it('sizes a table to its header and its key, name and type columns', () => {
+    const m = measureNode(t, text, 10);
+    // header 8 + 20 + 8; one compartment of 2 rows of 24 between 4 and 4.
+    expect(m.table!.lines).toEqual([36]);
+    expect(m.table!.rows.map((r) => r.y)).toEqual([52, 76]);
+    // key "PK" 16 + gap 14, name "total" 40, gap 14, type "money" 40, padding 8 on both sides.
+    expect(m.table!.nameX).toBe(38);
+    expect(m.size).toEqual({ w: 140, h: 100 });
+  });
+  it('draws a class compartment without rows as an empty band', () => {
+    const c = node('c', { compartments: [{ name: 'fields', rows: [{ name: 'x' }] }, { name: 'methods', rows: [] }] }, { shape: 'table', padding: 8 });
+    const m = measureNode(c, text, 10).table!;
+    expect(m.lines).toEqual([36, 68]);
+    expect(m.size.h).toBe(76);
+  });
+  it('draws a table without rows as a rectangle', () => {
+    expect(measureNode(node('t', {}, { shape: 'table' }), text, 10).table).toBeUndefined();
+  });
+});

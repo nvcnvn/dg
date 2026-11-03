@@ -4,7 +4,6 @@ Questions that do not block the current milestone. Each entry: the question, the
 default the code uses now, and the milestone that raised it. Delete an entry once decided (record
 the decision in `docs/spec.md`).
 
-
 ## Commit the built web app?
 
 - **Question:** should `web/dist` (the Vite output that `web/embed.go` embeds) be committed, so
@@ -93,3 +92,24 @@ the decision in `docs/spec.md`).
   obstacle and request set, which a persistent router can diff against its state.
 - **Milestone:** M3; decide in M10.
 
+
+## Layout direction of a view
+
+- **Question:** elk lays out layers top to bottom, or left to right when an edge ends at a row,
+  and gives an edge with `triangle-open` at one end only from that end, so the parent is drawn
+  above (spec 7.4). Keying the reversal to the marker is a heuristic. Should a view be able to
+  choose its direction?
+- **Options:** (a) the rules only; (b) a `direction` attribute on `view` in `views.hcl` for the
+  first layout, defaulting to the rules; (c) a style property of the edge kinds.
+- **Default:** (a) now; (b) recommended, with the rules as its default.
+- **Milestone:** M4; decide in M7 (views).
+
+## Self-loops as routing obstacles
+
+- **Question:** a self-loop drawn around a corner (spec 7.5) is not known to libavoid, so another
+  edge can be routed across it.
+- **Options:** (a) leave it; (b) add each loop's bounding box as an obstacle and route the other
+  edges after the loops; (c) route self-loops with libavoid between two stub points.
+- **Default:** (a). Loops reach two grid units out (three with the longest markers) and the placer
+  keeps four grid units between nodes, so crossings need an edge squeezed between neighbors.
+- **Milestone:** M4.
