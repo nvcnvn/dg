@@ -57,8 +57,9 @@ the decision in `docs/spec.md`).
 - **Question:** a hand-edited layout file can hold `x`, `y`, `w` or `h` that are not multiples of
   the project `grid` (or become so when `grid` changes). Should `dg check` warn?
 - **Options:** (a) no diagnostic; (b) a warning; (c) `dg fmt` snaps them to the grid.
-- **Default:** (a).
-- **Milestone:** M2; revisit with layout editing (M10).
+- **Default:** (a). The editor and operations write grid values, so only hand edits and a changed
+  `grid` leave such values.
+- **Milestone:** M2; revisited in M10.
 
 ## Font name of a project font in exported SVG
 
@@ -78,19 +79,6 @@ the decision in `docs/spec.md`).
   and an aspect ratio; (c) a grid for nodes without edges.
 - **Default:** (a).
 - **Milestone:** M3.
-
-## Dragging at 60 frames per second
-
-- **Question:** M3 routes a whole view with a new libavoid router per draw, about 3 seconds for
-  a dense 200-node, 400-edge view. Dragging at 60 frames per second (FR-8, M10) cannot reroute
-  that way.
-- **Options:** (a) a persistent router: keep libavoid's shapes and connectors between frames,
-  `moveShape` the dragged nodes and `processTransaction`, rerouting only their edges, off the main
-  thread if needed; draw a cheap preview (straight or last routes) while a frame would miss its
-  budget, and route fully on drop; (b) route only on drop; (c) a simpler router while dragging.
-- **Default:** (a) recommended. The `Router` type (`web/src/route/edges.ts`) takes the whole
-  obstacle and request set, which a persistent router can diff against its state.
-- **Milestone:** M3; decide in M10.
 
 ## Self-loops as routing obstacles
 
@@ -112,15 +100,6 @@ the decision in `docs/spec.md`).
 - **Default:** (a).
 - **Milestone:** M5.
 
-## Undo after an external edit to the same file
-
-- **Question:** an undo restores whole files, so it fails when a file it restores was changed
-  outside the editor since the operation, even in an unrelated place (FR-10).
-- **Options:** (a) fail, as now; (b) a three-way merge of the content before the operation, after
-  it and now, failing only on a conflict; (c) an inverse operation per operation.
-- **Default:** (a); (b) recommended.
-- **Milestone:** M6; decide in M10.
-
 ## Overlay outline shape
 
 - **Question:** an overlay is drawn as the convex hull of its padded member boxes (spec 5.8), which
@@ -141,3 +120,29 @@ the decision in `docs/spec.md`).
 - **Default:** (a). Both use the same grammar, so the highlighting is the same. Decide before the
   extension is published to any marketplace.
 - **Milestone:** M9.
+
+## Drawing a dense view after a drop
+
+- **Question:** a drop sends one operation, and the new snapshot is drawn from scratch: placing,
+  and routing every edge twice with libavoid on the main thread. At 200 nodes and 400 edges, all
+  pinned, the editor is editable again 0.16 to 0.17 seconds after a drop of one node, with tasks
+  of up to 95 to 130 milliseconds meanwhile (about 0.55 seconds after moving all 200 nodes, most
+  of it applying 200 moves); with nothing pinned, 0.22 to 0.66 seconds, with tasks of about 160
+  to 180 milliseconds. The moved nodes stay where they were dropped meanwhile.
+- **Options:** (a) as now; (b) draw in a Web Worker (text measured with `OffscreenCanvas`, libavoid
+  and elk in the worker); (c) after a drop, route again only the edges the operation can have
+  changed and keep the other routes, the cheap fix if this ever matters.
+- **Default:** (a). `TestDragPerformance` (`internal/server`) fails when one node's drop takes
+  more than 0.5 seconds at 200 nodes and 400 edges.
+- **Milestone:** M10.
+
+## Undo of a change that created a file, edited since
+
+- **Question:** the first drag in a view without a layout file creates the file. Once a text
+  editor changes it, undoing the drag is refused, because the undo would remove a file holding
+  someone else's edits (FR-10).
+- **Options:** (a) refuse, as now; (b) treat a created file like any other, merging against an
+  empty base, which leaves the outside edits in a file the undo would otherwise remove; (c) remove
+  the created file only if it is unchanged, otherwise refuse with an explanation of what to do.
+- **Default:** (a). Not blocking.
+- **Milestone:** M10.

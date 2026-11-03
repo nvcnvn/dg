@@ -7,15 +7,20 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"reflect"
+	"slices"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/chromedp/chromedp"
 	"github.com/coder/websocket"
+
+	"github.com/nvcnvn/dg/internal/ops"
 )
 
 func TestDecodeMessage(t *testing.T) {
+	x := 40
 	for _, tc := range []struct {
 		in   string
 		want Message
@@ -23,7 +28,17 @@ func TestDecodeMessage(t *testing.T) {
 	}{
 		{`{"type":"select-view","view":"main"}`, Message{Type: "select-view", View: "main"}, ""},
 		{`{"type":"select-view"}`, Message{Type: "select-view"}, ""},
-		{`{"type":"op"}`, Message{}, "read-only"},
+		{`{"type":"op","seq":3,"op":{"op":"move","view":"main","id":"a","x":40,"y":40}}`, Message{Type: "op", Seq: 3, Op: &ops.Op{Op: "move", View: "main", ID: "a", X: &x, Y: &x}}, ""},
+		{`{"type":"undo","seq":4}`, Message{Type: "undo", Seq: 4}, ""},
+		{`{"type":"redo"}`, Message{Type: "redo"}, ""},
+		{`{"type":"op"}`, Message{}, "op takes an op"},
+		{`{"type":"op","seq":7,"op":{"op":"move","view":"main","id":"a","x":10.5,"y":0}}`, Message{Seq: 7}, "whole number"},
+		{`{"type":"redo","seq":8,"view":"main"}`, Message{Seq: 8}, "takes no view"},
+		{`{"type":"op","op":{"op":"move","view":"main"}}`, Message{}, "missing field"},
+		{`{"type":"op","op":{"op":"fly"}}`, Message{}, "unknown operation"},
+		{`{"type":"op","view":"main","op":{"op":"unpin","view":"main","id":"a"}}`, Message{}, "no view"},
+		{`{"type":"undo","view":"main"}`, Message{}, "takes no view"},
+		{`{"type":"select-view","op":{}}`, Message{}, "takes no op"},
 		{`{"type":"nope"}`, Message{}, "unknown message type"},
 		{`{"type":"select-view","extra":1}`, Message{}, "unknown field"},
 		{`{"type":"select-view","view":3}`, Message{}, "invalid message"},
@@ -34,7 +49,7 @@ func TestDecodeMessage(t *testing.T) {
 		if tc.err == "" && err != nil || tc.err != "" && (err == nil || !strings.Contains(err.Error(), tc.err)) {
 			t.Errorf("DecodeMessage(%s) error %v, want %q", tc.in, err, tc.err)
 		}
-		if got != tc.want {
+		if !reflect.DeepEqual(got, tc.want) {
 			t.Errorf("DecodeMessage(%s) = %+v, want %+v", tc.in, got, tc.want)
 		}
 	}
@@ -65,13 +80,24 @@ func TestLoopbackOnly(t *testing.T) {
 }
 
 func FuzzDecodeMessage(f *testing.F) {
-	for _, s := range []string{`{"type":"select-view","view":"main"}`, `{"type":"op"}`, `{}`, `[]`, `{"type":"select-view","view":"\u0000"}`} {
+	for _, s := range []string{
+		`{"type":"select-view","view":"main"}`, `{"type":"op"}`, `{}`, `[]`, `{"type":"select-view","view":"\u0000"}`,
+		`{"type":"op","seq":1,"op":{"op":"move","view":"main","id":"a","x":40,"y":40}}`,
+		`{"type":"op","op":{"op":"batch","ops":[{"op":"resize","view":"v","id":"a","w":1,"h":2},{"op":"set_edge_hint","view":"v","id":"e","hint":{"via":[[1,2]]}}]}}`,
+		`{"type":"undo","seq":2}`, `{"type":"redo"}`,
+	} {
 		f.Add([]byte(s))
 	}
 	f.Fuzz(func(t *testing.T, data []byte) {
 		m, err := DecodeMessage(data)
-		if err == nil && m.Type != "select-view" {
+		if err != nil {
+			return
+		}
+		switch {
+		case !slices.Contains([]string{"select-view", "op", "undo", "redo"}, m.Type):
 			t.Fatalf("accepted message of type %q", m.Type)
+		case (m.Type == "op") != (m.Op != nil):
+			t.Fatalf("message %q with op %v", m.Type, m.Op)
 		}
 	})
 }
@@ -159,6 +185,9 @@ func TestReload(t *testing.T) {
 	if m := next(); m.Type != "diagnostics" || len(m.Diagnostics) != 0 {
 		t.Fatalf("second message %+v, want no diagnostics", m)
 	}
+	if m := next(); m.Type != "history" {
+		t.Fatalf("third message %+v, want the history", m)
+	}
 
 	write(t, dir, strings.Replace(model, `"Alpha"`, `"Alpha 2"`, 1))
 	if m := next(); m.Type != "snapshot" || m.Resolved.Nodes[0].Label != "Alpha 2" {
@@ -182,7 +211,7 @@ func TestReload(t *testing.T) {
 		t.Fatal(err)
 	}
 	if m := next(); m.Type != "error" {
-		t.Fatalf("after an op: %+v, want an error", m)
+		t.Fatalf("after an op without an operation: %+v, want an error", m)
 	}
 }
 
@@ -332,4 +361,120 @@ func TestDrillDown(t *testing.T) {
 	if err != nil {
 		t.Fatalf("drill-down menu: %v", err)
 	}
+}
+
+// TestEditing checks the editing protocol over the WebSocket (FR-10): an operation is answered
+// with an ack holding its results, every client gets the new drawing and the history, a batch is
+// one undo step, undo and redo from any client of the session restore the files byte for byte,
+// and a refused operation is an error that changes nothing.
+func TestEditing(t *testing.T) {
+	dir, url := start(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	type message struct {
+		Type     string          `json:"type"`
+		Seq      int64           `json:"seq"`
+		Message  string          `json:"message"`
+		Results  []ops.Result    `json:"results"`
+		Files    []string        `json:"files"`
+		Undo     bool            `json:"undo"`
+		Redo     bool            `json:"redo"`
+		Resolved json.RawMessage `json:"resolved"`
+	}
+	dial := func() func(want string) message {
+		conn, _, err := websocket.Dial(ctx, "ws"+strings.TrimPrefix(url, "http")+"/ws", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { conn.CloseNow() })
+		if err := conn.Write(ctx, websocket.MessageText, []byte(`{"type":"select-view"}`)); err != nil {
+			t.Fatal(err)
+		}
+		return func(send string) message {
+			t.Helper()
+			if send != "" {
+				if err := conn.Write(ctx, websocket.MessageText, []byte(send)); err != nil {
+					t.Fatal(err)
+				}
+			}
+			for {
+				_, data, err := conn.Read(ctx)
+				if err != nil {
+					t.Fatal(err)
+				}
+				var m message
+				if err := json.Unmarshal(data, &m); err != nil {
+					t.Fatal(err)
+				}
+				if m.Type == "ack" || m.Type == "error" && m.Seq != 0 || m.Type == "history" && send == "" {
+					return m
+				}
+			}
+		}
+	}
+	a, b := dial(), dial()
+	a("")
+	b("")
+	before := tree(t, dir)
+
+	m := a(`{"type":"op","seq":1,"op":{"op":"batch","ops":[{"op":"move","view":"main","id":"a","x":41,"y":0},{"op":"move","view":"main","id":"b","x":200,"y":0}]}}`)
+	x := 40
+	if m.Type != "ack" || m.Seq != 1 || len(m.Results) != 2 || *m.Results[0].X != x || !slices.Equal(m.Files, []string{"views/main.layout.yaml"}) {
+		t.Fatalf("after a batch: %+v", m)
+	}
+	if h := b(""); !h.Undo || h.Redo {
+		t.Fatalf("the other client's history after the batch: %+v", h)
+	}
+	after := tree(t, dir)
+	if !strings.Contains(after["views/main.layout.yaml"], "a: {x: 40, y: 0}") {
+		t.Fatalf("layout file:\n%s", after["views/main.layout.yaml"])
+	}
+
+	if m := b(`{"type":"undo","seq":2}`); m.Type != "ack" || m.Seq != 2 {
+		t.Fatalf("undo: %+v", m)
+	}
+	if h := a(""); h.Undo || !h.Redo {
+		t.Fatalf("history after the undo: %+v", h)
+	}
+	if got := tree(t, dir); !reflect.DeepEqual(got, before) {
+		t.Fatalf("after undo the files are %v, want %v", got, before)
+	}
+	if m := a(`{"type":"redo","seq":3}`); m.Type != "ack" {
+		t.Fatalf("redo: %+v", m)
+	}
+	if got := tree(t, dir); !reflect.DeepEqual(got, after) {
+		t.Fatalf("after redo the files are %v, want %v", got, after)
+	}
+
+	if m := a(`{"type":"op","seq":4,"op":{"op":"move","view":"main","id":"nope","x":0,"y":0}}`); m.Type != "error" || m.Seq != 4 || !strings.Contains(m.Message, `"nope" does not exist`) {
+		t.Fatalf("a refused op: %+v", m)
+	}
+	if got := tree(t, dir); !reflect.DeepEqual(got, after) {
+		t.Fatalf("a refused op changed the files")
+	}
+	if m := a(`{"type":"redo","seq":5}`); m.Type != "error" || !strings.Contains(m.Message, "nothing to redo") {
+		t.Fatalf("redo with nothing to redo: %+v", m)
+	}
+	if m := a(`{"type":"op","seq":6,"op":{"op":"move","view":"main","id":"a","x":10.5,"y":0}}`); m.Type != "error" || m.Seq != 6 {
+		t.Fatalf("an invalid op: %+v, want an error with its seq", m)
+	}
+}
+
+// tree returns every file under dir by its slash path.
+func tree(t *testing.T, dir string) map[string]string {
+	t.Helper()
+	out := map[string]string{}
+	err := filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		data, err := os.ReadFile(path)
+		rel, _ := filepath.Rel(dir, path)
+		out[filepath.ToSlash(rel)] = string(data)
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return out
 }

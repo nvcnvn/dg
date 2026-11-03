@@ -8,7 +8,7 @@ import { clip, insidePolygon, onSide, overlapScore, placeEndLabel, placeLabel, p
 // BUFFER is the clearance the router keeps around every obstacle.
 export const BUFFER = 10;
 // STUB is how far outside the buffer a free end with a direction is routed from.
-const STUB = BUFFER + 2;
+export const STUB = BUFFER + 2;
 export const LABEL_PAD = 4;
 
 // RouteEnd is where a route starts or ends: at the center of the obstacle it names, which the
@@ -46,7 +46,7 @@ interface Plan {
   stub?: number;
 }
 
-const step: Record<Side, Point> = { top: { x: 0, y: -1 }, bottom: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
+export const step: Record<Side, Point> = { top: { x: 0, y: -1 }, bottom: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
 const opposite: Record<Side, Side> = { top: 'bottom', bottom: 'top', left: 'right', right: 'left' };
 
 export interface EdgeGeometry {
@@ -304,7 +304,7 @@ export function keepStub(route: Point[], dir: Side, len: number, leaves: Box[], 
 
 // join returns the points from an end with a direction to the first point of its route: the end,
 // and a corner when libavoid's nudging has moved the route's stub point off the end's normal.
-function join(p: Plan, first: Point | undefined): Point[] {
+export function join(p: Pick<Plan, 'at' | 'dir'>, first: Point | undefined): Point[] {
   if (!first || p.dir === 'all') return [p.at];
   const vertical = p.dir === 'top' || p.dir === 'bottom';
   if (vertical ? first.x === p.at.x : first.y === p.at.y) return [p.at];
@@ -466,7 +466,9 @@ function markerBox(parts: MarkerPart[]): Box {
   return { x, y, w: Math.max(...pts.map((p) => p.x)) - x, h: Math.max(...pts.map((p) => p.y)) - y };
 }
 
-function nearestSide(b: Box, p: Point): Side {
+// nearestSide returns the side of b nearest p, or, for a point outside b, the side it is beyond
+// the most.
+export function nearestSide(b: Box, p: Point): Side {
   const d: [Side, number][] = [['top', p.y - b.y], ['right', b.x + b.w - p.x], ['bottom', b.y + b.h - p.y], ['left', p.x - b.x]];
   return d.reduce((a, c) => (c[1] < a[1] ? c : a))[0];
 }

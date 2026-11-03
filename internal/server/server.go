@@ -1,6 +1,7 @@
 // Package server serves the editor (FR-10): the embedded app over HTTP, and over a WebSocket the
 // resolved view each client selects and the project's diagnostics, sent again whenever a
-// project file changes (FR-13). The editor is read-only: clients cannot send operations yet.
+// project file changes (FR-13), and the operations, undo and redo its clients send, with one
+// undo history for the session.
 package server
 
 import (
@@ -20,6 +21,7 @@ import (
 	"github.com/coder/websocket"
 
 	"github.com/nvcnvn/dg/internal/diag"
+	"github.com/nvcnvn/dg/internal/ops"
 	"github.com/nvcnvn/dg/internal/project"
 	"github.com/nvcnvn/dg/internal/view"
 	"github.com/nvcnvn/dg/web"
@@ -37,6 +39,12 @@ type Server struct {
 	good    *project.Project // the latest load without errors
 	loadErr error            // set when the latest load failed outright
 	clients map[*client]bool
+
+	// edit serializes the operations, undos and redos of every client with the messages they
+	// send; it guards the history and the session they share (FR-10).
+	edit sync.Mutex
+	hist ops.History
+	sess *ops.Session
 }
 
 type client struct {
@@ -48,7 +56,7 @@ type client struct {
 
 // New loads the project in dir.
 func New(dir string) *Server {
-	s := &Server{dir: dir, clients: map[*client]bool{}}
+	s := &Server{dir: dir, clients: map[*client]bool{}, sess: ops.NewSession()}
 	s.load()
 	return s
 }
@@ -133,18 +141,73 @@ func (s *Server) serveWS(w http.ResponseWriter, r *http.Request) {
 		}
 		m, err := DecodeMessage(data)
 		if err != nil {
-			c.send(ctx, errorMessage{Type: "error", Message: err.Error()})
+			c.send(ctx, errorMessage{Type: "error", Seq: m.Seq, Message: err.Error()})
 			continue
 		}
-		if m.View != "" && !s.defines(m.View) {
-			c.send(ctx, errorMessage{Type: "error", Message: fmt.Sprintf("view %q is not defined", m.View)})
-			continue
+		switch m.Type {
+		case "select-view":
+			if m.View != "" && !s.defines(m.View) {
+				c.send(ctx, errorMessage{Type: "error", Seq: m.Seq, Message: fmt.Sprintf("view %q is not defined", m.View)})
+				continue
+			}
+			c.mu.Lock()
+			c.view = m.View
+			c.mu.Unlock()
+			s.update(ctx, c)
+			c.send(ctx, s.history())
+		default:
+			s.change(ctx, c, m)
 		}
-		c.mu.Lock()
-		c.view = m.View
-		c.mu.Unlock()
-		s.update(ctx, c)
 	}
+}
+
+// change applies the operation, undo or redo m from client c, sends every client its new
+// snapshot and the history, and then answers c. It holds s.edit throughout, so the clients get
+// the histories in the order of the changes.
+func (s *Server) change(ctx context.Context, c *client, m Message) {
+	s.edit.Lock()
+	defer s.edit.Unlock()
+	var ch *ops.Change
+	var err error
+	switch m.Type {
+	case "op":
+		if ch, err = ops.Apply(s.dir, *m.Op, s.sess); err == nil {
+			s.hist.Record(ch)
+		}
+	case "undo":
+		ch, err = s.hist.Undo(s.dir, s.sess)
+	case "redo":
+		ch, err = s.hist.Redo(s.dir, s.sess)
+	}
+	if err == nil && len(ch.Files) > 0 {
+		s.Reload(ctx)
+	}
+	hist := s.historyLocked()
+	s.mu.Lock()
+	clients := slices.Collect(maps.Keys(s.clients))
+	s.mu.Unlock()
+	for _, o := range clients {
+		o.send(ctx, hist)
+	}
+	if err != nil {
+		e := errorMessage{Type: "error", Seq: m.Seq, Message: err.Error()}
+		if r, ok := errors.AsType[*ops.RefusedError](err); ok {
+			e.Diagnostics = r.Diagnostics
+		}
+		c.send(ctx, e)
+		return
+	}
+	c.send(ctx, ackMessage{Type: "ack", Seq: m.Seq, Results: ch.Results, Files: ch.Paths(), Warnings: ch.Warnings})
+}
+
+func (s *Server) history() historyMessage {
+	s.edit.Lock()
+	defer s.edit.Unlock()
+	return s.historyLocked()
+}
+
+func (s *Server) historyLocked() historyMessage {
+	return historyMessage{Type: "history", Undo: s.hist.CanUndo(), Redo: s.hist.CanRedo()}
 }
 
 // update sends c its diagnostics and, when its view can be drawn, its snapshot. The view is
@@ -240,29 +303,70 @@ func (c *client) write(ctx context.Context, data []byte) {
 	}
 }
 
-// Message is a message from a client. Only select-view is accepted; View "" selects the
-// default view.
+// Message is a message from a client: select-view (View "" selects the default view), op with
+// the operation (FR-12), undo or redo. Seq, when set, is repeated in the ack or error that
+// answers an op, undo or redo.
 type Message struct {
-	Type string `json:"type"`
-	View string `json:"view"`
+	Type string
+	Seq  int64
+	View string
+	Op   *ops.Op
 }
 
-// DecodeMessage decodes and checks a message from a client.
+// DecodeMessage decodes and checks a message from a client. A message that is not valid still
+// has its Seq when it has a whole number seq, so the error answering it can repeat it.
 func DecodeMessage(data []byte) (Message, error) {
-	var m Message
+	var head struct {
+		Seq int64 `json:"seq"`
+	}
+	_ = json.Unmarshal(data, &head)
+	m, err := decodeMessage(data)
+	if err != nil {
+		return Message{Seq: head.Seq}, err
+	}
+	return m, nil
+}
+
+func decodeMessage(data []byte) (Message, error) {
+	var raw struct {
+		Type string          `json:"type"`
+		Seq  int64           `json:"seq"`
+		View *string         `json:"view"`
+		Op   json.RawMessage `json:"op"`
+	}
 	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.DisallowUnknownFields()
-	if err := dec.Decode(&m); err != nil {
+	if err := dec.Decode(&raw); err != nil {
 		return Message{}, fmt.Errorf("invalid message: %v", err)
 	}
 	if dec.More() {
 		return Message{}, errors.New("invalid message: more than one JSON value")
 	}
+	m := Message{Type: raw.Type, Seq: raw.Seq}
 	switch m.Type {
 	case "select-view":
+		if raw.Op != nil {
+			return Message{}, errors.New("invalid message: select-view takes no op")
+		}
+		if raw.View != nil {
+			m.View = *raw.View
+		}
 		return m, nil
-	case "op", "undo", "redo":
-		return Message{}, fmt.Errorf("%s is not supported: the editor is read-only", m.Type)
+	case "op":
+		if raw.View != nil || raw.Op == nil {
+			return Message{}, errors.New("invalid message: op takes an op and no view")
+		}
+		op, err := ops.DecodeOp(raw.Op)
+		if err != nil {
+			return Message{}, err
+		}
+		m.Op = &op
+		return m, nil
+	case "undo", "redo":
+		if raw.View != nil || raw.Op != nil {
+			return Message{}, fmt.Errorf("invalid message: %s takes no view or op", m.Type)
+		}
+		return m, nil
 	}
 	return Message{}, fmt.Errorf("unknown message type %q", strings.ToValidUTF8(m.Type, "�"))
 }
@@ -284,6 +388,23 @@ type diagnosticsMessage struct {
 }
 
 type errorMessage struct {
-	Type    string `json:"type"`
-	Message string `json:"message"`
+	Type        string           `json:"type"`
+	Seq         int64            `json:"seq,omitempty"`
+	Message     string           `json:"message"`
+	Diagnostics diag.Diagnostics `json:"diagnostics,omitempty"`
+}
+
+type ackMessage struct {
+	Type     string           `json:"type"`
+	Seq      int64            `json:"seq,omitempty"`
+	Results  []ops.Result     `json:"results"`
+	Files    []string         `json:"files"`
+	Warnings diag.Diagnostics `json:"warnings,omitempty"`
+}
+
+// historyMessage tells every client whether the session has a change to undo and to redo.
+type historyMessage struct {
+	Type string `json:"type"`
+	Undo bool   `json:"undo"`
+	Redo bool   `json:"redo"`
 }

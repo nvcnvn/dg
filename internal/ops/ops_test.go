@@ -239,6 +239,9 @@ func TestRefused(t *testing.T) {
 		{"rename to an invalid view ID", `{"op": "rename_id", "type": "view", "old": "calls", "new": "a/b"}`, `not a simple ID`},
 		{"not shown", `{"op": "move", "view": "calls", "id": "worker-2", "x": 0, "y": 0}`, `view "calls" does not show node "worker-2"`},
 		{"not pinned", `{"op": "resize", "view": "main", "id": "worker-2", "w": 10, "h": 10}`, `not pinned`},
+		{"zero size", `{"op": "resize", "view": "main", "id": "pool", "w": 0, "h": 0}`, `w and h are positive`},
+		{"negative size", `{"op": "resize", "view": "main", "id": "pool", "w": 100, "h": -10}`, `w and h are positive`},
+		{"zero decoration", `{"op": "add_decoration", "view": "main", "decoration": {"type": "band", "x": 0, "y": 0, "w": 0, "h": 10}}`, `w and h are positive`},
 		{"reorder a free container", `{"op": "reorder", "view": "main", "container": "pool", "order": ["worker-1"]}`, `"pool" is not a stack or grid container in view "main"`},
 		{"reorder a node not in the container", `[{"op": "set_kind", "id": "pool", "kind": "lane-set"}, {"op": "reorder", "view": "main", "container": "pool", "order": ["gateway"]}]`, `node "gateway" is not a child of "pool" drawn in view "main"`},
 		{"reorder twice", `[{"op": "set_kind", "id": "pool", "kind": "lane-set"}, {"op": "reorder", "view": "pool", "container": "pool", "order": ["worker-1", "worker-1"]}]`, `in the order twice`},
@@ -355,23 +358,116 @@ func TestChangedBetweenReadAndWrite(t *testing.T) {
 	}
 }
 
-// TestUndoAfterExternalChange checks that an undo whose files changed since is dropped.
+// TestUndoAfterExternalChange checks that undo and redo keep changes made outside the editor
+// elsewhere in the files they restore, by a three-way merge, and that an undo whose change was
+// edited since is dropped.
 func TestUndoAfterExternalChange(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		edit     func(string) string
+		conflict string
+	}{
+		{"elsewhere", func(s string) string { return "# edited\n" + s }, ""},
+		{"replaced", func(string) string { return "# edited\n" }, "model.hcl was changed since in the same place"},
+		{"same line", func(s string) string { return strings.Replace(s, `"Front"`, `"Back"`, 1) }, "model.hcl was changed since in the same place"},
+		{"removed", nil, "model.hcl was removed since"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := copyFixture(t)
+			path := filepath.Join(dir, "model.hcl")
+			orig, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var h History
+			c, err := Apply(dir, mustDecode(t, `{"op": "set_label", "id": "gateway", "label": "Front"}`), NewSession())
+			if err != nil {
+				t.Fatal(err)
+			}
+			h.Record(c)
+			after, _ := os.ReadFile(path)
+			if tc.edit == nil {
+				err = os.Remove(path)
+			} else {
+				err = os.WriteFile(path, []byte(tc.edit(string(after))), 0o644)
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = h.Undo(dir, nil)
+			if tc.conflict != "" {
+				if err == nil || !strings.Contains(err.Error(), tc.conflict) {
+					t.Fatalf("undo: %v", err)
+				}
+				if h.CanUndo() || h.CanRedo() {
+					t.Error("the change was kept")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got, _ := os.ReadFile(path); string(got) != tc.edit(string(orig)) {
+				t.Errorf("after undo:\n%s\nwant:\n%s", got, tc.edit(string(orig)))
+			}
+			if _, err := h.Redo(dir, nil); err != nil {
+				t.Fatal(err)
+			}
+			if got, _ := os.ReadFile(path); string(got) != tc.edit(string(after)) {
+				t.Errorf("after redo:\n%s\nwant:\n%s", got, tc.edit(string(after)))
+			}
+		})
+	}
+}
+
+// TestUndoMergeInvalid checks that an undo whose merge is clean line by line but would make the
+// project invalid is dropped and writes nothing: the operation removed the edge_hints section,
+// and an outside edit added another one.
+func TestUndoMergeInvalid(t *testing.T) {
 	dir := copyFixture(t)
+	path := filepath.Join(dir, "views", "main.layout.yaml")
 	var h History
-	c, err := Apply(dir, mustDecode(t, `{"op": "set_label", "id": "gateway", "label": "Front"}`), NewSession())
+	c, err := Apply(dir, mustDecode(t, `{"op": "set_edge_hint", "view": "main", "id": "gw-w1", "hint": {}}`), NewSession())
 	if err != nil {
 		t.Fatal(err)
 	}
 	h.Record(c)
-	if err := os.WriteFile(filepath.Join(dir, "model.hcl"), []byte("# edited\n"), 0o644); err != nil {
+	after, _ := os.ReadFile(path)
+	edited := strings.Replace(string(after), "version: 1\n", "version: 1\nedge_hints:\n  w1-w2: {to_side: top}\n", 1)
+	if err := os.WriteFile(path, []byte(edited), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := h.Undo(dir, nil); err == nil || !strings.Contains(err.Error(), "model.hcl changed since") {
+	if _, err := h.Undo(dir, nil); err == nil || !strings.Contains(err.Error(), "would add errors") {
 		t.Fatalf("undo: %v", err)
 	}
-	if h.CanUndo() || h.CanRedo() {
+	if got, _ := os.ReadFile(path); string(got) != edited {
+		t.Errorf("the refused undo wrote:\n%s", got)
+	}
+	if h.CanUndo() {
 		t.Error("the change was kept")
+	}
+}
+
+// TestUndoCreatedFile checks that undoing an operation that created a file, changed since, is
+// refused with a message saying so.
+func TestUndoCreatedFile(t *testing.T) {
+	dir := copyFixture(t)
+	var h History
+	c, err := Apply(dir, mustDecode(t, `{"op": "move", "view": "pool", "id": "gateway", "x": 0, "y": 0}`), NewSession())
+	if err != nil {
+		t.Fatal(err)
+	}
+	h.Record(c)
+	path := filepath.Join(dir, "views", "pool.layout.yaml")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("the move created no layout file: %v", err)
+	}
+	if err := os.WriteFile(path, append([]byte("# kept\n"), data...), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := h.Undo(dir, nil); err == nil || !strings.Contains(err.Error(), "views/pool.layout.yaml, which the change created, was changed since") {
+		t.Fatalf("undo: %v", err)
 	}
 }
 

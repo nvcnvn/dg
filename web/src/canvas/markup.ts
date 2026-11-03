@@ -16,6 +16,8 @@ export interface DrawnNode {
   frame?: string;
   rel?: Point;
   container: boolean;
+  // origin is a container's content origin in canvas coordinates.
+  origin?: Point;
   pinned: boolean;
   // orderedIn is the stack or grid container that places the node, which a move cannot.
   orderedIn?: string;

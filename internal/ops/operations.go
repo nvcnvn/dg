@@ -807,6 +807,18 @@ func snap(v, grid int) int {
 	return int(math.Round(float64(v)/float64(grid))) * grid
 }
 
+// size checks that a width or height is positive and rounds it to the grid, to at least one grid
+// unit.
+func size(v, grid int) (int, error) {
+	if v <= 0 {
+		return 0, fmt.Errorf("w and h are positive")
+	}
+	if err := checkCoords("w and h", v); err != nil {
+		return 0, err
+	}
+	return max(grid, snap(v, grid)), nil
+}
+
 func checkCoords(names string, vs ...int) error {
 	for _, v := range vs {
 		if v < -maxCoord || v > maxCoord {
@@ -913,17 +925,18 @@ func (s *state) resize(op Op) error {
 	if op.W == nil || op.H == nil {
 		return fmt.Errorf("resize needs w and h")
 	}
-	if *op.W < 0 || *op.H < 0 {
-		return fmt.Errorf("w and h are at least 0")
-	}
-	if err := checkCoords("w and h", *op.W, *op.H); err != nil {
-		return err
-	}
 	l, pl, err := s.pinned(op.View, op.ID)
 	if err != nil {
 		return err
 	}
-	w, h := snap(*op.W, s.p.Grid), snap(*op.H, s.p.Grid)
+	w, err := size(*op.W, s.p.Grid)
+	if err != nil {
+		return err
+	}
+	h, err := size(*op.H, s.p.Grid)
+	if err != nil {
+		return err
+	}
 	pl.W, pl.H = &w, &h
 	s.putLayout(op.View, l)
 	s.result(Result{Op: op.Op, ID: op.ID, W: &w, H: &h})

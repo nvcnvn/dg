@@ -23,7 +23,9 @@ async function main(): Promise<void> {
   const vscodeExecutablePath = process.env.DG_VSCODE ?? (fs.existsSync(insiders) ? insiders : await downloadAndUnzipVSCode());
   const extensionsDir = path.join(tmp, "extensions");
   let extensionDevelopmentPath = root;
-  const launchArgs = [workspace, "--user-data-dir", path.join(tmp, "user"), "--extensions-dir", extensionsDir];
+  // The DevTools port lets the test send input to the diagram panel's frame as a user would.
+  const userData = path.join(tmp, "user");
+  const launchArgs = [workspace, "--user-data-dir", userData, "--extensions-dir", extensionsDir, "--remote-debugging-port=0"];
   const vsix = process.env.DG_VSIX;
   if (vsix) {
     const [cli, ...args] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath, { reuseMachineInstall: true });
@@ -42,6 +44,7 @@ async function main(): Promise<void> {
       vscodeExecutablePath,
       extensionDevelopmentPath,
       extensionTestsPath: path.join(__dirname, "suite.js"),
+      extensionTestsEnv: { DG_USER_DATA: userData },
       launchArgs,
     });
   } finally {

@@ -413,7 +413,7 @@ func setDecoration(d *view.Decoration, a *DecorationArgs, grid int) error {
 	for _, f := range []struct {
 		dst **int
 		src *int
-	}{{&d.X, a.X}, {&d.Y, a.Y}, {&d.DX, a.DX}, {&d.DY, a.DY}, {&d.W, a.W}, {&d.H, a.H}} {
+	}{{&d.X, a.X}, {&d.Y, a.Y}, {&d.DX, a.DX}, {&d.DY, a.DY}} {
 		v, err := snapped(f.src)
 		if err != nil {
 			return err
@@ -421,6 +421,19 @@ func setDecoration(d *view.Decoration, a *DecorationArgs, grid int) error {
 		if v != nil {
 			*f.dst = v
 		}
+	}
+	for _, f := range []struct {
+		dst **int
+		src *int
+	}{{&d.W, a.W}, {&d.H, a.H}} {
+		if f.src == nil {
+			continue
+		}
+		v, err := size(*f.src, grid)
+		if err != nil {
+			return err
+		}
+		*f.dst = &v
 	}
 	if a.Z != nil {
 		d.Z = a.Z

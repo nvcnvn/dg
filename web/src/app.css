@@ -60,7 +60,8 @@ body.stale #paper {
   display: block;
 }
 #crumbs button,
-#drill-menu button {
+#drill-menu button,
+#context-menu button {
   font: inherit;
   color: #1a73e8;
   background: none;
@@ -69,10 +70,12 @@ body.stale #paper {
   cursor: pointer;
 }
 #crumbs button:hover,
-#drill-menu button:hover {
+#drill-menu button:hover,
+#context-menu button:hover {
   text-decoration: underline;
 }
-#drill-menu {
+#drill-menu,
+#context-menu {
   position: absolute;
   display: flex;
   flex-direction: column;
@@ -82,7 +85,8 @@ body.stale #paper {
   border: 1px solid #dadce0;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
-#drill-menu[hidden] {
+#drill-menu[hidden],
+#context-menu[hidden] {
   display: none;
 }
 #paper [data-drill] {
@@ -90,4 +94,66 @@ body.stale #paper {
 }
 #crumbs {
   white-space: nowrap;
+}
+#tools {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+#tools button,
+#tools select {
+  font: inherit;
+}
+#paper svg {
+  touch-action: none;
+  user-select: none;
+}
+body.editable #paper [data-node] {
+  cursor: move;
+}
+#paper [data-chrome] .dg-selected,
+#paper [data-chrome] .dg-edge-selected,
+#paper [data-chrome] .dg-ghost,
+#paper [data-chrome] .dg-band,
+#paper [data-chrome] .dg-side {
+  fill: none;
+  pointer-events: none;
+}
+#paper [data-chrome] .dg-selected,
+#paper [data-chrome] .dg-ghost,
+#paper [data-chrome] .dg-side {
+  stroke: #1a73e8;
+}
+#paper [data-chrome] .dg-ghost {
+  stroke-dasharray: 4 3;
+}
+#paper [data-chrome] .dg-edge-selected {
+  stroke: rgba(26, 115, 232, 0.45);
+}
+#paper [data-chrome] .dg-band {
+  stroke: #1a73e8;
+  fill: rgba(26, 115, 232, 0.08);
+}
+#paper [data-chrome] .dg-handle {
+  fill: #ffffff;
+  stroke: #1a73e8;
+}
+#paper [data-chrome] .dg-label {
+  fill: rgba(26, 115, 232, 0.08);
+  cursor: grab;
+}
+#paper [data-chrome] .dg-port,
+#paper [data-chrome] .dg-via {
+  fill: #1a73e8;
+}
+body:not(.editable) #paper [data-chrome] .dg-handle {
+  display: none;
+}
+#paper .dg-nw,
+#paper .dg-se {
+  cursor: nwse-resize;
+}
+#paper .dg-ne,
+#paper .dg-sw {
+  cursor: nesw-resize;
 }

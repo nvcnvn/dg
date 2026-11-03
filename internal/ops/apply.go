@@ -245,41 +245,43 @@ func plan(base fs.FS, dir string, op Op, sess *Session) (*Change, *files, error)
 	if err != nil {
 		return nil, nil, err
 	}
-	// A diagnostic is new when the operation adds one with its summary. Details are compared only
-	// to say which ones: they name IDs, which a rename changes.
-	added := func(sev diag.Severity) diag.Diagnostics {
-		count := map[string]int{}
-		exact := map[[2]string]int{}
-		for _, d := range before {
-			if d.Severity == sev {
-				count[d.Summary]++
-				exact[[2]string{d.Summary, d.Detail}]++
-			}
-		}
-		for _, d := range after {
-			if d.Severity == sev {
-				count[d.Summary]--
-			}
-		}
-		var out diag.Diagnostics
-		for _, d := range after {
-			k := [2]string{d.Summary, d.Detail}
-			if d.Severity != sev || count[d.Summary] >= 0 {
-				continue
-			}
-			if exact[k] > 0 {
-				exact[k]--
-				continue
-			}
-			out = append(out, d)
-		}
-		return out
-	}
-	if errs := added(diag.Error); len(errs) > 0 {
+	if errs := added(before, after, diag.Error); len(errs) > 0 {
 		return nil, nil, &RefusedError{Diagnostics: errs}
 	}
-	c.Warnings = added(diag.Warning)
+	c.Warnings = added(before, after, diag.Warning)
 	return c, f, nil
+}
+
+// added returns the diagnostics of severity sev in after that are new since before: those whose
+// summary after has more of. Details are compared only to say which ones: they name IDs, which a
+// rename changes.
+func added(before, after diag.Diagnostics, sev diag.Severity) diag.Diagnostics {
+	count := map[string]int{}
+	exact := map[[2]string]int{}
+	for _, d := range before {
+		if d.Severity == sev {
+			count[d.Summary]++
+			exact[[2]string{d.Summary, d.Detail}]++
+		}
+	}
+	for _, d := range after {
+		if d.Severity == sev {
+			count[d.Summary]--
+		}
+	}
+	var out diag.Diagnostics
+	for _, d := range after {
+		k := [2]string{d.Summary, d.Detail}
+		if d.Severity != sev || count[d.Summary] >= 0 {
+			continue
+		}
+		if exact[k] > 0 {
+			exact[k]--
+			continue
+		}
+		out = append(out, d)
+	}
+	return out
 }
 
 func (s *state) project() (*project.Project, error) {

@@ -29,11 +29,12 @@ edge lifting and merging; its resolved views are goldens like the examples'.
 goldens: each `testdata/lsp/*.jsonl` names a project on its first line and holds the client's
 messages, and its `.golden` file what the server answered.
 `go test ./internal/project -bench Load1000` times `dg check` at 1,000 nodes, and
-`go test ./internal/lsp -bench Keystroke` one keystroke in the language server at 1,000 nodes; the
-fuzz targets
+`go test ./internal/lsp -bench Keystroke` one keystroke in the language server at 1,000 nodes, and
+`go test ./internal/server -run DragPerformance -v` reads a Chromium performance trace of drags in a
+view of 200 nodes and 400 edges (frames per second, longest task); the fuzz targets
 are `FuzzLoad` (`internal/project`), `FuzzDecodeLayout` (`internal/view`),
 `FuzzDecodeMessage` (`internal/server`, the WebSocket protocol), `FuzzOp` (`internal/ops`,
-operations as JSON), `FuzzOpArgs` (`cmd/dg`, `dg op` command lines), `FuzzTools`
+operations as JSON), `FuzzDiff` and `FuzzMerge3` (`internal/ops`, the line diff and merge of undo), `FuzzOpArgs` (`cmd/dg`, `dg op` command lines), `FuzzTools`
 (`internal/mcp`, MCP tool calls), and `FuzzMessage` and `FuzzBuffer` (`internal/lsp`, any message,
 and every request at any position of any buffer).
 
@@ -97,19 +98,35 @@ and its position `rel` in it, which `move` takes; a node a stack or grid contain
 `examples/c4-container`, `examples/c4`, `examples/incident`, `examples/swimlane`,
 `examples/flowchart` and `examples/state-machine` with operations alone.
 
-`dg serve` shows the views read-only (editing comes later): it redraws within tens of
-milliseconds of a save, and while the project has errors it lists them and keeps the last good
-drawing. A view is chosen from the switcher, from a node's drill-down badge (the views whose `of`
-is that node; a menu when there are several) or from the breadcrumbs of a view with `of`. `-addr`
-sets the address (default a free loopback port), `-open=false` skips opening the browser, and
-`-stdin` stops `dg serve` when its standard input closes, as when the editor that started it exits.
+`dg serve` is the editor. It redraws within tens of milliseconds of a save, and while the
+project has errors it lists them and keeps the last good drawing, read-only. A view is chosen from
+the switcher, from a node's drill-down badge (the views whose `of` is that node; a menu when there
+are several) or from the breadcrumbs of a view with `of`. `-addr` sets the address (default a free
+loopback port), `-open=false` skips opening the browser, and `-stdin` stops `dg serve` when its
+standard input closes, as when the editor that started it exits.
+
+Layout gestures write the view's layout file, each as one operation (one undo step) sent when it
+is dropped:
+
+- select with a click, Shift-click, or a box dragged on empty canvas; Ctrl/⌘+A selects every node;
+- drag nodes to move them (in a view with nothing pinned, the first drag pins every node where it
+  is drawn); a node stays inside its container, which grows unless its size is pinned;
+- drag a corner handle of a selected node to resize it; drag a child of a stack or grid container
+  to reorder it; drag a port handle of a selected node along its border to pin the port;
+- select an edge to drag an end to another side or its middle label along it; double-click the
+  edge to add a via point, which can be dragged, and double-click a via point to remove it;
+- Unpin, Align and Distribute act on the selection, from the toolbar or the right-click menu
+  (U unpins);
+- Undo and Redo (Ctrl/⌘+Z, Ctrl/⌘+Shift+Z) take back the session's changes, whichever browser made
+  them; an undo keeps edits made since in a text editor elsewhere in the same files;
+- pan with the scroll bars, the middle button or Space+drag; zoom with Ctrl/⌘+wheel, +, − and 0.
 
 `dg lsp` serves the Language Server Protocol for a project's HCL files, on the editor's unsaved
 buffers: the diagnostics of `dg check`, completion of kinds, IDs, ports, rows, selectors and
 styles, hover, go to definition and find references, rename through `rename_id` (layout files
 included), and formatting as `dg fmt`. The VS Code extension runs it in a folder with `dg.hcl`;
-its command "dg: Open diagram" shows the views from `dg serve` in a panel beside the text,
-redrawn when a file is saved.
+its command "dg: Open diagram" opens the `dg serve` editor in a panel beside the text, redrawn
+when a file is saved.
 
 `dg export --format` is `svg` (edge animation kept as CSS), `png` (animation at time 0), `gif`
 (one half-second animation period in 10 frames, looping) or `json` (geometry).

@@ -6,9 +6,10 @@
     <script type="module" src="./src/main.ts"></script>
   </head>
   <body>
-    <header id="bar"><select id="views" aria-label="View"></select><nav id="crumbs" aria-label="Breadcrumbs" hidden></nav><span id="hint" hidden>Layout not saved: placed automatically until a node is pinned.</span><span id="status"></span></header>
+    <header id="bar"><select id="views" aria-label="View"></select><span id="tools"><button type="button" id="undo" title="Undo (Ctrl+Z)" disabled>Undo</button><button type="button" id="redo" title="Redo (Ctrl+Shift+Z)" disabled>Redo</button><button type="button" id="unpin" title="Unpin the selection (U)" disabled>Unpin</button><select id="arrange" aria-label="Arrange" disabled><option value="">Arrange…</option><option value="left">Align left</option><option value="center">Align center</option><option value="right">Align right</option><option value="top">Align top</option><option value="middle">Align middle</option><option value="bottom">Align bottom</option><option value="x">Distribute horizontally</option><option value="y">Distribute vertically</option></select><button type="button" id="zoom-out" title="Zoom out (-)">−</button><button type="button" id="zoom" title="Actual size (0)">100%</button><button type="button" id="zoom-in" title="Zoom in (+)">+</button></span><nav id="crumbs" aria-label="Breadcrumbs" hidden></nav><span id="hint" hidden>Layout not saved: placed automatically until a node is pinned.</span><span id="status"></span></header>
     <ul id="diagnostics" hidden></ul>
     <div id="canvas"><div id="paper"></div></div>
     <div id="drill-menu" role="menu" hidden></div>
+    <div id="context-menu" role="menu" hidden></div>
   </body>
 </html>

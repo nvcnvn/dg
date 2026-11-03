@@ -148,6 +148,7 @@ function drawnNode(n: ViewNode, m: NodeMeasure, box: Box, layout: Layout, custom
     ...(n.frame ? { frame: n.frame } : {}),
     rel: n.frame ? { x: Math.max(0, rel.x), y: Math.max(0, rel.y) } : rel,
     container: !!n.container,
+    ...(n.container ? { origin: { x: box.x + m.origin.x, y: box.y + m.origin.y } } : {}),
     pinned: pinned(view, byId, n),
     ...(orderedIn(view, byId, n) !== undefined ? { orderedIn: orderedIn(view, byId, n) } : {}),
     tooSmall: layout.tooSmall.has(n.id),
