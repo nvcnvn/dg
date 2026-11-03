@@ -1,14 +1,42 @@
 import { cmp, type Box } from '../geometry/geometry';
-import { attrs, defsMarkup, edgeMarkup, flowCSS, flowPeriods, nodeMarkup, num, type DrawnEdge, type DrawnNode, type FontMetrics, type Shapes } from './markup';
+import { attrs, decorationMarkup, defsMarkup, edgeMarkup, flowCSS, flowPeriods, nodeMarkup, num, overlayMarkup, type DrawnDecoration, type DrawnEdge, type DrawnNode, type DrawnOverlay, type FontMetrics, type Shapes } from './markup';
 
-// Drawing is a view with all geometry computed, nodes in draw order. family names the font
-// an exported SVG asks for.
+// Drawing is a view with all geometry computed, nodes in draw order and decorations in layout
+// file order. family names the font an exported SVG asks for.
 export interface Drawing extends FontMetrics, Shapes {
   view: string;
   family: string;
   bounds: Box;
   nodes: DrawnNode[];
   edges: DrawnEdge[];
+  overlays: DrawnOverlay[];
+  decorations: DrawnDecoration[];
+}
+
+// Layer is one part of a drawing in draw order (spec 5.7, 5.8): decorations with a negative z
+// behind everything, then expanded containers, overlays, the other nodes and the edges, then
+// the other decorations; decorations in order of z, then layout file order, and nodes in their
+// drawing order.
+export type Layer = { decoration: DrawnDecoration } | { overlay: DrawnOverlay } | { node: DrawnNode } | { edge: DrawnEdge };
+
+export function layers(d: Drawing): Layer[] {
+  const byZ = (list: DrawnDecoration[]) => list.map((dec, i) => ({ dec, i })).sort((a, b) => a.dec.z - b.dec.z || a.i - b.i).map(({ dec }) => ({ decoration: dec }));
+  return [
+    ...byZ(d.decorations.filter((x) => x.z < 0)),
+    ...d.nodes.filter((n) => n.container).map((node) => ({ node })),
+    ...d.overlays.map((overlay) => ({ overlay })),
+    ...d.nodes.filter((n) => !n.container).map((node) => ({ node })),
+    ...d.edges.map((edge) => ({ edge })),
+    ...byZ(d.decorations.filter((x) => x.z >= 0)),
+  ];
+}
+
+// layerMarkup draws one layer; periods are the drawing's flowPeriods.
+export function layerMarkup(l: Layer, d: Drawing, periods: number[]): string[] {
+  if ('decoration' in l) return decorationMarkup(l.decoration, d);
+  if ('overlay' in l) return overlayMarkup(l.overlay, d);
+  if ('node' in l) return nodeMarkup(l.node, d, d);
+  return edgeMarkup(l.edge, d, periods);
 }
 
 export function toSVG(d: Drawing): string {
@@ -27,8 +55,7 @@ export function toSVG(d: Drawing): string {
       `<svg xmlns="http://www.w3.org/2000/svg"${root}>`,
       ...(css ? [`<style>\n${css}</style>`] : []),
       ...(defs.length ? ['<defs>', ...defs, '</defs>'] : []),
-      ...d.nodes.flatMap((n) => nodeMarkup(n, d, d)),
-      ...d.edges.flatMap((e) => edgeMarkup(e, d, periods)),
+      ...layers(d).flatMap((l) => layerMarkup(l, d, periods)),
       '</svg>',
     ].join('\n') + '\n'
   );
@@ -75,8 +102,10 @@ export async function mountSVG(svg: string, family: string): Promise<void> {
         new Promise((done, fail) => {
           im.addEventListener('load', done);
           im.addEventListener('error', () => {
-            const owner = im.closest('[data-node]')?.getAttribute('data-node');
-            fail(new Error(owner === undefined || owner === null ? `the picture of shape ${im.id.replace('dg-shape-', '')} did not load` : `the picture of node "${owner}" did not load`));
+            const node = im.closest('[data-node]')?.getAttribute('data-node');
+            const decoration = im.closest('[data-decoration]')?.getAttribute('data-decoration');
+            const what = node != null ? `node "${node}"` : decoration != null ? `decoration "${decoration}"` : `shape ${im.id.replace('dg-shape-', '')}`;
+            fail(new Error(`the picture of ${what} did not load`));
           });
         }),
     ),

@@ -10,6 +10,7 @@ edge_hints:
   ab: {from_side: bottom}
   old: {to_side: top}
   "lift:g:nobody": {to_side: left}
+  "lift:a:b": {to_side: top}
 decorations:
   - {id: title, type: text, x: 0, y: -60, text: "Title"}
   - {id: note, type: text, attach: ghost, dx: 0, dy: -40, text: "note"}

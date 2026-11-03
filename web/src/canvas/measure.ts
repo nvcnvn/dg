@@ -40,6 +40,8 @@ export async function loadFonts(view: ResolvedView): Promise<FontChoice> {
     }
   }
   for (const e of view.edges) add(400, (e.labels.start ?? '') + (e.labels.mid ?? '') + (e.labels.end ?? ''));
+  for (const o of view.overlays ?? []) add(400, o.label ?? '');
+  for (const d of view.decorations ?? []) add(400, d.text ?? '');
   for (const [weight, text] of [...texts].sort((a, b) => a[0] - b[0])) {
     const loaded = await document.fonts.load(cssFont(choice.family, { size: 16, weight }), text);
     if (loaded.length === 0) throw new Error(`font ${choice.name} did not load`);

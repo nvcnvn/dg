@@ -259,3 +259,77 @@ func jsString(s string) string {
 	data, _ := json.Marshal(s)
 	return string(data)
 }
+
+// TestDrillDown checks in Chromium that examples/c4 is navigable by drill-down: a badge opens
+// the view of its node, breadcrumbs lead back, and a badge of a node several views show the
+// inside of opens a menu of them (spec 8.2).
+func TestDrillDown(t *testing.T) {
+	if testing.Short() {
+		t.Skip("starts Chromium")
+	}
+	dir := t.TempDir()
+	if err := os.CopyFS(dir, os.DirFS(filepath.Join("..", "..", "examples", "c4"))); err != nil {
+		t.Fatal(err)
+	}
+	s := New(dir)
+	srv := httptest.NewServer(s.Handler())
+	defer srv.Close()
+	watch, stop := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() { done <- s.Watch(watch, func(err error) { t.Error(err) }) }()
+	defer func() {
+		stop()
+		if err := <-done; err != nil {
+			t.Error(err)
+		}
+	}()
+	ctx, cancel := chromedp.NewContext(context.Background())
+	defer cancel()
+	ctx, cancelTimeout := context.WithTimeout(ctx, 60*time.Second)
+	defer cancelTimeout()
+	shows := func(view string) chromedp.Action[chromedp.Void] {
+		return chromedp.Poll[chromedp.Void](`document.getElementById('paper').dataset.view === ` + jsString(view))
+	}
+	crumbs := func(want string) chromedp.Action[chromedp.Void] {
+		return chromedp.Poll[chromedp.Void](`(() => { const c = document.getElementById('crumbs'); return (c.hidden ? '' : c.textContent) === ` + jsString(want) + ` })()`)
+	}
+	steps := []struct {
+		name    string
+		actions []chromedp.Action[chromedp.Void]
+	}{
+		{"the context view", []chromedp.Action[chromedp.Void]{chromedp.Navigate(srv.URL), shows("main"), crumbs(""), chromedp.Poll[chromedp.Void](`document.querySelector('[data-node="banking"] [data-collapsed]') !== null`)}},
+		{"drill into the system", []chromedp.Action[chromedp.Void]{chromedp.Click(chromedp.CSS(`[data-drill="banking"]`)), shows("containers"), crumbs("Internet Banking System: system context › Internet Banking System: containers")}},
+		{"drill into the API", []chromedp.Action[chromedp.Void]{chromedp.Click(chromedp.CSS(`[data-drill="api"]`)), shows("components"), crumbs("Internet Banking System: system context › Internet Banking System: containers › API Application: components")}},
+		{"back by the breadcrumb", []chromedp.Action[chromedp.Void]{chromedp.Click(chromedp.CSS(`#crumbs button[data-views="containers"]`)), shows("containers")}},
+	}
+	for _, st := range steps {
+		if err := chromedp.Do(ctx, st.actions...); err != nil {
+			t.Fatalf("%s: %v", st.name, err)
+		}
+	}
+
+	views, err := os.ReadFile(filepath.Join(dir, "views.hcl"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	more := "\nview \"security\" {\n  title = \"API security\"\n  of    = node.api\n}\n\nview \"deployment\" {\n  title = \"Deployment\"\n  of    = node.banking\n}\n"
+	if err := os.WriteFile(filepath.Join(dir, "views.hcl"), append(views, more...), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	err = chromedp.Do(ctx,
+		chromedp.Poll[chromedp.Void](`[...document.querySelectorAll('#views option')].some((o) => o.value === 'security')`),
+		chromedp.Click(chromedp.CSS(`[data-drill="api"]`)),
+		chromedp.Poll[chromedp.Void](`!document.getElementById('drill-menu').hidden && document.querySelectorAll('#drill-menu button').length === 2`),
+		chromedp.Click(chromedp.CSS(`#drill-menu button[data-view="security"]`)),
+		shows("security"),
+		chromedp.Poll[chromedp.Void](`document.getElementById('drill-menu').hidden`),
+		crumbs("Internet Banking System: system context › Internet Banking System: containers (+1) ▾ › API security"),
+		chromedp.Click(chromedp.CSS(`#crumbs button[data-views="containers deployment"]`)),
+		chromedp.Poll[chromedp.Void](`!document.getElementById('drill-menu').hidden && document.querySelectorAll('#drill-menu button').length === 2`),
+		chromedp.Click(chromedp.CSS(`#drill-menu button[data-view="containers"]`)),
+		shows("containers"),
+	)
+	if err != nil {
+		t.Fatalf("drill-down menu: %v", err)
+	}
+}

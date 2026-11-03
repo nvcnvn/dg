@@ -13,6 +13,7 @@ func FuzzDecodeLayout(f *testing.F) {
 	f.Add([]byte("version: 1\nplace: {a: {x: 1}, a: {x: 2}}\n"))
 	f.Add([]byte("version: 1.0\nplace: {a: {x: 1.5, y: .inf}}\ndecorations:\n  - {id: d, type: rect, stroke_width: .nan, opacity: -0.0}\n"))
 	f.Add([]byte("version: 1\n---\nversion: 1\n"))
+	f.Add([]byte("version: 1\ndecorations:\n  - {id: a, type: arrow, points: [[0, 0], [10, 5]], attach: n, dx: 1, dy: -2, z: 3}\n  - {id: f, type: freehand, path: \"M0 0 L1 1 Z\", in: g, x: 1, fill: \"#fff\"}\n  - {id: i, type: image, src: a/b.svg, w: 1, h: 2}\n  - {id: e, type: ellipse, w: 1, h: 2, text: x}\n"))
 	f.Add([]byte("---\n"))
 	f.Add([]byte("version: 1\nplace:\n  t: {w: -10, ports: {a%3Ab: {side: left}}}\n"))
 	f.Fuzz(func(t *testing.T, src []byte) {

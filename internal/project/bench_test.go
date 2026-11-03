@@ -30,7 +30,7 @@ func BenchmarkLoad1000(b *testing.B) {
 		"spec.hcl":               "kind \"box\" {\n  ports = port_range(\"p\", 1, 8)\n  property \"size\" {\n    type = number\n  }\n}\n",
 		"style.hcl":              "style \"box\" {\n  shape = \"rounded\"\n}\n\nstyle \"tag.t1\" {\n  fill = \"#EEEEEE\"\n}\n",
 		"model.hcl":              model.String(),
-		"views.hcl":              "view \"main\" {}\n\nview \"some\" {\n  include = [kind.box, tag.t1, descendants.g1]\n  exclude = [children.g2]\n}\n",
+		"views.hcl":              "view \"main\" {}\n\nview \"some\" {\n  include  = [kind.box, tag.t1, descendants.g1]\n  exclude  = [children.g2]\n  collapse = [node.g3, kind.group]\n  overlay \"o\" {\n    members = [tag.t2]\n  }\n}\n",
 		"views/main.layout.yaml": layout.String(),
 	}
 	for name, src := range files {

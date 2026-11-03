@@ -66,14 +66,14 @@ var EdgeProps = map[string]Prop{
 	"animate":      {enum("none", "flow"), now},
 }
 
-// OverlayProps are the properties of overlay_style blocks; overlays are drawn from M7.
+// OverlayProps are the properties of overlay_style blocks.
 var OverlayProps = map[string]Prop{
-	"fill":         {color, from(7)},
-	"stroke":       {color, from(7)},
-	"stroke_width": {number(0, inf), from(7)},
-	"stroke_dash":  {dash, from(7)},
-	"opacity":      {number(0, 1), from(7)},
-	"padding":      {number(0, inf), from(7)},
+	"fill":         {color, now},
+	"stroke":       {color, now},
+	"stroke_width": {number(0, inf), now},
+	"stroke_dash":  {dash, now},
+	"opacity":      {number(0, 1), now},
+	"padding":      {number(0, inf), now},
 }
 
 // DrawnFrom returns the milestone from which the renderer draws value v of property name in
@@ -85,8 +85,6 @@ func DrawnFrom(props map[string]Prop, name string, v cty.Value) int {
 const inf = 1e18
 
 func now(cty.Value) int { return 0 }
-
-func from(m int) func(cty.Value) int { return func(cty.Value) int { return m } }
 
 func except(m int, drawn ...string) func(cty.Value) int {
 	return func(v cty.Value) int {
@@ -104,6 +102,16 @@ func isString(v cty.Value) string {
 		return "must be a string"
 	}
 	return ""
+}
+
+// PictureProblem says why svg is not a picture a browser can draw, or returns "".
+func PictureProblem(svg string) string {
+	return picture(cty.StringVal(svg))
+}
+
+// ColorProblem says why s is not a color, or returns "".
+func ColorProblem(s string) string {
+	return color(cty.StringVal(s))
 }
 
 // picture accepts the text of an SVG file: well-formed XML whose root element is svg in the SVG

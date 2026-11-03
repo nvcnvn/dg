@@ -30,7 +30,7 @@ node "worker-2" {
 }
 
 node "cache" {
-  kind = "database"
+  kind   = "database"
   parent = node.rack
 }
 

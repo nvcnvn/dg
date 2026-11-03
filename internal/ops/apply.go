@@ -320,7 +320,7 @@ func (s *state) block(typ, id string) (string, *hclwrite.File, *hclwrite.Block, 
 	if err != nil {
 		return "", nil, nil, err
 	}
-	b := f.Body().FirstMatchingBlock(typ, []string{id})
+	b := findBlock(f.Body(), typ, []string{id})
 	if b == nil {
 		return "", nil, nil, fmt.Errorf("%s %q is not a block of %s", typ, id, rng.Filename)
 	}

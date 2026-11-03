@@ -3,10 +3,58 @@
 export interface ResolvedView {
   view: string;
   grid: number;
+  // direction is the way the layers of the first layout run, when the view sets it.
+  direction?: 'down' | 'right' | 'up' | 'left';
+  // breadcrumbs are the levels of views this view leads back to, outermost first.
+  breadcrumbs?: string[][];
   font?: { family: string; data: string };
   nodes: ViewNode[];
   edges: ViewEdge[];
+  overlays?: ViewOverlay[];
+  decorations?: ViewDecoration[];
   shapes?: Record<string, CustomShape>;
+}
+
+export interface ViewOverlay {
+  id: string;
+  label?: string;
+  members: string[];
+  style: OverlayStyle;
+}
+
+export interface OverlayStyle {
+  fill: string;
+  stroke: string;
+  stroke_width: number;
+  stroke_dash: number[];
+  opacity: number;
+  padding: number;
+}
+
+// ViewDecoration is a decoration with every style property set. x and y are relative to the
+// content origin of the frame in, or to the canvas; for an attached decoration they move the
+// decoration's center from its node's center.
+export interface ViewDecoration {
+  id: string;
+  type: 'text' | 'rect' | 'ellipse' | 'band' | 'image' | 'arrow' | 'freehand';
+  in?: string;
+  attach?: string;
+  x: number;
+  y: number;
+  w?: number;
+  h?: number;
+  z: number;
+  text?: string;
+  image?: string;
+  points?: [number, number][];
+  path?: string;
+  fill: string;
+  stroke: string;
+  stroke_width: number;
+  stroke_dash: number[];
+  opacity: number;
+  text_color: string;
+  font_size: number;
 }
 
 export type Side = 'top' | 'right' | 'bottom' | 'left';
@@ -17,6 +65,10 @@ export interface ViewNode {
   label: string;
   frame?: string;
   container?: boolean;
+  // collapsed marks a collapsed container, drawn as a leaf with a "+" badge.
+  collapsed?: boolean;
+  // drill lists the views that show the inside of this node.
+  drill?: string[];
   read_only?: boolean;
   ports?: Port[];
   compartments?: Compartment[];
@@ -71,6 +123,8 @@ export interface NodeStyle {
 
 export interface ViewEdge {
   id: string;
+  // edges are the model edges a lifted edge stands for.
+  edges?: string[];
   kind: string;
   from: End;
   to: End;

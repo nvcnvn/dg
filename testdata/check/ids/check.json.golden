@@ -72,6 +72,16 @@
   {
     "severity": "error",
     "summary": "Invalid ID",
+    "detail": "The edge ID \"lift:x:x\" starts with lift:, which names lifted edges.",
+    "file": "b.hcl",
+    "line": 8,
+    "column": 1,
+    "end_line": 8,
+    "end_column": 16
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid ID",
     "detail": "The kind ID \"bad kind\" is not a simple ID (letters, digits, _ and -, starting with a letter or _).",
     "file": "spec.hcl",
     "line": 1,

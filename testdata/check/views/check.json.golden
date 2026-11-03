@@ -238,6 +238,16 @@
     "column": 13,
     "end_line": 40,
     "end_column": 23
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid value",
+    "detail": "\"sideways\" is not one of \"down\", \"right\", \"up\", \"left\".",
+    "file": "views.hcl",
+    "line": 44,
+    "column": 15,
+    "end_line": 44,
+    "end_column": 25
   }
 ]
 exit 1

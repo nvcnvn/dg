@@ -1,0 +1,5 @@
+version: 1
+decorations:
+  - {id: title, type: text, x: 0, y: -60, text: Solo}
+  - {id: note, type: text, attach: gateway, dx: 0, dy: -40, text: entry point}
+  - {id: shelf, type: rect, in: pool, x: 10, y: 20, w: 120, h: 60}

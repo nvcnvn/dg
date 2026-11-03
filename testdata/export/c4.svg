@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -20 800 740" width="800" height="740" font-family="Inter, sans-serif">
+<g data-node="banking">
+<rect x="250" y="260" width="230" height="160" rx="8" fill="#1168BD" stroke="#0B4884" stroke-width="1"/>
+<text x="365" y="287" text-anchor="middle" fill="#FFFFFF" font-size="14">Internet Banking System</text>
+<text x="365" y="307" text-anchor="middle" fill="#FFFFFF" font-size="14">[Software System]</text>
+<text x="365" y="327" text-anchor="middle" fill="#FFFFFF" font-size="14"></text>
+<text x="365" y="347" text-anchor="middle" fill="#FFFFFF" font-size="14">Allows customers to view</text>
+<text x="365" y="367" text-anchor="middle" fill="#FFFFFF" font-size="14">information about their bank</text>
+<text x="365" y="387" text-anchor="middle" fill="#FFFFFF" font-size="14">accounts, and make payments.</text>
+<g data-collapsed="">
+<rect x="359" y="396" width="12" height="12" rx="2" fill="#FFFFFF" stroke="#3C4043"/>
+<path d="M362 402 H368 M365 399 V405" stroke="#3C4043" stroke-width="2"/>
+</g>
+</g>
+<g data-node="customer">
+<rect x="250" y="38" width="220" height="122" rx="24" fill="#08427B" stroke="#073B6F" stroke-width="1"/>
+<circle cx="360" cy="24" r="24" fill="#08427B" stroke="#073B6F" stroke-width="1"/>
+<text x="360" y="64" text-anchor="middle" fill="#FFFFFF" font-size="14">Personal Banking Customer</text>
+<text x="360" y="84" text-anchor="middle" fill="#FFFFFF" font-size="14">[Person]</text>
+<text x="360" y="104" text-anchor="middle" fill="#FFFFFF" font-size="14"></text>
+<text x="360" y="124" text-anchor="middle" fill="#FFFFFF" font-size="14">A customer of the bank, with</text>
+<text x="360" y="144" text-anchor="middle" fill="#FFFFFF" font-size="14">personal bank accounts.</text>
+</g>
+<g data-node="email">
+<rect x="520" y="540" width="240" height="130" rx="8" fill="#999999" stroke="#8A8A8A" stroke-width="1"/>
+<text x="640" y="570" text-anchor="middle" fill="#FFFFFF" font-size="14">E-mail System</text>
+<text x="640" y="590" text-anchor="middle" fill="#FFFFFF" font-size="14">[Software System]</text>
+<text x="640" y="610" text-anchor="middle" fill="#FFFFFF" font-size="14"></text>
+<text x="640" y="630" text-anchor="middle" fill="#FFFFFF" font-size="14">The internal Microsoft Exchange</text>
+<text x="640" y="650" text-anchor="middle" fill="#FFFFFF" font-size="14">e-mail system.</text>
+</g>
+<g data-node="mainframe">
+<rect x="0" y="540" width="220" height="160" rx="8" fill="#999999" stroke="#8A8A8A" stroke-width="1"/>
+<text x="110" y="567" text-anchor="middle" fill="#FFFFFF" font-size="14">Mainframe Banking System</text>
+<text x="110" y="587" text-anchor="middle" fill="#FFFFFF" font-size="14">[Software System]</text>
+<text x="110" y="607" text-anchor="middle" fill="#FFFFFF" font-size="14"></text>
+<text x="110" y="627" text-anchor="middle" fill="#FFFFFF" font-size="14">Stores all of the core banking</text>
+<text x="110" y="647" text-anchor="middle" fill="#FFFFFF" font-size="14">information about customers,</text>
+<text x="110" y="667" text-anchor="middle" fill="#FFFFFF" font-size="14">accounts, transactions, etc.</text>
+<g data-collapsed="">
+<rect x="104" y="676" width="12" height="12" rx="2" fill="#FFFFFF" stroke="#3C4043"/>
+<path d="M107 682 H113 M110 679 V685" stroke="#3C4043" stroke-width="2"/>
+</g>
+</g>
+<g data-edge="email-customer">
+<path d="M640 540 L640 80 L470 80" fill="none" stroke="#707070" stroke-width="1.5" stroke-dasharray="6 4"/>
+<path d="M480 75 L470 80 L480 85" fill="none" stroke="#707070" stroke-width="1.5"/>
+<rect x="590" y="217" width="100" height="16" fill="#FFFFFF"/>
+<text x="640" y="229" text-anchor="middle" fill="#202124" font-size="11">Sends e-mails to</text>
+</g>
+<g data-edge="lift:banking:email">
+<path d="M403 420 L403 432 L508 432 L508 605 L520 605" fill="none" stroke="#707070" stroke-width="1.5" stroke-dasharray="6 4"/>
+<path d="M510 610 L520 605 L510 600" fill="none" stroke="#707070" stroke-width="1.5"/>
+<rect x="453" y="458" width="110" height="16" fill="#FFFFFF"/>
+<text x="508" y="470" text-anchor="middle" fill="#202124" font-size="11">Sends e-mail using</text>
+</g>
+<g data-edge="lift:banking:mainframe">
+<path d="M327 420 L327 620 L220 620" fill="none" stroke="#707070" stroke-width="1.5" stroke-dasharray="6 4"/>
+<path d="M230 615 L220 620 L230 625" fill="none" stroke="#707070" stroke-width="1.5"/>
+<rect x="272" y="558" width="110" height="32" fill="#FFFFFF"/>
+<text x="327" y="570" text-anchor="middle" fill="#202124" font-size="11">Makes API calls to</text>
+<text x="327" y="586" text-anchor="middle" fill="#202124" font-size="11">[XML/HTTPS]</text>
+</g>
+<g data-edge="lift:customer:banking">
+<path d="M363 160 L363 260" fill="none" stroke="#707070" stroke-width="1.5" stroke-dasharray="6 4"/>
+<path d="M358 250 L363 260 L368 250" fill="none" stroke="#707070" stroke-width="1.5"/>
+<rect x="348" y="202" width="30" height="16" fill="#FFFFFF"/>
+<text x="363" y="214" text-anchor="middle" fill="#202124" font-size="11">×3</text>
+</g>
+</svg>

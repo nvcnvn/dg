@@ -37,6 +37,15 @@ func FuzzOp(f *testing.F) {
 		`{"op": "set_edge_hint", "view": "main", "id": "lift:a%3Ab:pool", "hint": {"via": [[1, 2]]}}`,
 		`{"op": "pin_port", "view": "main", "id": "worker-1", "port": "nic1", "side": "left", "offset": 1}`,
 		`{"op": "create_view", "id": "v", "include": ["descendants[\"pool\"]"], "edges": ["edge_kind.async"], "of": "pool"}`,
+		`{"op": "update_view", "id": "calls", "title": "C", "collapse": ["node.pool"], "overlays": [{"id": "o", "members": ["tag.edge"]}], "unset": ["edges"]}`,
+		`{"op": "update_view", "id": "main", "unset": ["overlays", "include"], "direction": "up"}`,
+		`{"op": "delete_view", "id": "calls"}`,
+		`{"op": "create_view", "id": "v", "overlays": [{"id": "o", "members": ["all"], "style": "hull", "label": "L"}], "direction": "left"}`,
+		`{"op": "add_decoration", "view": "solo", "decoration": {"type": "arrow", "points": [[0, 0], [10, 10]], "stroke_dash": [1, 2]}}`,
+		`{"op": "add_decoration", "view": "main", "id": "t", "decoration": {"type": "freehand", "path": "M0 0 L10 10", "in": "pool"}}`,
+		`{"op": "update_decoration", "view": "solo", "id": "note", "decoration": {"type": "rect", "w": 10, "h": 10}, "unset": ["text"]}`,
+		`{"op": "delete_decoration", "view": "solo", "id": "shelf"}`,
+		`{"op": "promote_decoration", "view": "solo", "id": "shelf", "kind": "group", "new": "s"}`,
 		`[{"op": "create_node", "kind": "group"}, {"op": "set_label", "id": "group", "label": "Rack 2"}, {"op": "move", "view": "main", "id": "rack-2", "x": -5, "y": 5}]`,
 	} {
 		f.Add([]byte(seed), []byte{})

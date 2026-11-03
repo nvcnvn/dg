@@ -12,4 +12,10 @@ decorations:
   - {id: t, type: text}
   - {id: t, type: rect}
   - {type: blob}
+  - {id: r, type: rect, w: 10, h: 10, text: "x", fill: red}
+  - {id: a, type: arrow, points: [[0, 0]], attach: g, x: 1}
+  - {id: f, type: freehand, path: "<script>", dx: 1}
+  - {id: i, type: image, src: "../x.svg", w: 1, h: 1, in: g, attach: g, stroke_width: -1, font_size: 0, stroke_dash: [-1]}
+  - {id: m, type: image, src: missing.svg, w: 1, h: 1}
+  - {id: n, type: image, src: model.hcl, w: 1, h: 1}
 extra: 1

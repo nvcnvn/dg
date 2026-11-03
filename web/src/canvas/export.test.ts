@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { edgeStyle, nodeStyle } from '../fixtures';
 import type { NodeStyle } from '../protocol/view';
-import { toJSON, toSVG, type Drawing } from './export';
-import { flowDash, nodeMarkup, type DrawnNode } from './markup';
+import { layers, toJSON, toSVG, type Drawing } from './export';
+import { flowDash, nodeMarkup, type DrawnDecoration, type DrawnNode } from './markup';
 
 const font = { size: 14, weight: 400 };
 
@@ -39,6 +39,8 @@ const drawing: Drawing = {
       style: edgeStyle({ stroke_dash: [6, 4] }),
     },
   ],
+  overlays: [],
+  decorations: [],
 };
 
 describe('toSVG', () => {
@@ -53,6 +55,31 @@ describe('toSVG', () => {
     expect(svg).toContain('d="M190 25 L200 20 L190 15"');
     expect(svg).toContain('<circle cx="104" cy="20" r="4" fill="#FFFFFF" stroke="#3C4043" stroke-width="1.5"/>');
     expect(svg).toContain('font-family="Inter, sans-serif"');
+  });
+});
+
+describe('layers', () => {
+  const deco = (id: string, z: number): DrawnDecoration => ({
+    id,
+    type: 'rect',
+    z,
+    box: { x: 0, y: 0, w: 10, h: 10 },
+    origin: { x: 0, y: 0 },
+    style: { fill: 'none', stroke: '#000000', stroke_width: 1, stroke_dash: [], opacity: 1, text_color: '#000000' },
+  });
+  it('draws negative decorations, containers, overlays, other nodes, edges, then the other decorations, by z then file order', () => {
+    const overlay = { id: 'o', path: 'M0 0 Z', box: { x: 0, y: 0, w: 1, h: 1 }, style: { fill: 'none', stroke: '#000000', stroke_width: 1, stroke_dash: [], opacity: 1, padding: 0 } };
+    const d = { ...drawing, nodes: [...drawing.nodes, { ...drawn('g'), container: true }], overlays: [overlay], decorations: [deco('top', 2), deco('band', -1), deco('note', 1), deco('back', -2), deco('note2', 1)] };
+    const order = layers(d).map((l) => ('decoration' in l ? l.decoration.id : 'overlay' in l ? 'overlay' : 'node' in l ? l.node.id : 'edge'));
+    expect(order).toEqual(['back', 'band', 'g', 'overlay', 'b', 'a"<&>', 'edge', 'note', 'note2', 'top']);
+    const svg = toSVG(d);
+    expect(svg.indexOf('data-decoration="band"')).toBeLessThan(svg.indexOf('data-overlay="o"'));
+    expect(svg.indexOf('data-edge="e"')).toBeLessThan(svg.indexOf('data-decoration="note"'));
+  });
+  it('draws collapse and drill-down badges', () => {
+    const out = nodeMarkup({ ...drawn('n'), badge: { x: 44, y: 30, w: 12, h: 12 }, drill: { x: 85, y: 3, w: 12, h: 12 } }, drawing, drawing).join('');
+    expect(out).toContain('<g data-collapsed=""><rect x="44" y="30" width="12" height="12"');
+    expect(out).toContain('<g data-drill="n"><rect x="85" y="3"');
   });
 });
 

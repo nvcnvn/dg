@@ -50,6 +50,11 @@ type Op struct {
 	Collapse     []string           `json:"collapse,omitzero"`
 	Edges        []string           `json:"edges,omitzero"`
 	Of           string             `json:"of,omitempty"`
+	Direction    string             `json:"direction,omitempty"`
+	Overlays     []OverlayArgs      `json:"overlays,omitzero"`
+	Styles       []StyleArgs        `json:"styles,omitzero"`
+	Decoration   *DecorationArgs    `json:"decoration,omitempty"`
+	Unset        []string           `json:"unset,omitzero"`
 	Ops          []Op               `json:"ops,omitzero"`
 }
 
@@ -75,14 +80,17 @@ func (f Field) req() Field { f.Required = true; return f }
 func (f Field) help(h string) Field { f.Help = h; return f }
 
 const (
-	strSchema    = `{"type":"string"}`
-	intSchema    = `{"type":"integer"}`
-	endSchema    = `{"type":"object","properties":{"node":{"type":"string"},"port":{"type":"string"},"row":{"type":"string"}},"required":["node"],"additionalProperties":false}`
-	stringList   = `{"type":"array","items":{"type":"string"}}`
-	sideSchema   = `{"type":"string","enum":["top","right","bottom","left"]}`
-	labelsSchema = `{"type":"object","properties":{"start":{"type":"string"},"mid":{"type":"string"},"end":{"type":"string"}},"additionalProperties":false}`
-	rowsSchema   = `{"type":"array","items":{"type":"object","properties":{"name":{"type":"string"},"rows":{"type":"array","items":{"type":"object","properties":{"name":{"type":"string"},"type":{"type":"string"},"key":{"type":"string"}},"required":["name"],"additionalProperties":false}}},"required":["rows"],"additionalProperties":false}}`
-	hintSchema   = `{"type":"object","properties":{"from_side":` + sideSchema + `,"to_side":` + sideSchema + `,"via":{"type":"array","items":{"type":"array","items":{"type":"integer"},"minItems":2,"maxItems":2}},"label_pos":{"type":"number","minimum":0,"maximum":1}},"additionalProperties":false}`
+	strSchema        = `{"type":"string"}`
+	intSchema        = `{"type":"integer"}`
+	endSchema        = `{"type":"object","properties":{"node":{"type":"string"},"port":{"type":"string"},"row":{"type":"string"}},"required":["node"],"additionalProperties":false}`
+	stringList       = `{"type":"array","items":{"type":"string"}}`
+	sideSchema       = `{"type":"string","enum":["top","right","bottom","left"]}`
+	labelsSchema     = `{"type":"object","properties":{"start":{"type":"string"},"mid":{"type":"string"},"end":{"type":"string"}},"additionalProperties":false}`
+	rowsSchema       = `{"type":"array","items":{"type":"object","properties":{"name":{"type":"string"},"rows":{"type":"array","items":{"type":"object","properties":{"name":{"type":"string"},"type":{"type":"string"},"key":{"type":"string"}},"required":["name"],"additionalProperties":false}}},"required":["rows"],"additionalProperties":false}}`
+	overlaysSchema   = `{"type":"array","items":{"type":"object","properties":{"id":{"type":"string"},"members":{"type":"array","items":{"type":"string"}},"style":{"type":"string"},"label":{"type":"string"}},"required":["id","members"],"additionalProperties":false}}`
+	stylesSchema     = `{"type":"array","items":{"type":"object","properties":{"type":{"type":"string","enum":["style","edge_style"]},"label":{"type":"string"},"props":{"type":"object","additionalProperties":{"anyOf":[{"type":["string","number","boolean"]},{"type":"array","items":{"type":"number"}}]}}},"required":["label","props"],"additionalProperties":false}}`
+	decorationSchema = `{"type":"object","properties":{"type":{"type":"string","enum":["text","rect","ellipse","band","image","arrow","freehand"]},"in":{"type":"string"},"attach":{"type":"string"},"x":{"type":"integer"},"y":{"type":"integer"},"dx":{"type":"integer"},"dy":{"type":"integer"},"w":{"type":"integer","minimum":0},"h":{"type":"integer","minimum":0},"z":{"type":"integer"},"text":{"type":"string"},"src":{"type":"string"},"points":{"type":"array","items":{"type":"array","items":{"type":"integer"},"minItems":2,"maxItems":2}},"path":{"type":"string"},"fill":{"type":"string"},"stroke":{"type":"string"},"stroke_width":{"type":"number","minimum":0},"stroke_dash":{"type":"array","items":{"type":"number","minimum":0}},"opacity":{"type":"number","minimum":0,"maximum":1},"text_color":{"type":"string"},"font_size":{"type":"number","minimum":1}},"additionalProperties":false}`
+	hintSchema       = `{"type":"object","properties":{"from_side":` + sideSchema + `,"to_side":` + sideSchema + `,"via":{"type":"array","items":{"type":"array","items":{"type":"integer"},"minItems":2,"maxItems":2}},"label_pos":{"type":"number","minimum":0,"maximum":1}},"additionalProperties":false}`
 )
 
 var (
@@ -102,6 +110,19 @@ var (
 	fSels     = func(name, help string) Field {
 		return Field{Name: name, Schema: stringList, Help: help, Example: `["node.api"]`}
 	}
+	fViewID       = Field{Name: "id", Schema: strSchema, Help: "view ID", Example: `"overview"`}
+	fTitle        = Field{Name: "title", Schema: strSchema, Help: "view title", Example: `"Overview"`}
+	fInclude      = fSels("include", `selectors of the nodes the view shows, as in views.hcl: all, node.<id> or node["<id>"], kind.<kind>, tag.<tag>, children.<id>, descendants.<id> (default [all])`)
+	fExclude      = fSels("exclude", "selectors of nodes the view leaves out")
+	fCollapse     = fSels("collapse", "selectors of containers the view draws collapsed")
+	fEdgeSels     = fSels("edges", "selectors of the edges the view shows: edge_kind.<kind>, tag.<tag>, edge.<id> (default: every edge whose ends are shown)")
+	fOf           = Field{Name: "of", Schema: strSchema, Help: "ID of the container whose inside the view shows (drill-down)", Example: `"backend"`}
+	fDirection    = Field{Name: "direction", Schema: `{"type":"string","enum":["down","right","up","left"]}`, Help: "the way the layers of the view's first layout run: down, right, up or left (default: down, or right when an edge ends at a row)", Example: `"right"`}
+	fOverlays     = Field{Name: "overlays", Schema: overlaysSchema, Help: "overlays [{id, members: [selectors], style?, label?}]", Example: `[{"id": "blast", "members": ["tag.critical"], "label": "Blast radius"}]`}
+	fStyles       = Field{Name: "styles", Schema: stylesSchema, Help: "view style rules [{type?: style (default) or edge_style, label: a kind, tag.<tag>, node.<id> or edge.<id>, props: {property: value}}]", Example: `[{"label": "tag.new", "props": {"fill": "#E6F4EA"}}]`}
+	fUnset        = Field{Name: "unset", Schema: stringList, Example: `["of"]`}
+	fDecorationID = Field{Name: "id", Schema: strSchema, Help: "ID of the decoration", Example: `"note"`}
+	fDecoration   = Field{Name: "decoration", Schema: decorationSchema, Help: "decoration fields as in layout files: type (text, rect, ellipse, band, image, arrow, freehand), in or attach, x and y (in the frame) or dx and dy (from the attached node's center), w, h, z, text, src, points, path, fill, stroke, stroke_width, stroke_dash, opacity, text_color, font_size", Example: `{"type": "text", "x": 0, "y": -60, "text": "Title"}`}
 )
 
 // Defs are the operations, in the order help lists them.
@@ -141,13 +162,22 @@ var Defs = []Def{
 		{Name: "old", Schema: strSchema, Help: "current ID", Example: `"api"`, Required: true},
 		{Name: "new", Schema: strSchema, Help: "new ID", Example: `"gateway"`, Required: true}}},
 	{"create_view", "Append a view block to views.hcl.", []Field{
-		{Name: "id", Schema: strSchema, Help: "ID of the new view (a simple ID)", Example: `"overview"`, Required: true},
-		{Name: "title", Schema: strSchema, Help: "view title", Example: `"Overview"`},
-		fSels("include", `selectors of the nodes the view shows, as in views.hcl: all, node.<id> or node["<id>"], kind.<kind>, tag.<tag>, children.<id>, descendants.<id> (default [all])`),
-		fSels("exclude", "selectors of nodes the view leaves out"),
-		fSels("collapse", "selectors of containers the view draws collapsed"),
-		fSels("edges", "selectors of the edges the view shows: edge_kind.<kind>, tag.<tag>, edge.<id> (default: every edge whose ends are shown)"),
-		{Name: "of", Schema: strSchema, Help: "ID of the container whose inside the view shows (drill-down)", Example: `"backend"`}}},
+		fViewID.help("ID of the new view (a simple ID)").req(), fTitle, fInclude, fExclude, fCollapse, fEdgeSels, fOf, fDirection, fOverlays, fStyles}},
+	{"update_view", "Change attributes and overlays of a view in views.hcl: the fields given replace the view's, unset removes them.", []Field{
+		fViewID.req(), fTitle, fInclude, fExclude, fCollapse, fEdgeSels, fOf, fDirection,
+		fOverlays.help(fOverlays.Help + "; replaces every overlay of the view, keeping unchanged ones as they are written"),
+		fStyles.help(fStyles.Help + "; replaces every style rule of the view, keeping unchanged ones as they are written"),
+		fUnset.help("attributes to remove: title, include, exclude, collapse, edges, of, direction, overlays, styles")}},
+	{"delete_view", "Remove a view from views.hcl, and its layout file.", []Field{fViewID.req()}},
+	{"add_decoration", "Add a decoration to a view's layout file (spec 5.7).", []Field{fView.req(),
+		fDecorationID.help("ID of the new decoration (generated from its type when omitted)"),
+		fDecoration.help(fDecoration.Help + "; type is required").req()}},
+	{"update_decoration", "Change fields of a decoration of a view: the fields given replace its, unset removes them.", []Field{fView.req(), fDecorationID.req(), fDecoration,
+		fUnset.help("decoration fields to remove, such as attach, dx and dy")}},
+	{"delete_decoration", "Remove a decoration from a view.", []Field{fView.req(), fDecorationID.req()}},
+	{"promote_decoration", "Replace a decoration of a view with a model node pinned where the decoration is, at its size; a text decoration's text becomes the label, and a decoration in a frame becomes a child of that container. Refused for attached decorations, arrows and freehand lines.", []Field{fView.req(), fDecorationID.req(), fKind.req(),
+		{Name: "new", Schema: strSchema, Help: "ID of the new node (generated from the label, or the kind, when omitted)", Example: `"note"`},
+		fLabel.help("label of the new node (default: the text of a text decoration)")}},
 	{"batch", "Apply operations in order as one change: all files are written together, or none.", []Field{
 		{Name: "ops", Schema: `{"type":"array","items":{"type":"object"}}`, Help: "operations, each an object with op and its fields", Example: `[{"op": "create_node", "kind": "service"}]`, Required: true}}},
 }

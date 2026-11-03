@@ -32,7 +32,7 @@ node "worker-2" {
 node "cache" { kind = "database" }
 
 node "disk" {
-  kind   = "storage"
+  kind = "storage"
 }
 
 node "orders" {

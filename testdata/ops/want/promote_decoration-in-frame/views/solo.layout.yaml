@@ -1,0 +1,7 @@
+version: 1
+place:
+  shelf: {in: pool, x: 10, y: 20, w: 120, h: 60}
+decorations:
+  - {id: title, type: text, x: 0, y: -60, text: Solo}
+  - {id: note, type: text, attach: gateway, dx: 0, dy: -40, text: entry point}
+  - {id: flow, type: arrow, points: [[0, 0], [100, 0]]}

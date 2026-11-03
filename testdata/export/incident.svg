@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 830 750" width="830" height="750" font-family="Inter, sans-serif">
+<g data-node="core">
+<rect x="60" y="290" width="300" height="210" fill="#F8F9FA" stroke="#9AA0A6" stroke-width="1"/>
+<text x="80" y="315" fill="#202124" font-size="14">Core services</text>
+</g>
+<g data-node="data">
+<rect x="10" y="580" width="440" height="140" fill="#F8F9FA" stroke="#9AA0A6" stroke-width="1"/>
+<text x="30" y="605" fill="#202124" font-size="14">Data</text>
+</g>
+<g data-node="edge">
+<rect x="80" y="10" width="160" height="210" fill="#F8F9FA" stroke="#9AA0A6" stroke-width="1"/>
+<text x="100" y="35" fill="#202124" font-size="14">Edge</text>
+</g>
+<g data-node="events">
+<path d="M680 580 L800 580 L790 620 L670 620 Z" fill="#F3E8FD" stroke="#9334E6" stroke-width="1"/>
+<text x="735" y="605" text-anchor="middle" fill="#202124" font-size="14">Order events</text>
+</g>
+<g data-node="psp">
+<rect x="490" y="580" width="140" height="40" rx="8" fill="#F1F3F4" stroke="#5F6368" stroke-width="1" stroke-dasharray="6 4"/>
+<text x="560" y="605" text-anchor="middle" fill="#202124" font-size="14">Payment provider</text>
+</g>
+<g data-node="cache">
+<path d="M170 637 L170 693 A55 7 0 0 0 280 693 L280 637 A55 7 0 0 0 170 637 Z" fill="#FEF7E0" stroke="#E37400" stroke-width="1"/>
+<path d="M170 637 A55 7 0 0 0 280 637" fill="none" stroke="#E37400" stroke-width="1"/>
+<text x="225" y="674" text-anchor="middle" fill="#202124" font-size="14">Stock cache</text>
+</g>
+<g data-node="gateway">
+<rect x="110" y="160" width="110" height="40" rx="8" fill="#E8F0FE" stroke="#1A73E8" stroke-width="1"/>
+<text x="165" y="185" text-anchor="middle" fill="#202124" font-size="14">API gateway</text>
+</g>
+<g data-node="inventory">
+<rect x="100" y="440" width="100" height="40" rx="8" fill="#E8F0FE" stroke="#1A73E8" stroke-width="1"/>
+<text x="150" y="465" text-anchor="middle" fill="#202124" font-size="14">Inventory</text>
+</g>
+<g data-node="lb">
+<rect x="100" y="60" width="120" height="40" rx="8" fill="#E8F0FE" stroke="#1A73E8" stroke-width="1"/>
+<text x="160" y="85" text-anchor="middle" fill="#202124" font-size="14">Load balancer</text>
+</g>
+<g data-node="orders">
+<rect x="110" y="340" width="100" height="40" rx="8" fill="#E8F0FE" stroke="#1A73E8" stroke-width="1"/>
+<text x="160" y="365" text-anchor="middle" fill="#202124" font-size="14">Orders</text>
+</g>
+<g data-node="orders-db">
+<path d="M30 637 L30 693 A50 7 0 0 0 130 693 L130 637 A50 7 0 0 0 30 637 Z" fill="#FEF7E0" stroke="#E37400" stroke-width="1"/>
+<path d="M30 637 A50 7 0 0 0 130 637" fill="none" stroke="#E37400" stroke-width="1"/>
+<text x="80" y="674" text-anchor="middle" fill="#202124" font-size="14">Orders DB</text>
+</g>
+<g data-node="payments">
+<rect x="240" y="440" width="100" height="40" rx="8" fill="#E8F0FE" stroke="#1A73E8" stroke-width="1"/>
+<text x="290" y="465" text-anchor="middle" fill="#202124" font-size="14">Payments</text>
+</g>
+<g data-node="payments-db">
+<path d="M320 637 L320 693 A55 7 0 0 0 430 693 L430 637 A55 7 0 0 0 320 637 Z" fill="#FEF7E0" stroke="#E37400" stroke-width="1"/>
+<path d="M320 637 A55 7 0 0 0 430 637" fill="none" stroke="#E37400" stroke-width="1"/>
+<text x="375" y="674" text-anchor="middle" fill="#202124" font-size="14">Payments DB</text>
+</g>
+<g data-edge="gateway-orders">
+<path d="M163 200 L163 210 L182 210 L182 328 L163 328 L163 340" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M158 330 L163 340 L168 330" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="147" y="262" width="70" height="17" fill="#FFFFFF"/>
+<text x="182" y="275" text-anchor="middle" fill="#202124" font-size="12">checkout</text>
+</g>
+<g data-edge="inventory-cache">
+<path d="M150 480 L150 490 L158 490 L158 665 L170 665" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M160 670 L170 665 L160 660" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="lb-gateway">
+<path d="M163 100 L163 160" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M158 150 L163 160 L168 150" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="orders-db">
+<path d="M110 360 L80 360 L80 630" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M75 620 L80 630 L85 620" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="orders-events">
+<path d="M210 367 L222 367 L222 370 L713 370 L713 580" fill="none" stroke="#3C4043" stroke-width="1.5" stroke-dasharray="6 4"/>
+<path d="M708 570 L713 580 L718 570" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="orders-inventory">
+<path d="M155 380 L155 440" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M150 430 L155 440 L160 430" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="125" y="402" width="60" height="17" fill="#FFFFFF"/>
+<text x="155" y="415" text-anchor="middle" fill="#202124" font-size="12">reserve</text>
+</g>
+<g data-edge="orders-payments">
+<path d="M210 353 L222 353 L222 350 L290 350 L290 440" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M285 430 L290 440 L295 430" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="265" y="345" width="50" height="17" fill="#FFFFFF"/>
+<text x="290" y="358" text-anchor="middle" fill="#202124" font-size="12">charge</text>
+</g>
+<g data-edge="payments-db">
+<path d="M273 480 L273 510 L308 510 L308 665 L320 665" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M310 670 L320 665 L310 660" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="payments-events">
+<path d="M340 460 L757 460 L757 580" fill="none" stroke="#3C4043" stroke-width="1.5" stroke-dasharray="6 4"/>
+<path d="M752 570 L757 580 L762 570" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="payments-psp">
+<path d="M307 480 L307 490 L478 490 L478 600 L490 600" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M480 605 L490 600 L480 595" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="414" y="482" width="70" height="17" fill="#FFFFFF"/>
+<text x="449" y="495" text-anchor="middle" fill="#202124" font-size="12">authorize</text>
+</g>
+</svg>

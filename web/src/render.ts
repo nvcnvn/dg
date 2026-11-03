@@ -1,6 +1,8 @@
 import type { Drawing } from './canvas/export';
-import type { DrawnEdge, DrawnNode } from './canvas/markup';
-import { absoluteBoxes, ceilTo, cmp, contentLayout, depth, fitContainers, measureNode, type Box, type Layout, type NodeMeasure, type Point } from './geometry/geometry';
+import type { DrawnDecoration, DrawnEdge, DrawnNode, DrawnOverlay } from './canvas/markup';
+import { placeDecorations } from './geometry/decoration';
+import { absoluteBoxes, ceilTo, cmp, contentLayout, depth, drillBadge, fitContainers, measureNode, type Box, type Layout, type NodeMeasure, type Point } from './geometry/geometry';
+import { hull } from './geometry/overlay';
 import { rowLines } from './geometry/table';
 import { textBlock, type TextMeasure } from './geometry/text';
 import { placeWithElk, type EdgeLabelSizes, type Elk } from './place/elk';
@@ -11,6 +13,7 @@ import { marker } from './route/markers';
 import type { PortPos } from './route/route';
 
 const MARGIN = 20;
+const OVERLAY_FONT = 12;
 
 // draw computes the geometry of a view: sizes, placement, ports, routes and labels.
 export async function draw(view: ResolvedView, text: TextMeasure, family: string, elk: Elk, router: Router): Promise<Drawing> {
@@ -35,13 +38,39 @@ export async function draw(view: ResolvedView, text: TextMeasure, family: string
   const edges: DrawnEdge[] = view.edges.map((e) => {
     return { id: e.id, points: routes.get(e.id)!, style: e.style, markers: markers.get(e.id)!.flat(), labels: labels.get(e.id)! };
   });
+  const overlays = (view.overlays ?? []).map((o): DrawnOverlay => {
+    const h = hull(o.members.map((id) => boxes.get(id)!), o.style.padding);
+    const drawn: DrawnOverlay = { id: o.id, path: h.path, box: h.box, style: o.style };
+    if (o.label) {
+      const t = textBlock(o.label, 0, { size: OVERLAY_FONT, weight: 400 }, text);
+      drawn.label = { text: t, box: { x: h.top.x, y: h.top.y - t.h - 2, w: t.w, h: t.h } };
+    }
+    return drawn;
+  });
+  const decorations = placeDecorations(view.decorations ?? [], boxes, measures, text).map(
+    ({ d, box, text: t, points, origin }): DrawnDecoration => ({
+      id: d.id,
+      type: d.type,
+      z: d.z,
+      box,
+      origin,
+      style: d,
+      ...(t ? { text: t } : {}),
+      ...(points ? { points, marker: marker('arrow', points) } : {}),
+      ...(d.path ? { path: d.path } : {}),
+      ...(d.image ? { image: d.image } : {}),
+    }),
+  );
+  const extra = [...overlays.flatMap((o) => (o.label ? [o.box, o.label.box] : [o.box])), ...decorations.map((d) => d.box)];
 
   return {
     view: view.view,
     family,
-    bounds: bounds(nodes.map((n) => n.box), edges, grid),
+    bounds: bounds([...nodes.map((n) => n.box), ...extra], edges, grid),
     nodes,
     edges,
+    overlays,
+    decorations,
     shapes,
     ascent: text.ascent,
     descent: text.descent,
@@ -86,6 +115,7 @@ function drawnNode(n: ViewNode, m: NodeMeasure, box: Box, layout: Layout, custom
     keyFont: t.keyFont,
   };
   const rel = layout.rel.get(n.id) ?? { x: 0, y: 0 };
+  const drill = n.drill?.length ? { drill: drillBadge(n, box, custom ? view.shapes![custom] : undefined) } : {};
   return {
     id: n.id,
     box,
@@ -100,6 +130,7 @@ function drawnNode(n: ViewNode, m: NodeMeasure, box: Box, layout: Layout, custom
     ...c,
     ports: [...ports].map(([name, p]) => ({ name, ...p })),
     table,
+    ...drill,
   };
 }
 

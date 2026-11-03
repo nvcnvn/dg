@@ -1,0 +1,199 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 880 1140" width="880" height="1140" font-family="Inter, sans-serif">
+<g data-node="api">
+<rect x="10" y="270" width="840" height="570" fill="none" stroke="#444444" stroke-width="1" stroke-dasharray="8 4"/>
+<text x="30" y="295" fill="#444444" font-size="14">API Application</text>
+<text x="30" y="315" fill="#444444" font-size="14">[Container: Java and Spring</text>
+<text x="30" y="335" fill="#444444" font-size="14">MVC]</text>
+<text x="30" y="355" fill="#444444" font-size="14"></text>
+<text x="30" y="375" fill="#444444" font-size="14">Provides Internet banking</text>
+<text x="30" y="395" fill="#444444" font-size="14">functionality via a</text>
+<text x="30" y="415" fill="#444444" font-size="14">JSON/HTTPS API.</text>
+</g>
+<g data-node="database">
+<path d="M350 907 L350 1103 A110 7 0 0 0 570 1103 L570 907 A110 7 0 0 0 350 907 Z" fill="#438DD5" stroke="#3C7FC0" stroke-width="1"/>
+<path d="M350 907 A110 7 0 0 0 570 907" fill="none" stroke="#3C7FC0" stroke-width="1"/>
+<text x="460" y="944" text-anchor="middle" fill="#FFFFFF" font-size="14">Database</text>
+<text x="460" y="964" text-anchor="middle" fill="#FFFFFF" font-size="14">[Container: Oracle Database</text>
+<text x="460" y="984" text-anchor="middle" fill="#FFFFFF" font-size="14">Schema]</text>
+<text x="460" y="1004" text-anchor="middle" fill="#FFFFFF" font-size="14"></text>
+<text x="460" y="1024" text-anchor="middle" fill="#FFFFFF" font-size="14">Stores user registration</text>
+<text x="460" y="1044" text-anchor="middle" fill="#FFFFFF" font-size="14">information, hashed</text>
+<text x="460" y="1064" text-anchor="middle" fill="#FFFFFF" font-size="14">authentication credentials,</text>
+<text x="460" y="1084" text-anchor="middle" fill="#FFFFFF" font-size="14">access logs, etc.</text>
+</g>
+<g data-node="email">
+<rect x="610" y="900" width="240" height="130" rx="8" fill="#999999" stroke="#8A8A8A" stroke-width="1"/>
+<text x="730" y="930" text-anchor="middle" fill="#FFFFFF" font-size="14">E-mail System</text>
+<text x="730" y="950" text-anchor="middle" fill="#FFFFFF" font-size="14">[Software System]</text>
+<text x="730" y="970" text-anchor="middle" fill="#FFFFFF" font-size="14"></text>
+<text x="730" y="990" text-anchor="middle" fill="#FFFFFF" font-size="14">The internal Microsoft Exchange</text>
+<text x="730" y="1010" text-anchor="middle" fill="#FFFFFF" font-size="14">e-mail system.</text>
+</g>
+<g data-node="mainframe">
+<rect x="40" y="900" width="220" height="160" rx="8" fill="#999999" stroke="#8A8A8A" stroke-width="1"/>
+<text x="150" y="927" text-anchor="middle" fill="#FFFFFF" font-size="14">Mainframe Banking System</text>
+<text x="150" y="947" text-anchor="middle" fill="#FFFFFF" font-size="14">[Software System]</text>
+<text x="150" y="967" text-anchor="middle" fill="#FFFFFF" font-size="14"></text>
+<text x="150" y="987" text-anchor="middle" fill="#FFFFFF" font-size="14">Stores all of the core banking</text>
+<text x="150" y="1007" text-anchor="middle" fill="#FFFFFF" font-size="14">information about customers,</text>
+<text x="150" y="1027" text-anchor="middle" fill="#FFFFFF" font-size="14">accounts, transactions, etc.</text>
+<g data-collapsed="">
+<rect x="144" y="1036" width="12" height="12" rx="2" fill="#FFFFFF" stroke="#3C4043"/>
+<path d="M147 1042 H153 M150 1039 V1045" stroke="#3C4043" stroke-width="2"/>
+</g>
+</g>
+<g data-node="mobile-app">
+<rect x="220" y="30" width="240" height="170" rx="8" fill="#438DD5" stroke="#3C7FC0" stroke-width="1"/>
+<text x="340" y="60" text-anchor="middle" fill="#FFFFFF" font-size="14">Mobile App</text>
+<text x="340" y="80" text-anchor="middle" fill="#FFFFFF" font-size="14">[Container: Xamarin]</text>
+<text x="340" y="100" text-anchor="middle" fill="#FFFFFF" font-size="14"></text>
+<text x="340" y="120" text-anchor="middle" fill="#FFFFFF" font-size="14">Provides a limited subset of the</text>
+<text x="340" y="140" text-anchor="middle" fill="#FFFFFF" font-size="14">Internet banking functionality to</text>
+<text x="340" y="160" text-anchor="middle" fill="#FFFFFF" font-size="14">customers via their mobile</text>
+<text x="340" y="180" text-anchor="middle" fill="#FFFFFF" font-size="14">device.</text>
+</g>
+<g data-node="spa">
+<rect x="500" y="10" width="210" height="190" rx="8" fill="#438DD5" stroke="#3C7FC0" stroke-width="1"/>
+<text x="605" y="40" text-anchor="middle" fill="#FFFFFF" font-size="14">Single-Page Application</text>
+<text x="605" y="60" text-anchor="middle" fill="#FFFFFF" font-size="14">[Container: JavaScript and</text>
+<text x="605" y="80" text-anchor="middle" fill="#FFFFFF" font-size="14">Angular]</text>
+<text x="605" y="100" text-anchor="middle" fill="#FFFFFF" font-size="14"></text>
+<text x="605" y="120" text-anchor="middle" fill="#FFFFFF" font-size="14">Provides all of the Internet</text>
+<text x="605" y="140" text-anchor="middle" fill="#FFFFFF" font-size="14">banking functionality to</text>
+<text x="605" y="160" text-anchor="middle" fill="#FFFFFF" font-size="14">customers via their web</text>
+<text x="605" y="180" text-anchor="middle" fill="#FFFFFF" font-size="14">browser.</text>
+</g>
+<g data-node="accounts">
+<rect x="30" y="440" width="230" height="170" rx="8" fill="#85BBF0" stroke="#78A8D8" stroke-width="1"/>
+<text x="145" y="470" text-anchor="middle" fill="#000000" font-size="14">Accounts Summary Controller</text>
+<text x="145" y="490" text-anchor="middle" fill="#000000" font-size="14">[Component: Spring MVC Rest</text>
+<text x="145" y="510" text-anchor="middle" fill="#000000" font-size="14">Controller]</text>
+<text x="145" y="530" text-anchor="middle" fill="#000000" font-size="14"></text>
+<text x="145" y="550" text-anchor="middle" fill="#000000" font-size="14">Provides customers with a</text>
+<text x="145" y="570" text-anchor="middle" fill="#000000" font-size="14">summary of their bank</text>
+<text x="145" y="590" text-anchor="middle" fill="#000000" font-size="14">accounts.</text>
+</g>
+<g data-node="facade">
+<rect x="40" y="670" width="220" height="150" rx="8" fill="#85BBF0" stroke="#78A8D8" stroke-width="1"/>
+<text x="150" y="700" text-anchor="middle" fill="#000000" font-size="14">Mainframe Banking System</text>
+<text x="150" y="720" text-anchor="middle" fill="#000000" font-size="14">Facade</text>
+<text x="150" y="740" text-anchor="middle" fill="#000000" font-size="14">[Component: Spring Bean]</text>
+<text x="150" y="760" text-anchor="middle" fill="#000000" font-size="14"></text>
+<text x="150" y="780" text-anchor="middle" fill="#000000" font-size="14">A facade onto the mainframe</text>
+<text x="150" y="800" text-anchor="middle" fill="#000000" font-size="14">banking system.</text>
+</g>
+<g data-node="mailer">
+<rect x="620" y="690" width="210" height="110" rx="8" fill="#85BBF0" stroke="#78A8D8" stroke-width="1"/>
+<text x="725" y="720" text-anchor="middle" fill="#000000" font-size="14">E-mail Component</text>
+<text x="725" y="740" text-anchor="middle" fill="#000000" font-size="14">[Component: Spring Bean]</text>
+<text x="725" y="760" text-anchor="middle" fill="#000000" font-size="14"></text>
+<text x="725" y="780" text-anchor="middle" fill="#000000" font-size="14">Sends e-mails to users.</text>
+</g>
+<g data-node="reset">
+<rect x="570" y="440" width="230" height="170" rx="8" fill="#85BBF0" stroke="#78A8D8" stroke-width="1"/>
+<text x="685" y="470" text-anchor="middle" fill="#000000" font-size="14">Reset Password Controller</text>
+<text x="685" y="490" text-anchor="middle" fill="#000000" font-size="14">[Component: Spring MVC Rest</text>
+<text x="685" y="510" text-anchor="middle" fill="#000000" font-size="14">Controller]</text>
+<text x="685" y="530" text-anchor="middle" fill="#000000" font-size="14"></text>
+<text x="685" y="550" text-anchor="middle" fill="#000000" font-size="14">Allows users to reset their</text>
+<text x="685" y="570" text-anchor="middle" fill="#000000" font-size="14">passwords with a single use</text>
+<text x="685" y="590" text-anchor="middle" fill="#000000" font-size="14">URL.</text>
+</g>
+<g data-node="security">
+<rect x="340" y="670" width="240" height="150" rx="8" fill="#85BBF0" stroke="#78A8D8" stroke-width="1"/>
+<text x="460" y="700" text-anchor="middle" fill="#000000" font-size="14">Security Component</text>
+<text x="460" y="720" text-anchor="middle" fill="#000000" font-size="14">[Component: Spring Bean]</text>
+<text x="460" y="740" text-anchor="middle" fill="#000000" font-size="14"></text>
+<text x="460" y="760" text-anchor="middle" fill="#000000" font-size="14">Provides functionality related to</text>
+<text x="460" y="780" text-anchor="middle" fill="#000000" font-size="14">signing in, changing passwords,</text>
+<text x="460" y="800" text-anchor="middle" fill="#000000" font-size="14">etc.</text>
+</g>
+<g data-node="signin">
+<rect x="300" y="450" width="230" height="150" rx="8" fill="#85BBF0" stroke="#78A8D8" stroke-width="1"/>
+<text x="415" y="480" text-anchor="middle" fill="#000000" font-size="14">Sign In Controller</text>
+<text x="415" y="500" text-anchor="middle" fill="#000000" font-size="14">[Component: Spring MVC Rest</text>
+<text x="415" y="520" text-anchor="middle" fill="#000000" font-size="14">Controller]</text>
+<text x="415" y="540" text-anchor="middle" fill="#000000" font-size="14"></text>
+<text x="415" y="560" text-anchor="middle" fill="#000000" font-size="14">Allows users to sign in to the</text>
+<text x="415" y="580" text-anchor="middle" fill="#000000" font-size="14">Internet Banking System.</text>
+</g>
+<g data-edge="accounts-facade">
+<path d="M148 610 L148 670" fill="none" stroke="#707070" stroke-width="1.5" stroke-dasharray="6 4"/>
+<path d="M143 660 L148 670 L153 660" fill="none" stroke="#707070" stroke-width="1.5"/>
+<rect x="128" y="632" width="40" height="16" fill="#FFFFFF"/>
+<text x="148" y="644" text-anchor="middle" fill="#202124" font-size="11">Uses</text>
+</g>
+<g data-edge="lift:facade:mainframe">
+<path d="M150 820 L150 900" fill="none" stroke="#707070" stroke-width="1.5" stroke-dasharray="6 4"/>
+<path d="M145 890 L150 900 L155 890" fill="none" stroke="#707070" stroke-width="1.5"/>
+<rect x="95" y="844" width="110" height="32" fill="#FFFFFF"/>
+<text x="150" y="856" text-anchor="middle" fill="#202124" font-size="11">Makes API calls to</text>
+<text x="150" y="872" text-anchor="middle" fill="#202124" font-size="11">[XML/HTTPS]</text>
+</g>
+<g data-edge="mailer-email">
+<path d="M728 800 L728 900" fill="none" stroke="#707070" stroke-width="1.5" stroke-dasharray="6 4"/>
+<path d="M723 890 L728 900 L733 890" fill="none" stroke="#707070" stroke-width="1.5"/>
+<rect x="673" y="842" width="110" height="16" fill="#FFFFFF"/>
+<text x="728" y="854" text-anchor="middle" fill="#202124" font-size="11">Sends e-mail using</text>
+</g>
+<g data-edge="mobile-accounts">
+<path d="M300 200 L300 420 L107 420 L107 440" fill="none" stroke="#707070" stroke-width="1.5" stroke-dasharray="6 4"/>
+<path d="M102 430 L107 440 L112 430" fill="none" stroke="#707070" stroke-width="1.5"/>
+<rect x="245" y="357" width="110" height="32" fill="#FFFFFF"/>
+<text x="300" y="369" text-anchor="middle" fill="#202124" font-size="11">Makes API calls to</text>
+<text x="300" y="385" text-anchor="middle" fill="#202124" font-size="11">[JSON/HTTPS]</text>
+</g>
+<g data-edge="mobile-signin">
+<path d="M378 200 L378 450" fill="none" stroke="#707070" stroke-width="1.5" stroke-dasharray="6 4"/>
+<path d="M373 440 L378 450 L383 440" fill="none" stroke="#707070" stroke-width="1.5"/>
+<rect x="323" y="309" width="110" height="32" fill="#FFFFFF"/>
+<text x="378" y="321" text-anchor="middle" fill="#202124" font-size="11">Makes API calls to</text>
+<text x="378" y="337" text-anchor="middle" fill="#202124" font-size="11">[JSON/HTTPS]</text>
+</g>
+<g data-edge="reset-mailer">
+<path d="M724 610 L724 690" fill="none" stroke="#707070" stroke-width="1.5" stroke-dasharray="6 4"/>
+<path d="M719 680 L724 690 L729 680" fill="none" stroke="#707070" stroke-width="1.5"/>
+<rect x="704" y="642" width="40" height="16" fill="#FFFFFF"/>
+<text x="724" y="654" text-anchor="middle" fill="#202124" font-size="11">Uses</text>
+</g>
+<g data-edge="reset-security">
+<path d="M647 610 L647 658 L500 658 L500 670" fill="none" stroke="#707070" stroke-width="1.5" stroke-dasharray="6 4"/>
+<path d="M495 660 L500 670 L505 660" fill="none" stroke="#707070" stroke-width="1.5"/>
+<rect x="572" y="650" width="40" height="16" fill="#FFFFFF"/>
+<text x="592" y="662" text-anchor="middle" fill="#202124" font-size="11">Uses</text>
+</g>
+<g data-edge="security-database">
+<path d="M460 820 L460 900" fill="none" stroke="#707070" stroke-width="1.5" stroke-dasharray="6 4"/>
+<path d="M455 890 L460 900 L465 890" fill="none" stroke="#707070" stroke-width="1.5"/>
+<rect x="390" y="844" width="140" height="32" fill="#FFFFFF"/>
+<text x="460" y="856" text-anchor="middle" fill="#202124" font-size="11">Reads from and writes to</text>
+<text x="460" y="872" text-anchor="middle" fill="#202124" font-size="11">[SQL/TCP]</text>
+</g>
+<g data-edge="signin-security">
+<path d="M418 600 L418 670" fill="none" stroke="#707070" stroke-width="1.5" stroke-dasharray="6 4"/>
+<path d="M413 660 L418 670 L423 660" fill="none" stroke="#707070" stroke-width="1.5"/>
+<rect x="398" y="627" width="40" height="16" fill="#FFFFFF"/>
+<text x="418" y="639" text-anchor="middle" fill="#202124" font-size="11">Uses</text>
+</g>
+<g data-edge="spa-accounts">
+<path d="M553 200 L553 428 L183 428 L183 440" fill="none" stroke="#707070" stroke-width="1.5" stroke-dasharray="6 4"/>
+<path d="M178 430 L183 440 L188 430" fill="none" stroke="#707070" stroke-width="1.5"/>
+<rect x="498" y="367" width="110" height="32" fill="#FFFFFF"/>
+<text x="553" y="379" text-anchor="middle" fill="#202124" font-size="11">Makes API calls to</text>
+<text x="553" y="395" text-anchor="middle" fill="#202124" font-size="11">[JSON/HTTPS]</text>
+</g>
+<g data-edge="spa-reset">
+<path d="M658 200 L658 212 L685 212 L685 440" fill="none" stroke="#707070" stroke-width="1.5" stroke-dasharray="6 4"/>
+<path d="M680 430 L685 440 L690 430" fill="none" stroke="#707070" stroke-width="1.5"/>
+<rect x="630" y="291" width="110" height="32" fill="#FFFFFF"/>
+<text x="685" y="303" text-anchor="middle" fill="#202124" font-size="11">Makes API calls to</text>
+<text x="685" y="319" text-anchor="middle" fill="#202124" font-size="11">[JSON/HTTPS]</text>
+</g>
+<g data-edge="spa-signin">
+<path d="M605 200 L605 212 L453 212 L453 450" fill="none" stroke="#707070" stroke-width="1.5" stroke-dasharray="6 4"/>
+<path d="M448 440 L453 450 L458 440" fill="none" stroke="#707070" stroke-width="1.5"/>
+<rect x="398" y="233" width="110" height="32" fill="#FFFFFF"/>
+<text x="453" y="245" text-anchor="middle" fill="#202124" font-size="11">Makes API calls to</text>
+<text x="453" y="261" text-anchor="middle" fill="#202124" font-size="11">[JSON/HTTPS]</text>
+</g>
+</svg>

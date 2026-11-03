@@ -2,8 +2,8 @@ import { dia } from '@joint/core';
 import type { Diagnostic, ServerMessage, ViewInfo } from '../protocol/client';
 import { connect } from '../protocol/client';
 import type { ResolvedView } from '../protocol/view';
-import { checkStyle, type Drawing } from './export';
-import { defsMarkup, edgeMarkup, flowCSS, flowPeriods, nodeMarkup, shiftNode } from './markup';
+import { checkStyle, layerMarkup, layers, type Drawing } from './export';
+import { defsMarkup, flowCSS, flowPeriods, nodeMarkup, shiftNode } from './markup';
 
 const UNPINNED_OPACITY = 0.55;
 
@@ -12,10 +12,12 @@ const namespace = { dg: { Markup } };
 
 // startEditor runs the read-only editor: it draws each snapshot the server sends on a JointJS
 // paper, with the markup the SVG export uses, fading unpinned nodes in a view with pinned ones,
-// and lists diagnostics. While the project has
-// errors the last good drawing stays.
+// and lists diagnostics. While the project has errors the last good drawing stays. The view
+// switcher, the breadcrumbs and the drill-down badges select views (spec 8.2).
 export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: Drawing; family: string }>) {
   const select = document.getElementById('views') as HTMLSelectElement;
+  const crumbs = document.getElementById('crumbs')!;
+  const menu = document.getElementById('drill-menu')!;
   const status = document.getElementById('status')!;
   const hint = document.getElementById('hint')!;
   const list = document.getElementById('diagnostics')!;
@@ -35,6 +37,10 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
   let tooSmall: string[] = [];
   let pending: ResolvedView | undefined;
   let drawing = false;
+  let shown: ResolvedView | undefined;
+  let received: ResolvedView | undefined;
+  let titles = new Map<string, string>();
+  const title = (id: string) => titles.get(id) || id;
 
   const showDiagnostics = () => {
     const all = [...serverDiags, ...tooSmall.map((id): Diagnostic => ({ severity: 'warning', summary: 'Container too small', detail: `Node "${id}" has a pinned size too small for its children.` }))];
@@ -64,26 +70,28 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
     // the layout is not saved instead (spec 7.4).
     const anyPinned = d.nodes.some((n) => n.pinned);
     hint.hidden = anyPinned;
-    const nodes = d.nodes.map(
-      (n, i) =>
-        new Markup({
+    const periods = flowPeriods(d.edges);
+    const cells = layers(d).map((l, z) => {
+      if ('node' in l) {
+        const n = l.node;
+        return new Markup({
           id: 'n:' + n.id,
           position: { x: n.box.x, y: n.box.y },
           size: { width: n.box.w, height: n.box.h },
           markup: nodeMarkup(shiftNode(n, -n.box.x, -n.box.y), d, d).join(''),
           attrs: { root: { opacity: n.pinned || !anyPinned ? 1 : UNPINNED_OPACITY } },
-          z: i,
-        }),
-    );
-    const periods = flowPeriods(d.edges);
-    const edges = d.edges.map(
-      (e, i) => new Markup({ id: 'e:' + e.id, position: { x: 0, y: 0 }, size: { width: 1, height: 1 }, markup: edgeMarkup(e, d, periods).join(''), z: nodes.length + i }),
-    );
+          z,
+        });
+      }
+      const id = 'edge' in l ? 'e:' + l.edge.id : 'overlay' in l ? 'o:' + l.overlay.id : 'd:' + l.decoration.id;
+      return new Markup({ id, position: { x: 0, y: 0 }, size: { width: 1, height: 1 }, markup: layerMarkup(l, d, periods).join(''), z });
+    });
     flowStyle.textContent = flowCSS(periods);
     checkStyle(flowStyle);
-    graph.resetCells([...nodes, ...edges]);
+    graph.resetCells(cells);
     paper.setDimensions(d.bounds.w, d.bounds.h);
     paper.translate(-d.bounds.x, -d.bounds.y);
+    if (paper.el.dataset.view !== d.view) window.scrollTo(0, 0);
     paper.el.dataset.view = d.view;
   };
 
@@ -97,6 +105,7 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
         try {
           const { drawing: d, family } = await render(view);
           show(d, family);
+          shown = view;
           tooSmall = d.nodes.filter((n) => n.tooSmall).map((n) => n.id);
         } catch (err) {
           status.textContent = `Drawing failed: ${err}`;
@@ -108,7 +117,68 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
     }
   };
 
+  // openMenu lists views at the page position (x, y); choosing one selects it.
+  const openMenu = (views: string[], x: number, y: number) => {
+    menu.replaceChildren(
+      ...views.map((v) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = title(v);
+        b.dataset.view = v;
+        b.addEventListener('click', () => {
+          menu.hidden = true;
+          conn.selectView(v);
+        });
+        return b;
+      }),
+    );
+    menu.style.left = `${x}px`;
+    menu.style.top = `${y}px`;
+    menu.hidden = false;
+  };
+
+  // A breadcrumb leads to a view, or, when several views are one level up, to a menu of them.
+  const showCrumbs = (view: ResolvedView) => {
+    const items: Node[] = [];
+    for (const level of view.breadcrumbs ?? []) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = level.length === 1 ? title(level[0]) : `${title(level[0])} (+${level.length - 1}) ▾`;
+      b.dataset.views = level.join(' ');
+      b.addEventListener('click', (ev) => {
+        if (level.length === 1) return conn.selectView(level[0]);
+        const r = b.getBoundingClientRect();
+        openMenu(level, r.left + window.scrollX, r.bottom + window.scrollY);
+        ev.stopPropagation();
+      });
+      items.push(b, document.createTextNode(' › '));
+    }
+    if (items.length) {
+      const here = document.createElement('span');
+      here.textContent = title(view.view);
+      items.push(here);
+    }
+    crumbs.replaceChildren(...items);
+    crumbs.hidden = items.length === 0;
+  };
+
+  // A drill-down badge opens the view of its node, or, when several views show its inside, a
+  // menu of them.
+  paper.el.addEventListener('click', (ev) => {
+    const id = (ev.target as Element).closest('[data-drill]')?.getAttribute('data-drill');
+    const current = received?.view === shown?.view ? received : shown;
+    const views = current?.nodes.find((n) => n.id === id)?.drill ?? [];
+    if (views.length === 1) conn.selectView(views[0]);
+    if (views.length < 2) return;
+    openMenu(views, ev.pageX, ev.pageY);
+    ev.stopPropagation();
+  });
+  document.addEventListener('click', (ev) => {
+    if (!menu.contains(ev.target as Node)) menu.hidden = true;
+  });
+
   const showViews = (views: ViewInfo[], current: string) => {
+    titles = new Map(views.map((v) => [v.id, v.title ?? '']));
     select.replaceChildren(
       ...views.map((v) => {
         const o = document.createElement('option');
@@ -125,7 +195,8 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
       switch (m.type) {
         case 'snapshot':
           showViews(m.views, m.resolved.view);
-          pending = m.resolved;
+          showCrumbs(m.resolved);
+          pending = received = m.resolved;
           void drawLatest();
           break;
         case 'diagnostics':

@@ -61,8 +61,8 @@ edge "gw-w1" {
 
 edge "w1-w2" {
   from = node.worker-a
-  to = node.worker-2
-  kind = "async"   # queued
+  to   = node.worker-2
+  kind = "async" # queued
 }
 
 edge "dns-gw" {

@@ -1,7 +1,7 @@
 import type { Box, Point } from '../geometry/geometry';
 import { CYLINDER_RY, DOCUMENT_WAVE, outline, personBodyTop, personHead, svgSize } from '../geometry/shapes';
 import { lineHeight, type Font, type TextBlock } from '../geometry/text';
-import type { CustomShape, EdgeStyle, NodeStyle, Side } from '../protocol/view';
+import type { CustomShape, EdgeStyle, NodeStyle, OverlayStyle, Side, ViewDecoration } from '../protocol/view';
 import type { PlacedLabel } from '../route/edges';
 import type { MarkerPart } from '../route/markers';
 
@@ -27,6 +27,35 @@ export interface DrawnNode {
   picture?: Box;
   ports: DrawnPort[];
   table?: DrawnTable;
+  // badge is a collapsed container's "+" badge.
+  badge?: Box;
+  // drill is the drill-down badge of a node other views show the inside of.
+  drill?: Box;
+}
+
+// DrawnOverlay is an overlay's outline (SVG path data) and its label, left-aligned above it.
+export interface DrawnOverlay {
+  id: string;
+  path: string;
+  box: Box;
+  label?: { text: TextBlock; box: Box };
+  style: OverlayStyle;
+}
+
+// DrawnDecoration is a decoration in canvas coordinates: the box it covers, its text, an
+// arrow's points with its marker, or the offset of a freehand path.
+export interface DrawnDecoration {
+  id: string;
+  type: ViewDecoration['type'];
+  z: number;
+  box: Box;
+  text?: TextBlock;
+  points?: Point[];
+  marker?: MarkerPart[];
+  origin: Point;
+  path?: string;
+  image?: string;
+  style: Pick<ViewDecoration, 'fill' | 'stroke' | 'stroke_width' | 'stroke_dash' | 'opacity' | 'text_color'>;
 }
 
 // DrawnTable is the rows of a table or class node: separator lines across the box at each y in
@@ -66,6 +95,7 @@ export interface Shapes {
 
 const LABEL_BACKGROUND = '#FFFFFF';
 const WARNING = '#D93025';
+const BADGE_STROKE = '#3C4043';
 export const LABEL_PAD = 4;
 
 // num writes a coordinate as an integer, so output does not depend on sub-pixel differences in
@@ -246,9 +276,80 @@ export function nodeMarkup(n: DrawnNode, m: FontMetrics, s: Shapes): string[] {
   if (n.icon && st.icon) out.push(picture(st.icon, n.icon, 'meet'));
   if (n.text) out.push(...textLines(n.text, n.textBox, n.align, st.text_color, m));
   if (n.table) out.push(...tableMarkup(n, n.table, m));
+  if (n.badge) out.push(...collapseBadge(n.badge));
+  if (n.drill) out.push(...drillBadge(n.id, n.drill));
   if (n.tooSmall) {
     const b = n.box;
     out.push(`<rect${attrs({ x: b.x - 3, y: b.y - 3, width: b.w + 6, height: b.h + 6, fill: 'none', stroke: WARNING, 'stroke-dasharray': '4 4' })}/>`);
+  }
+  out.push('</g>');
+  return out;
+}
+
+// collapseBadge draws a "+" in a box: the container holds more than it shows.
+function collapseBadge(b: Box): string[] {
+  const { x, y, w, h } = b;
+  return [
+    `<g data-collapsed="">`,
+    `<rect${attrs({ x, y, width: w, height: h, rx: 2, fill: LABEL_BACKGROUND, stroke: BADGE_STROKE })}/>`,
+    `<path${attrs({ d: `M${num(x + 3)} ${num(y + h / 2)} H${num(x + w - 3)} M${num(x + w / 2)} ${num(y + 3)} V${num(y + h - 3)}`, stroke: BADGE_STROKE, 'stroke-width': 1.5 })}/>`,
+    '</g>',
+  ];
+}
+
+// drillBadge draws a magnifying glass in a box: another view shows the inside of node id.
+function drillBadge(id: string, b: Box): string[] {
+  const { x, y, w, h } = b;
+  return [
+    `<g${attrs({ 'data-drill': id })}>`,
+    `<rect${attrs({ x, y, width: w, height: h, rx: 2, fill: LABEL_BACKGROUND, stroke: BADGE_STROKE })}/>`,
+    `<circle${attrs({ cx: x + 5, cy: y + 5, r: 2.5, fill: 'none', stroke: BADGE_STROKE, 'stroke-width': 1.5 })}/>`,
+    `<path${attrs({ d: `M${num(x + 7)} ${num(y + 7)} L${num(x + w - 3)} ${num(y + h - 3)}`, stroke: BADGE_STROKE, 'stroke-width': 1.5 })}/>`,
+    '</g>',
+  ];
+}
+
+// overlayMarkup draws an overlay's outline and label.
+export function overlayMarkup(o: DrawnOverlay, m: FontMetrics): string[] {
+  const st = o.style;
+  const out = [
+    `<g${attrs({ 'data-overlay': o.id, opacity: st.opacity < 1 ? dec(st.opacity) : undefined })}>`,
+    `<path${attrs({ d: o.path, fill: st.fill, stroke: st.stroke, 'stroke-width': dec(st.stroke_width), 'stroke-dasharray': dash(st.stroke_dash) })}/>`,
+  ];
+  if (o.label) out.push(...textLines(o.label.text, o.label.box, 'left', st.stroke === 'none' ? '#202124' : st.stroke, m));
+  out.push('</g>');
+  return out;
+}
+
+// decorationMarkup draws a decoration.
+export function decorationMarkup(d: DrawnDecoration, m: FontMetrics): string[] {
+  const st = d.style;
+  const { x, y, w, h } = d.box;
+  const paint = { fill: st.fill, stroke: st.stroke, 'stroke-width': dec(st.stroke_width), 'stroke-dasharray': dash(st.stroke_dash) };
+  const out = [`<g${attrs({ 'data-decoration': d.id, opacity: st.opacity < 1 ? dec(st.opacity) : undefined })}>`];
+  switch (d.type) {
+    case 'text':
+      if (d.text) out.push(...textLines(d.text, d.box, 'left', st.text_color, m));
+      break;
+    case 'rect':
+    case 'band':
+      out.push(`<rect${attrs({ x, y, width: w, height: h, ...paint })}/>`);
+      break;
+    case 'ellipse':
+      out.push(`<ellipse${attrs({ cx: x + w / 2, cy: y + h / 2, rx: w / 2, ry: h / 2, ...paint })}/>`);
+      break;
+    case 'image':
+      if (d.image) out.push(picture(d.image, d.box, 'meet'));
+      break;
+    case 'arrow': {
+      const line = { fill: 'none', stroke: st.stroke, 'stroke-width': dec(st.stroke_width) };
+      out.push(`<path${attrs({ d: path(d.points ?? []), ...line, 'stroke-dasharray': dash(st.stroke_dash) })}/>`);
+      for (const p of d.marker ?? []) if ('line' in p) out.push(`<path${attrs({ d: path(p.line), ...line })}/>`);
+      break;
+    }
+    case 'freehand':
+      out.push(`<path${attrs({ d: d.path, transform: `translate(${num(d.origin.x)} ${num(d.origin.y)})`, ...paint })}/>`);
+      break;
   }
   out.push('</g>');
   return out;
@@ -307,6 +408,8 @@ export function shiftNode(n: DrawnNode, dx: number, dy: number): DrawnNode {
     icon: n.icon && mv(n.icon),
     picture: n.picture && mv(n.picture),
     ports: n.ports.map(mv),
+    badge: n.badge && mv(n.badge),
+    drill: n.drill && mv(n.drill),
     table: n.table && {
       ...n.table,
       lines: n.table.lines.map((y) => y + dy),

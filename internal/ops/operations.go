@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/zclconf/go-cty/cty"
 
@@ -73,6 +72,18 @@ func (s *state) apply(op Op) error {
 		return s.renameID(op)
 	case "create_view":
 		return s.createView(op)
+	case "update_view":
+		return s.updateView(op)
+	case "delete_view":
+		return s.deleteView(op)
+	case "add_decoration":
+		return s.addDecoration(op)
+	case "update_decoration":
+		return s.updateDecoration(op)
+	case "delete_decoration":
+		return s.deleteDecoration(op)
+	case "promote_decoration":
+		return s.promoteDecoration(op)
 	}
 	return fmt.Errorf("unknown operation %q", op.Op)
 }
@@ -168,7 +179,7 @@ func (s *state) showNode(v, id string) error {
 	if err != nil {
 		return err
 	}
-	b := f.Body().FirstMatchingBlock("view", []string{v})
+	b := findBlock(f.Body(), "view", []string{v})
 	if b == nil {
 		return fmt.Errorf("view %q is not a block of %s", v, name)
 	}
@@ -247,11 +258,11 @@ func (s *state) deleteNode(op Op) error {
 		parent = ref("node", n.Parent.Node)
 	}
 	if err := s.editModel(p, del, edges, func(b *hclwrite.Block) bool {
-		if b.Type() != "node" || len(b.Labels()) != 1 || !slices.Contains(children, b.Labels()[0]) {
+		if b.Type() != "node" || len(labelsOf(b)) != 1 || !slices.Contains(children, labelsOf(b)[0]) {
 			return false
 		}
 		if parent == nil {
-			b.Body().RemoveAttribute("parent")
+			removeAttr(b.Body(), "parent")
 		} else {
 			setTraversal(b.Body(), "parent", parent)
 		}
@@ -298,10 +309,10 @@ func (s *state) editModel(p *project.Project, nodes, edges map[string]bool, edit
 		var rm []*hclwrite.Block
 		changed := false
 		for _, b := range f.Body().Blocks() {
-			if len(b.Labels()) != 1 {
+			if len(labelsOf(b)) != 1 {
 				continue
 			}
-			id := b.Labels()[0]
+			id := labelsOf(b)[0]
 			switch {
 			case b.Type() == "node" && nodes[id], b.Type() == "edge" && edges[id]:
 				rm = append(rm, b)
@@ -342,7 +353,7 @@ func (s *state) dropViewRefs(nodes, edges map[string]bool) error {
 			changed = dropSelectors(o.Body(), "members", dropNode) || changed
 		}
 		for _, r := range b.Body().Blocks() {
-			labels := r.Labels()
+			labels := labelsOf(r)
 			if len(labels) != 1 {
 				continue
 			}
@@ -411,7 +422,7 @@ func (s *state) setLabel(op Op) error {
 func (s *state) setParent(op Op) error {
 	err := s.editBlock("node", op.ID, func(b *hclwrite.Body) error {
 		if op.Parent == "" {
-			b.RemoveAttribute("parent")
+			removeAttr(b, "parent")
 		} else {
 			setTraversal(b, "parent", ref("node", op.Parent))
 		}
@@ -459,7 +470,7 @@ func (s *state) setTags(op Op) error {
 	}
 	if err := s.editBlock(typ, op.ID, func(b *hclwrite.Body) error {
 		if len(op.Tags) == 0 {
-			b.RemoveAttribute("tags")
+			removeAttr(b, "tags")
 			return nil
 		}
 		var vals []cty.Value
@@ -510,7 +521,7 @@ func (s *state) setProps(op Op) error {
 	}
 	if err := s.editBlock("node", op.ID, func(b *hclwrite.Body) error {
 		if len(props) == 0 {
-			b.RemoveAttribute("props")
+			removeAttr(b, "props")
 		} else {
 			setValue(b, "props", cty.ObjectVal(props))
 		}
@@ -563,7 +574,7 @@ func (s *state) removePort(op Op) error {
 	if err != nil {
 		return err
 	}
-	i := slices.IndexFunc(blocks(b.Body(), "port"), func(pb *hclwrite.Block) bool { return pb.Labels()[0] == op.Name })
+	i := slices.IndexFunc(blocks(b.Body(), "port"), func(pb *hclwrite.Block) bool { return labelsOf(pb)[0] == op.Name })
 	switch {
 	case i >= 0:
 	case slices.Contains(p.Spec.Ports(n.Kind), op.Name):
@@ -627,8 +638,8 @@ func (s *state) setRows(op Op) error {
 
 // setLabels writes an edge's labels: label for a middle label alone, else labels.
 func setLabels(b *hclwrite.Body, l model.Labels) {
-	b.RemoveAttribute("label")
-	b.RemoveAttribute("labels")
+	removeAttr(b, "label")
+	removeAttr(b, "labels")
 	switch {
 	case l == model.Labels{}:
 	case l.Start == "" && l.End == "":
@@ -723,14 +734,14 @@ func (s *state) showEdge(v, id string) error {
 			return fmt.Errorf("view %q does not show node %q, an end of edge %q", v, n, id)
 		}
 	}
-	if vw.EdgesIn(p.Spec, p.Model, visible)[id] {
+	if vw.EdgesIn(p.Spec, p.Model)[id] {
 		return nil
 	}
 	name, f, err := s.viewsFile(true)
 	if err != nil {
 		return err
 	}
-	b := f.Body().FirstMatchingBlock("view", []string{v})
+	b := findBlock(f.Body(), "view", []string{v})
 	if b == nil {
 		return fmt.Errorf("view %q is not a block of %s", v, name)
 	}
@@ -788,59 +799,6 @@ func tokensOf(src string) (hclwrite.Tokens, error) {
 		return nil, fmt.Errorf("%q: %s", src, diags.Error())
 	}
 	return f.Body().GetAttribute("x").Expr().BuildTokens(nil), nil
-}
-
-func (s *state) createView(op Op) error {
-	p, err := s.project()
-	if err != nil {
-		return err
-	}
-	if d := spec.CheckSimple("view", op.ID, hcl.Range{}); d.HasErrors() {
-		return fmt.Errorf("%s", d[0].Detail)
-	}
-	if v := p.Views[op.ID]; v != nil && v.Range.Filename != "" {
-		return fmt.Errorf("view %q already exists", op.ID)
-	}
-	b := hclwrite.NewBlock("view", []string{op.ID})
-	if op.Title != "" {
-		b.Body().SetAttributeValue("title", cty.StringVal(op.Title))
-	}
-	if op.Of != "" {
-		b.Body().SetAttributeTraversal("of", ref("node", op.Of))
-	}
-	for _, attr := range []struct {
-		name  string
-		sels  []string
-		edges bool
-	}{{"include", op.Include, false}, {"exclude", op.Exclude, false}, {"collapse", op.Collapse, false}, {"edges", op.Edges, true}} {
-		if attr.sels == nil {
-			continue
-		}
-		var items []hclwrite.Tokens
-		for _, src := range attr.sels {
-			expr, diags := hclsyntax.ParseExpression([]byte(src), "", hcl.InitialPos)
-			if !diags.HasErrors() {
-				_, diags = view.ParseSelector(expr, attr.edges)
-			}
-			if diags.HasErrors() {
-				return fmt.Errorf("%s: %q is not a selector: %s", attr.name, src, diags[0].Detail)
-			}
-			toks, err := tokensOf(src)
-			if err != nil {
-				return err
-			}
-			items = append(items, toks)
-		}
-		b.Body().SetAttributeRaw(attr.name, hclwrite.TokensForTuple(items))
-	}
-	name, f, err := s.viewsFile(op.ID != view.DefaultView)
-	if err != nil {
-		return err
-	}
-	appendBlock(f, b)
-	s.putHCL(name, f)
-	s.result(Result{Op: op.Op, ID: op.ID})
-	return nil
 }
 
 func snap(v, grid int) int {
@@ -1045,33 +1003,30 @@ func (s *state) setEdgeHint(op Op) error {
 		return err
 	}
 	empty := h.FromSide == "" && h.ToSide == "" && len(h.Via) == 0 && h.LabelPos == nil
-	if rest, ok := strings.CutPrefix(op.ID, "lift:"); ok {
-		parts := strings.Split(rest, ":")
-		if len(parts) != 2 {
-			return fmt.Errorf("a lifted edge is lift:<from>:<to>, with %%, : and # in those IDs written %%25, %%3A and %%23")
+	if k, isLift, err := view.ParseLiftKey(op.ID); isLift {
+		if err != nil {
+			return fmt.Errorf("%s: %w", op.ID, err)
 		}
-		var k [2]string
-		for i, part := range parts {
-			id, err := view.DecodeID(part)
-			if err != nil {
-				return fmt.Errorf("lift key: %w", err)
-			}
+		for _, id := range k {
 			if p.Model.Nodes[id] == nil {
 				return fmt.Errorf("node %q does not exist", id)
 			}
-			k[i] = id
 		}
-		if empty {
+		visible, collapsed := vw.Visible(p.Spec, p.Model)
+		drawn := slices.ContainsFunc(vw.DrawnEdges(p.Spec, p.Model, visible, collapsed), func(e view.DrawnEdge) bool { return e.Lifted && e.From == k[0] && e.To == k[1] })
+		switch {
+		case empty:
 			delete(l.LiftHints, k)
-		} else {
+		case !drawn:
+			return fmt.Errorf("view %q draws no lifted edge from %q to %q", op.View, k[0], k[1])
+		default:
 			l.LiftHints[k] = &h
 		}
 	} else {
 		if p.Model.Edges[op.ID] == nil {
 			return fmt.Errorf("edge %q does not exist", op.ID)
 		}
-		visible, _ := vw.Visible(p.Spec, p.Model)
-		if !vw.EdgesIn(p.Spec, p.Model, visible)[op.ID] {
+		if !vw.EdgesIn(p.Spec, p.Model)[op.ID] {
 			return fmt.Errorf("view %q does not show edge %q", op.View, op.ID)
 		}
 		if empty {

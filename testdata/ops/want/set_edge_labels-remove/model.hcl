@@ -54,8 +54,8 @@ node "kube-system/dns" {
 }
 
 edge "gw-w1" {
-  from  = node.gateway
-  to    = node.worker-1.port.nic0
+  from = node.gateway
+  to   = node.worker-1.port.nic0
 }
 
 edge "w1-w2" {

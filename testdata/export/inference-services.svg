@@ -1,4 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 350 360" width="350" height="360" font-family="Inter, sans-serif">
+<g data-node="pool">
+<rect x="40" y="220" width="280" height="110" fill="#F8F9FA" stroke="#9AA0A6" stroke-width="1"/>
+<text x="60" y="245" fill="#202124" font-size="14">GPU Pool</text>
+</g>
 <g data-node="gateway">
 <rect x="150" y="110" width="150" height="40" rx="8" fill="#E8F0FE" stroke="#1A73E8" stroke-width="1"/>
 <text x="225" y="135" text-anchor="middle" fill="#202124" font-size="14">Inference Gateway</text>
@@ -10,10 +14,6 @@
 <g data-node="kube-system/router:v2">
 <rect x="30" y="10" width="100" height="40" rx="8" fill="#E8F0FE" stroke="#1A73E8" stroke-width="1"/>
 <text x="80" y="35" text-anchor="middle" fill="#202124" font-size="14">Router v2</text>
-</g>
-<g data-node="pool">
-<rect x="40" y="220" width="280" height="110" fill="#F8F9FA" stroke="#9AA0A6" stroke-width="1"/>
-<text x="60" y="245" fill="#202124" font-size="14">GPU Pool</text>
 </g>
 <g data-node="worker-1">
 <rect x="60" y="270" width="100" height="40" rx="8" fill="#E6F4EA" stroke="#D93025" stroke-width="1"/>

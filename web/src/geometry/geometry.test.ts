@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { node, text } from '../fixtures';
 import type { ResolvedView } from '../protocol/view';
-import { absoluteBoxes, containerSize, contentLayout, fitContainers, measureNode } from './geometry';
+import { absoluteBoxes, BADGE, containerSize, contentLayout, drillBadge, fitContainers, GAP, measureNode } from './geometry';
 import { innerBox, outerSize, svgSize } from './shapes';
 import { lineHeight, textBlock } from './text';
 
@@ -22,6 +22,22 @@ describe('textBlock', () => {
   it('is as tall as its lines', () => {
     expect(textBlock('a\nb', 0, font, text).h).toBe(2 * lineHeight(14));
     expect(textBlock('', 0, font, text).h).toBe(0);
+  });
+});
+
+describe('collapsed containers and drill-down badges', () => {
+  it('sizes a collapsed container as a leaf with its badge under the label', () => {
+    const n = node('c', { collapsed: true, label: 'x'.repeat(20) }, { min_h: 0, min_w: 0 });
+    const m = measureNode(n, text, 10);
+    expect(m.size).toEqual({ w: 180, h: 60 });
+    const c = contentLayout(n, m, { x: 0, y: 0, ...m.size });
+    expect(c.badge).toEqual({ x: 84, y: c.textBox.y + lineHeight(14) + GAP, w: BADGE, h: BADGE });
+    expect(c.badge!.y + BADGE).toBeLessThanOrEqual(m.size.h - 10);
+  });
+  it('puts the drill-down badge in the top right corner of the content area, or of a container', () => {
+    expect(drillBadge(node('n'), { x: 0, y: 0, w: 100, h: 40 })).toEqual({ x: 85, y: 3, w: BADGE, h: BADGE });
+    expect(drillBadge(node('n', {}, { shape: 'cylinder' }), { x: 0, y: 0, w: 100, h: 60 }).y).toBe(17);
+    expect(drillBadge(node('g', { container: true }), { x: 10, y: 10, w: 100, h: 60 })).toEqual({ x: 95, y: 13, w: BADGE, h: BADGE });
   });
 });
 

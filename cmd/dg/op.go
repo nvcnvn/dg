@@ -61,7 +61,7 @@ var opFlagHelp = map[string]string{
 // applyOp applies an operation; tests replace it to record operations instead.
 var applyOp = ops.Apply
 
-var listFields = []string{"tags", "include", "exclude", "collapse", "edges"}
+var listFields = []string{"tags", "include", "exclude", "collapse", "edges", "unset"}
 
 type listFlag []string
 
@@ -184,7 +184,7 @@ func defineOpFlags(fl *flag.FlagSet, def ops.Def, values map[string]any) {
 }
 
 var (
-	jsonFields   = []string{"props", "compartments"}
+	jsonFields   = []string{"props", "compartments", "overlays", "styles", "decoration"}
 	numberFields = []string{"x", "y", "w", "h", "offset"}
 )
 

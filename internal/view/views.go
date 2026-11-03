@@ -34,6 +34,7 @@ type View struct {
 	Edges      []Selector
 	EdgesSet   bool
 	Of         *Selector
+	Direction  string
 	Overlays   []Overlay
 	Styles     []style.Rule
 	EdgeStyles []style.Rule
@@ -53,14 +54,15 @@ type Overlay struct {
 type Views map[string]*View
 
 type viewBlock struct {
-	ID       string         `hcl:"id,label"`
-	Title    *string        `hcl:"title,optional"`
-	Include  *hcl.Attribute `hcl:"include,optional"`
-	Exclude  *hcl.Attribute `hcl:"exclude,optional"`
-	Collapse *hcl.Attribute `hcl:"collapse,optional"`
-	Edges    *hcl.Attribute `hcl:"edges,optional"`
-	Of       *hcl.Attribute `hcl:"of,optional"`
-	Overlays []struct {
+	ID        string         `hcl:"id,label"`
+	Title     *string        `hcl:"title,optional"`
+	Include   *hcl.Attribute `hcl:"include,optional"`
+	Exclude   *hcl.Attribute `hcl:"exclude,optional"`
+	Collapse  *hcl.Attribute `hcl:"collapse,optional"`
+	Edges     *hcl.Attribute `hcl:"edges,optional"`
+	Of        *hcl.Attribute `hcl:"of,optional"`
+	Direction *hcl.Attribute `hcl:"direction,optional"`
+	Overlays  []struct {
 		ID      string         `hcl:"id,label"`
 		Members *hcl.Attribute `hcl:"members"`
 		Style   *string        `hcl:"style,optional"`
@@ -75,6 +77,8 @@ type viewBlock struct {
 var (
 	nodeForms = []string{"all", "node", "kind", "tag", "children", "descendants"}
 	edgeForms = []string{"edge_kind", "tag", "edge"}
+	// Directions are the values of a view's direction: the way the layers of its first layout run.
+	Directions = []string{"down", "right", "up", "left"}
 )
 
 // Decode adds the view blocks of a views.hcl body to vs.
@@ -111,6 +115,11 @@ func (vs Views) Decode(body hcl.Body, ctx *hcl.EvalContext) hcl.Diagnostics {
 			if !d.HasErrors() {
 				v.Of = &s
 			}
+		}
+		if b.Direction != nil {
+			d, dd := spec.DecodeEnum(b.Direction.Expr, ctx, Directions)
+			diags = append(diags, dd...)
+			v.Direction = d
 		}
 		if b.Include == nil {
 			v.Include = []Selector{{Form: "all", Range: b.Range}}
@@ -371,20 +380,96 @@ func Frame(m *model.Model, visible map[string]bool, id string) string {
 	return ""
 }
 
-// EdgesIn returns the edges in v given its visible nodes: both ends visible and, when v has an
-// edges filter, matched by it.
-func (v *View) EdgesIn(sp *spec.Spec, m *model.Model, visible map[string]bool) map[string]bool {
+// DrawnEdge is an edge as a view draws it (spec 8.3): a model edge with both ends visible, keyed
+// by its ID, or the lifted edges between the same two drawn nodes merged into one, keyed
+// lift:<from>:<to>. Edges are the model edges it stands for, sorted.
+type DrawnEdge struct {
+	Key    string
+	From   string
+	To     string
+	Edges  []string
+	Lifted bool
+}
+
+// drawnAs returns the node that draws node id in a view: id when it is visible, else the
+// outermost collapsed container holding it when that is visible, else "".
+func drawnAs(m *model.Model, visible, collapsed map[string]bool, id string) string {
+	if visible[id] {
+		return id
+	}
+	out := ""
+	for c := range collapsed {
+		if m.Contains(c, id) && (out == "" || m.Contains(c, out)) {
+			out = c
+		}
+	}
+	if !visible[out] {
+		return ""
+	}
+	return out
+}
+
+// DrawnEdges returns the edges v draws, sorted by key, given its visible and collapsed nodes
+// (Visible): each model edge that passes its edges filter, with an end hidden inside a
+// collapsed container lifted to the outermost collapsed container holding it, unless that is
+// not visible; a lifted edge whose two drawn ends are the same collapsed container is hidden.
+func (v *View) DrawnEdges(sp *spec.Spec, m *model.Model, visible, collapsed map[string]bool) []DrawnEdge {
 	filter := map[string]bool{}
 	for _, s := range v.Edges {
 		maps.Copy(filter, edgeMatches(s, sp, m))
 	}
+	byKey := map[string]*DrawnEdge{}
+	var plain []DrawnEdge
+	for _, id := range slices.Sorted(maps.Keys(m.Edges)) {
+		e := m.Edges[id]
+		from, to := drawnAs(m, visible, collapsed, e.From.Node), drawnAs(m, visible, collapsed, e.To.Node)
+		if from == "" || to == "" || v.EdgesSet && !filter[id] {
+			continue
+		}
+		if from == e.From.Node && to == e.To.Node {
+			plain = append(plain, DrawnEdge{Key: id, From: from, To: to, Edges: []string{id}})
+			continue
+		}
+		if from == to {
+			continue
+		}
+		key := liftKey(from, to)
+		if byKey[key] == nil {
+			byKey[key] = &DrawnEdge{Key: key, From: from, To: to, Lifted: true}
+		}
+		byKey[key].Edges = append(byKey[key].Edges, id)
+	}
+	for _, k := range slices.Sorted(maps.Keys(byKey)) {
+		plain = append(plain, *byKey[k])
+	}
+	slices.SortFunc(plain, func(a, b DrawnEdge) int { return cmp.Compare(a.Key, b.Key) })
+	return plain
+}
+
+// EdgesIn returns the model edges v draws as themselves, not lifted.
+func (v *View) EdgesIn(sp *spec.Spec, m *model.Model) map[string]bool {
+	visible, collapsed := v.Visible(sp, m)
 	out := map[string]bool{}
-	for id, e := range m.Edges {
-		if visible[e.From.Node] && visible[e.To.Node] && (!v.EdgesSet || filter[id]) {
-			out[id] = true
+	for _, e := range v.DrawnEdges(sp, m, visible, collapsed) {
+		if !e.Lifted {
+			out[e.Key] = true
 		}
 	}
 	return out
+}
+
+// OverlayMembers returns the drawn members of overlay o of v, sorted, given its visible and
+// collapsed nodes: each node its selectors match as it is drawn (spec 8.3).
+func (v *View) OverlayMembers(sp *spec.Spec, m *model.Model, visible, collapsed map[string]bool, o Overlay) []string {
+	members := map[string]bool{}
+	for _, s := range o.Members {
+		for id := range nodeMatches(s, sp, m) {
+			if d := drawnAs(m, visible, collapsed, id); d != "" {
+				members[d] = true
+			}
+		}
+	}
+	return slices.Sorted(maps.Keys(members))
 }
 
 // ValidateLayouts reports layout files without a view (errors), and entries naming IDs that no
@@ -402,7 +487,7 @@ func (s *Sources) ValidateLayouts() hcl.Diagnostics {
 			diags = append(diags, spec.Errorf(l.Range, "Layout without view", "No view %q is defined for this layout file.", id))
 			continue
 		}
-		visible, _ := v.Visible(sp, m)
+		visible, collapsed := v.Visible(sp, m)
 		for _, nid := range slices.Sorted(maps.Keys(l.Place)) {
 			p := l.Place[nid]
 			n := m.Nodes[nid]
@@ -445,11 +530,20 @@ func (s *Sources) ValidateLayouts() hcl.Diagnostics {
 		lifts := slices.SortedFunc(maps.Keys(l.LiftHints), func(a, b [2]string) int {
 			return cmp.Or(cmp.Compare(a[0], b[0]), cmp.Compare(a[1], b[1]))
 		})
+		drawn := map[string]bool{}
+		for _, e := range v.DrawnEdges(sp, m, visible, collapsed) {
+			drawn[e.Key] = e.Lifted
+		}
 		for _, k := range lifts {
+			missing := false
 			for _, nid := range k {
 				if m.Nodes[nid] == nil {
 					orphan(l.LiftHints[k].Range, "Node", nid)
+					missing = true
 				}
+			}
+			if !missing && !drawn[liftKey(k[0], k[1])] {
+				diags = append(diags, spec.Warnf(l.LiftHints[k].Range, "Orphan layout entry", "View %q draws no lifted edge from %q to %q.", id, k[0], k[1]))
 			}
 		}
 		for _, d := range l.Decorations {
@@ -482,5 +576,23 @@ func (s *Sources) NodeStyle(v *View, n *model.Node) map[string]style.Setting {
 		labels = append(labels, "tag."+t)
 	}
 	maps.Copy(props, style.Cascade(v.Styles, append(labels, "node."+n.ID)))
+	return props
+}
+
+// EdgeStyle returns the settings of an edge of kind with tags in view v, id naming it for v's
+// edge.<id> rules ("" for a merged lifted edge, which has no tags either).
+func (s *Sources) EdgeStyle(v *View, kind string, tags []string, id string) map[string]style.Setting {
+	props := s.Styles.ForEdge(s.Spec, kind, tags)
+	var labels []string
+	for _, k := range s.Spec.EdgeLineage(kind) {
+		labels = append(labels, k.Name)
+	}
+	for _, t := range tags {
+		labels = append(labels, "tag."+t)
+	}
+	if id != "" {
+		labels = append(labels, "edge."+id)
+	}
+	maps.Copy(props, style.Cascade(v.EdgeStyles, labels))
 	return props
 }

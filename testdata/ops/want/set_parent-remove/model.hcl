@@ -25,7 +25,7 @@ node "worker-1" {
 }
 
 node "worker-2" {
-  kind   = "worker"
+  kind = "worker"
 }
 
 node "cache" { kind = "database" }

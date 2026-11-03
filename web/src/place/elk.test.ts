@@ -32,6 +32,11 @@ describe('elkGraph edges', () => {
     expect(elkGraph(rows, measures).layoutOptions!['elk.direction']).toBe('RIGHT');
     expect(elkGraph({ ...rows, edges: [edge('r', 't', 'u')] }, measures).layoutOptions!['elk.direction']).toBe('DOWN');
   });
+  it('takes the direction the view sets', () => {
+    const rows: ResolvedView = { view: 'v', grid: 10, nodes, edges: [{ ...edge('r', 't', 'u'), from: { node: 't', row: 'id' } }], direction: 'up' };
+    expect(elkGraph(rows, measures).layoutOptions!['elk.direction']).toBe('UP');
+    expect(elkGraph({ ...rows, edges: [], direction: 'left' }, measures).layoutOptions!['elk.direction']).toBe('LEFT');
+  });
   it('gives an edge from the end with an open triangle', () => {
     const edges = [styled('a', { arrow_end: 'triangle-open' }), styled('b', { arrow_start: 'triangle-open', arrow_end: 'none' }), styled('c', { arrow_start: 'triangle-open', arrow_end: 'triangle-open' })];
     const g = elkGraph({ view: 'v', grid: 10, nodes, edges }, measures);

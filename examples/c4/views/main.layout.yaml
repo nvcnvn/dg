@@ -1,0 +1,6 @@
+version: 1
+place:
+  banking: {x: 250, y: 260}
+  customer: {x: 250, y: 0}
+  email: {x: 520, y: 540}
+  mainframe: {x: 0, y: 540}

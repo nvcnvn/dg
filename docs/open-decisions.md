@@ -93,17 +93,6 @@ the decision in `docs/spec.md`).
   obstacle and request set, which a persistent router can diff against its state.
 - **Milestone:** M3; decide in M10.
 
-## Layout direction of a view
-
-- **Question:** elk lays out layers top to bottom, or left to right when an edge ends at a row,
-  and gives an edge with `triangle-open` at one end only from that end, so the parent is drawn
-  above (spec 7.4). Keying the reversal to the marker is a heuristic. Should a view be able to
-  choose its direction?
-- **Options:** (a) the rules only; (b) a `direction` attribute on `view` in `views.hcl` for the
-  first layout, defaulting to the rules; (c) a style property of the edge kinds.
-- **Default:** (a) now; (b) recommended, with the rules as its default.
-- **Milestone:** M4; decide in M7 (views).
-
 ## Self-loops as routing obstacles
 
 - **Question:** a self-loop drawn around a corner (spec 7.5) is not known to libavoid, so another
@@ -132,3 +121,12 @@ the decision in `docs/spec.md`).
   it and now, failing only on a conflict; (c) an inverse operation per operation.
 - **Default:** (a); (b) recommended.
 - **Milestone:** M6; decide in M10.
+
+## Overlay outline shape
+
+- **Question:** an overlay is drawn as the convex hull of its padded member boxes (spec 5.8), which
+  can cover nodes that are not members, such as a node between two members.
+- **Options:** (a) convex hull, as now; (b) bubble sets: the padded member boxes joined by thin
+  bridges routed around non-members; (c) the convex hull, with non-members inside it marked.
+- **Default:** (a); (b) recommended.
+- **Milestone:** M7; not blocking.

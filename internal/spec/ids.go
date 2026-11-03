@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"slices"
+	"strings"
 	"unicode"
 	"unicode/utf8"
 
@@ -35,11 +36,15 @@ func NameProblem(s string) string {
 	return ""
 }
 
-// CheckID reports a node or edge ID that is reserved or not a valid quoted ID.
+// CheckID reports a node or edge ID that is reserved or not a valid quoted ID; an edge ID may
+// not start with lift:, which names lifted edges (spec 8.3).
 func CheckID(what, id string, rng hcl.Range) hcl.Diagnostics {
 	problem := NameProblem(id)
-	if slices.Contains(Reserved, id) {
+	switch {
+	case slices.Contains(Reserved, id):
 		problem = "is reserved"
+	case what == "edge" && strings.HasPrefix(id, "lift:"):
+		problem = "starts with lift:, which names lifted edges"
 	}
 	if problem == "" {
 		return nil

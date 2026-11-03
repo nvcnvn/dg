@@ -5,6 +5,7 @@ a.hcl:14:1: error: Invalid ID: The edge ID "lift" is reserved.
 a.hcl:20:17: error: Invalid ID: The tag ID "not ok" is not a simple ID (letters, digits, _ and -, starting with a letter or _).
 b.hcl:1:1: error: Duplicate ID: The node ID "x" is already defined at a.hcl:1:1.
 b.hcl:3:1: error: Duplicate ID: The edge ID "e" is already defined at a.hcl:3:1.
+b.hcl:8:1: error: Invalid ID: The edge ID "lift:x:x" starts with lift:, which names lifted edges.
 spec.hcl:1:1: error: Invalid ID: The kind ID "bad kind" is not a simple ID (letters, digits, _ and -, starting with a letter or _).
 spec.hcl:3:1: error: Invalid ID: The edge kind ID "bad/edge" is not a simple ID (letters, digits, _ and -, starting with a letter or _).
 views.hcl:3:1: error: Duplicate ID: The view ID "main" is already defined at line 1.

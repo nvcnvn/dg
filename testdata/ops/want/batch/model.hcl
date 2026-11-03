@@ -71,7 +71,7 @@ edge "dns-gw" {
 }
 
 node "search" {
-  kind = "service"
+  kind  = "service"
   label = "Search"
 }
 

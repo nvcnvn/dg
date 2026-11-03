@@ -1,0 +1,6 @@
+version: 1
+decorations:
+  - {id: title, type: text, x: 0, y: -60, text: Solo}
+  - {id: note, type: text, x: 10, y: 20, text: entry point, font_size: 12}
+  - {id: shelf, type: rect, in: pool, x: 10, y: 20, w: 120, h: 60}
+  - {id: flow, type: arrow, points: [[0, 0], [100, 0]]}

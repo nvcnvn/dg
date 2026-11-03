@@ -1,0 +1,24 @@
+version: 1
+place:
+  core: {x: 120, y: 290}
+  data: {x: 300, y: 590}
+  edge: {x: 140, y: 10}
+  events: {x: 90, y: 590}
+  gateway: {in: edge, x: 10, y: 100}
+  inventory: {in: core, x: 20, y: 100}
+  lb: {in: edge, x: 0, y: 0}
+  orders: {in: core, x: 30, y: 0}
+  payments: {in: core, x: 160, y: 100}
+  psp: {x: 520, y: 440}
+decorations:
+  - {id: banner, type: band, x: -20, y: -90, w: 800, h: 70, fill: '#FFF4E5'}
+  - {id: alert, type: image, x: 0, y: -70, w: 30, h: 30, src: icons/alert.svg}
+  - {id: title, type: text, x: 40, y: -70, text: 'Payment provider timeouts, 14:02 UTC', font_size: 20}
+  - {id: underline, type: freehand, x: 40, y: -40, path: M0 0 C 120 6 240 -6 360 0, stroke: '#D93025', stroke_width: 2}
+  - {id: legend, type: rect, x: 520, y: 10, w: 230, h: 90, fill: '#FFFFFF', stroke: '#DADCE0'}
+  - {id: legend-title, type: text, x: 530, y: 20, text: Legend, text_color: '#5F6368', font_size: 12}
+  - {id: legend-degraded, type: text, x: 530, y: 50, text: 'Red: degraded', font_size: 12}
+  - {id: legend-hull, type: text, x: 530, y: 70, text: 'Shaded outline: blast radius', font_size: 12}
+  - {id: cause, type: ellipse, attach: psp, w: 200, h: 90, stroke: '#D93025', stroke_dash: [4, 3]}
+  - {id: cause-arrow, type: arrow, attach: psp, points: [[0, 80], [0, 50]], stroke: '#D93025'}
+  - {id: cause-note, type: text, attach: psp, dx: 0, dy: 90, text: 'Root cause: provider 5xx', text_color: '#D93025', font_size: 12}

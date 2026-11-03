@@ -134,7 +134,8 @@ func exprTokens(toks hclwrite.Tokens) hclwrite.Tokens {
 }
 
 // setAttr sets attribute name of body to the expression toks. A new attribute is indented like
-// body and its = aligned with the attribute on the line before, if any.
+// body. The = signs and trailing comments of the run of attributes it is in are then aligned as
+// hclwrite.Format aligns them.
 func setAttr(body *hclwrite.Body, name string, toks hclwrite.Tokens) {
 	attr := body.GetAttribute(name)
 	isNew := attr == nil
@@ -152,23 +153,139 @@ func setAttr(body *hclwrite.Body, name string, toks hclwrite.Tokens) {
 		first = false
 	})
 	body.SetAttributeRaw(name, expr)
-	if !isNew {
-		return
+	if isNew {
+		at := body.GetAttribute(name).BuildTokens(nil)
+		at[0].SpacesBefore, at[1].SpacesBefore = indent, 1
 	}
+	alignAttr(body, name)
+}
+
+// formatLine is a line of tokens split as hclwrite.Format splits it: up to the =, the = and
+// a value on that line, and a trailing comment.
+type formatLine struct {
+	lead, assign, comment hclwrite.Tokens
+}
+
+func isLineEnd(t *hclwrite.Token) bool {
+	return t.Type == hclsyntax.TokenNewline || t.Type == hclsyntax.TokenComment && bytes.HasSuffix(t.Bytes, []byte("\n"))
+}
+
+func bracketChange(t *hclwrite.Token) int {
+	switch t.Type {
+	case hclsyntax.TokenOBrace, hclsyntax.TokenOBrack, hclsyntax.TokenOParen, hclsyntax.TokenTemplateControl, hclsyntax.TokenTemplateInterp:
+		return 1
+	case hclsyntax.TokenCBrace, hclsyntax.TokenCBrack, hclsyntax.TokenCParen, hclsyntax.TokenTemplateSeqEnd:
+		return -1
+	}
+	return 0
+}
+
+func formatLines(toks hclwrite.Tokens) []formatLine {
+	var lines []formatLine
+	start := 0
+	for i, t := range toks {
+		if isLineEnd(t) || i == len(toks)-1 {
+			lines = append(lines, formatLine{lead: toks[start : i+1]})
+			start = i + 1
+		}
+	}
+	for i := range lines {
+		l := &lines[i]
+		if len(l.lead) > 1 && l.lead[len(l.lead)-1].Type == hclsyntax.TokenComment {
+			l.comment, l.lead = l.lead[len(l.lead)-1:], l.lead[:len(l.lead)-1]
+		}
+		for j, t := range l.lead {
+			if j == 0 || t.Type != hclsyntax.TokenEqual {
+				continue
+			}
+			net := 0
+			for _, u := range l.lead[j:] {
+				net += bracketChange(u)
+			}
+			if net == 0 {
+				l.assign, l.lead = l.lead[j:], l.lead[:j]
+			}
+			break
+		}
+	}
+	return lines
+}
+
+// alignAttr aligns, as hclwrite.Format does, the = signs of the run of one-line attributes that
+// attribute name of body is in, and the trailing comments of the runs of commented lines that
+// touch that run or the attribute's lines; every other line stays as it is.
+func alignAttr(body *hclwrite.Body, name string) {
 	at := body.GetAttribute(name).BuildTokens(nil)
-	at[0].SpacesBefore, at[1].SpacesBefore = indent, 1
-	bt := body.BuildTokens(nil)
-	i := slices.Index(bt, at[0])
-	if i < 2 || bt[i-1].Type != hclsyntax.TokenNewline {
+	lines := formatLines(body.BuildTokens(nil))
+	holds := func(t *hclwrite.Token) func(formatLine) bool {
+		return func(l formatLine) bool { return slices.Contains(l.lead, t) || slices.Contains(l.assign, t) }
+	}
+	first, last := slices.IndexFunc(lines, holds(at[0])), slices.IndexFunc(lines, holds(at[len(at)-1]))
+	if first < 0 || last < 0 {
 		return
 	}
-	j := i - 1
-	for j > 0 && bt[j-1].Type != hclsyntax.TokenNewline && !(bt[j-1].Type == hclsyntax.TokenComment && bytes.HasSuffix(bt[j-1].Bytes, []byte("\n"))) {
-		j--
+	run := func(at int, in func(formatLine) bool) (int, int) {
+		s, e := at, at+1
+		for s > 0 && in(lines[s-1]) {
+			s--
+		}
+		for e < len(lines) && in(lines[e]) {
+			e++
+		}
+		return s, e
 	}
-	if bt[j].Type == hclsyntax.TokenIdent && bt[j+1].Type == hclsyntax.TokenEqual {
-		col := len(bt[j].Bytes) + bt[j+1].SpacesBefore
-		at[1].SpacesBefore = max(1, col-len(name))
+	s, e := first, last+1
+	if lines[first].assign != nil {
+		s, e = run(first, func(l formatLine) bool { return l.assign != nil })
+		widest := 0
+		for _, l := range lines[s:e] {
+			widest = max(widest, l.lead.Columns())
+		}
+		for _, l := range lines[s:e] {
+			l.assign[0].SpacesBefore = widest - l.lead.Columns() + 1
+		}
+		e = max(e, last+1)
+	}
+	for k := s; k < e; k++ {
+		if lines[k].comment == nil {
+			continue
+		}
+		cs, ce := run(k, func(l formatLine) bool { return l.comment != nil })
+		widest := 0
+		for _, l := range lines[cs:ce] {
+			widest = max(widest, l.lead.Columns()+l.assign.Columns())
+		}
+		for _, l := range lines[cs:ce] {
+			l.comment[0].SpacesBefore = widest - l.lead.Columns() - l.assign.Columns() + 1
+		}
+		k = ce - 1
+	}
+}
+
+// removeAttr removes attribute name of body and aligns the attributes it was between.
+func removeAttr(body *hclwrite.Body, name string) {
+	attr := body.GetAttribute(name)
+	if attr == nil {
+		return
+	}
+	lines := formatLines(body.BuildTokens(nil))
+	at := attr.BuildTokens(nil)
+	var neighbors []string
+	for i, l := range lines {
+		if !slices.Contains(l.lead, at[0]) {
+			continue
+		}
+		for _, j := range []int{i - 1, i + 1} {
+			if j >= 0 && j < len(lines) && len(lines[j].lead) > 0 && lines[j].assign != nil {
+				if n := string(lines[j].lead[0].Bytes); n != name && body.GetAttribute(n) != nil {
+					neighbors = append(neighbors, n)
+				}
+			}
+		}
+	}
+	body.RemoveAttribute(name)
+	for _, n := range neighbors {
+		alignAttr(body, n)
 	}
 }
 
@@ -214,10 +331,6 @@ func stepTokens(id string) hclwrite.Tokens {
 // names old with one naming id. A reference written another way (an unusual escape) is left as
 // it is; validation then refuses the operation.
 func renameTokens(toks hclwrite.Tokens, roots []string, old, id string) (hclwrite.Tokens, bool) {
-	oldStep := stepTokens(old)
-	quoted := hclwrite.Tokens{tok(hclsyntax.TokenOBrack, "[")}
-	quoted = append(quoted, hclwrite.TokensForValue(cty.StringVal(old))...)
-	quoted = append(quoted, tok(hclsyntax.TokenCBrack, "]"))
 	var out hclwrite.Tokens
 	changed := false
 	for i := 0; i < len(toks); i++ {
@@ -226,28 +339,43 @@ func renameTokens(toks hclwrite.Tokens, roots []string, old, id string) (hclwrit
 		if t.Type != hclsyntax.TokenIdent || !slices.Contains(roots, string(t.Bytes)) || i > 0 && toks[i-1].Type == hclsyntax.TokenDot {
 			continue
 		}
-		for _, form := range []hclwrite.Tokens{oldStep, quoted} {
-			if matches(toks[i+1:], form) {
-				out = append(out, stepTokens(id)...)
-				i += len(form)
-				changed = true
-				break
-			}
+		if name, n := stepAt(toks[i+1:]); n > 0 && name == old {
+			out = append(out, stepTokens(id)...)
+			i += n
+			changed = true
 		}
 	}
 	return out, changed
 }
 
-func matches(toks, want hclwrite.Tokens) bool {
-	if len(toks) < len(want) {
-		return false
+// stepAt returns the name a traversal step at the start of toks names, .name or ["name"], and
+// how many tokens it takes (0 when toks does not start with a step).
+func stepAt(toks hclwrite.Tokens) (string, int) {
+	if len(toks) >= 2 && toks[0].Type == hclsyntax.TokenDot && toks[1].Type == hclsyntax.TokenIdent {
+		return string(toks[1].Bytes), 2
 	}
-	for i, w := range want {
-		if toks[i].Type != w.Type || !bytes.Equal(toks[i].Bytes, w.Bytes) {
-			return false
+	if len(toks) < 4 || toks[0].Type != hclsyntax.TokenOBrack || toks[1].Type != hclsyntax.TokenOQuote {
+		return "", 0
+	}
+	var lit []byte
+	for j := 2; j+1 < len(toks); j++ {
+		switch toks[j].Type {
+		case hclsyntax.TokenQuotedLit:
+			lit = append(lit, toks[j].Bytes...)
+			continue
+		case hclsyntax.TokenCQuote:
+			if toks[j+1].Type != hclsyntax.TokenCBrack {
+				return "", 0
+			}
+			s, diags := hclsyntax.ParseStringLiteralToken(hclsyntax.Token{Type: hclsyntax.TokenQuotedLit, Bytes: lit})
+			if diags.HasErrors() {
+				return "", 0
+			}
+			return s, j + 2
 		}
+		return "", 0
 	}
-	return true
+	return "", 0
 }
 
 // renameIn renames references in every attribute of body and its nested blocks, changing no
@@ -258,6 +386,7 @@ func renameIn(body *hclwrite.Body, roots []string, old, id string) bool {
 		toks := body.GetAttribute(name).Expr().BuildTokens(nil)
 		if out, ok := renameTokens(toks, roots, old, id); ok {
 			body.SetAttributeRaw(name, out)
+			alignAttr(body, name)
 			changed = true
 		}
 	}
@@ -465,6 +594,7 @@ func dropSelectors(body *hclwrite.Body, name string, drop func(view.Selector) bo
 		return false
 	}
 	body.SetAttributeRaw(name, l.tokens())
+	alignAttr(body, name)
 	return true
 }
 
@@ -486,6 +616,7 @@ func addSelector(body *hclwrite.Body, name string, def []hcl.Traversal, sel hcl.
 	}
 	l.add(hclwrite.TokensForTraversal(sel))
 	body.SetAttributeRaw(name, l.tokens())
+	alignAttr(body, name)
 	return nil
 }
 
@@ -556,14 +687,107 @@ func expand(f *hclwrite.File, b *hclwrite.Block) (*hclwrite.File, *hclwrite.Bloc
 	if err != nil {
 		return nil, nil, err
 	}
-	nb := findBlock(nf.Body(), b.Type(), b.Labels())
+	nb := findBlock(nf.Body(), b.Type(), labelsOf(b))
 	if nb == nil {
-		return nil, nil, fmt.Errorf("expanding block %s %v lost it", b.Type(), b.Labels())
+		return nil, nil, fmt.Errorf("expanding block %s %v lost it", b.Type(), labelsOf(b))
 	}
 	return nf, nb, nil
 }
 
-// findBlock returns the first top-level block of body with type typ and labels.
+// attrsBeforeBlocks moves each attribute of names in top-level block typ labels of f that
+// follows a nested block to before the first nested block, after the attributes there, as
+// canonical format orders them; hclwrite appends a new attribute at the end of a body.
+func attrsBeforeBlocks(f *hclwrite.File, typ string, labels, names []string) (*hclwrite.File, error) {
+	b := findBlock(f.Body(), typ, labels)
+	nested := b.Body().Blocks()
+	if len(nested) == 0 {
+		return f, nil
+	}
+	toks := f.BuildTokens(nil)
+	firstBlock := slices.Index(toks, nested[0].BuildTokens(nil)[0])
+	start := slices.Index(toks, b.BuildTokens(nil)[0])
+	// The block is on several lines, so its { is followed by a newline.
+	insert := start + slices.IndexFunc(toks[start:], func(t *hclwrite.Token) bool { return t.Type == hclsyntax.TokenOBrace }) + 2
+	var movedNames []string
+	for _, name := range sortedAttrs(b.Body()) {
+		at := b.Body().GetAttribute(name).BuildTokens(nil)
+		i := slices.Index(toks, at[0])
+		switch {
+		case i < firstBlock:
+			insert = max(insert, slices.Index(toks, at[len(at)-1])+1)
+		case slices.Contains(names, name):
+			movedNames = append(movedNames, name)
+		}
+	}
+	if len(movedNames) == 0 {
+		return f, nil
+	}
+	moved := map[*hclwrite.Token]bool{}
+	for _, name := range movedNames {
+		for _, t := range b.Body().GetAttribute(name).BuildTokens(nil) {
+			moved[t] = true
+		}
+	}
+	var move hclwrite.Tokens
+	for _, t := range toks {
+		if moved[t] {
+			move = append(move, t)
+		}
+	}
+	var out hclwrite.Tokens
+	for i, t := range toks {
+		if i == insert {
+			out = append(out, move...)
+		}
+		if !moved[t] {
+			out = append(out, t)
+		}
+	}
+	nf, err := parse("", out.Bytes())
+	if err != nil {
+		return nil, err
+	}
+	body := findBlock(nf.Body(), typ, labels).Body()
+	for _, name := range movedNames {
+		alignAttr(body, name)
+	}
+	return nf, nil
+}
+
+// findBlock returns the first block of body with type typ and labels.
 func findBlock(body *hclwrite.Body, typ string, labels []string) *hclwrite.Block {
-	return body.FirstMatchingBlock(typ, labels)
+	for _, b := range body.Blocks() {
+		if b.Type() == typ && slices.Equal(labelsOf(b), labels) {
+			return b
+		}
+	}
+	return nil
+}
+
+// labelsOf returns the labels of b. hclwrite's Block.Labels drops a quoted label whose literal
+// the lexer splits, as it does at % and $, so a label is read from its tokens here.
+func labelsOf(b *hclwrite.Block) []string {
+	var out []string
+	var lit []byte
+	toks := b.BuildTokens(nil)
+	typ := slices.IndexFunc(toks, func(t *hclwrite.Token) bool { return t.Type == hclsyntax.TokenIdent })
+	for _, t := range toks[typ+1:] {
+		switch t.Type {
+		case hclsyntax.TokenOBrace:
+			return out
+		case hclsyntax.TokenIdent:
+			out = append(out, string(t.Bytes))
+		case hclsyntax.TokenOQuote:
+			lit = []byte{}
+		case hclsyntax.TokenQuotedLit:
+			lit = append(lit, t.Bytes...)
+		case hclsyntax.TokenCQuote:
+			s, diags := hclsyntax.ParseStringLiteralToken(hclsyntax.Token{Type: hclsyntax.TokenQuotedLit, Bytes: lit})
+			if diags.HasErrors() {
+				s = "\x00invalid"
+			}
+			out = append(out, s)
+		}
+	}
+	return out
 }

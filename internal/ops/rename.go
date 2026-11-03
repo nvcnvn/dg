@@ -84,7 +84,7 @@ func (s *state) rename(typ, old, id string) error {
 	if err != nil {
 		return err
 	}
-	b := f.Body().FirstMatchingBlock("view", []string{old})
+	b := findBlock(f.Body(), "view", []string{old})
 	if b == nil {
 		return fmt.Errorf("view %q is not a block of %s", old, name)
 	}
@@ -156,7 +156,7 @@ func (s *state) renameInViews(roots []string, rule, prefix, old, id string) erro
 	for _, b := range blocks(f.Body(), "view") {
 		changed = renameIn(b.Body(), roots, old, id) || changed
 		for _, r := range blocks(b.Body(), rule) {
-			if labels := r.Labels(); len(labels) == 1 && labels[0] == prefix+old {
+			if labels := labelsOf(r); len(labels) == 1 && labels[0] == prefix+old {
 				setLabel(r, prefix+id)
 				changed = true
 			}
@@ -169,8 +169,9 @@ func (s *state) renameInViews(roots []string, rule, prefix, old, id string) erro
 }
 
 // renameInModel renames the block of type typ labeled old, and references under roots, in every
-// model file.
+// model file. It fails when no block was renamed.
 func (s *state) renameInModel(p *project.Project, typ string, roots []string, old, id string) error {
+	renamed := false
 	for _, mf := range p.Files {
 		if mf.Role != project.RoleModel {
 			continue
@@ -182,9 +183,9 @@ func (s *state) renameInModel(p *project.Project, typ string, roots []string, ol
 		changed := false
 		for _, b := range f.Body().Blocks() {
 			bc := false
-			if labels := b.Labels(); b.Type() == typ && len(labels) == 1 && labels[0] == old {
+			if labels := labelsOf(b); b.Type() == typ && len(labels) == 1 && labels[0] == old {
 				setLabel(b, id)
-				bc = true
+				bc, renamed = true, true
 			}
 			if len(roots) > 0 && renameIn(b.Body(), roots, old, id) {
 				bc = true
@@ -194,6 +195,9 @@ func (s *state) renameInModel(p *project.Project, typ string, roots []string, ol
 		if changed {
 			s.putHCL(mf.Path, f)
 		}
+	}
+	if !renamed {
+		return fmt.Errorf("the block of %s %q was not found to rename; it is written in a way dg cannot edit", typ, old)
 	}
 	return nil
 }

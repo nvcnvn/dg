@@ -2,6 +2,10 @@
 <defs>
 <image id="dg-shape-rack" width="80" height="80" preserveAspectRatio="none" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2080%2080%22%3E%3Crect%20x%3D%221%22%20y%3D%221%22%20width%3D%2278%22%20height%3D%2278%22%20rx%3D%226%22%20fill%3D%22%23F1F3F4%22%20stroke%3D%22%235F6368%22%20stroke-width%3D%222%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%221%22%20width%3D%2278%22%20height%3D%2214%22%20rx%3D%226%22%20fill%3D%22%235F6368%22%2F%3E%3Ccircle%20cx%3D%228%22%20cy%3D%2272%22%20r%3D%223%22%20fill%3D%22%235F6368%22%2F%3E%3Ccircle%20cx%3D%2272%22%20cy%3D%2272%22%20r%3D%223%22%20fill%3D%22%235F6368%22%2F%3E%3C%2Fsvg%3E%0A"/>
 </defs>
+<g data-node="lab">
+<rect x="600" y="0" width="140" height="110" fill="#F8F9FA" stroke="#9AA0A6" stroke-width="1"/>
+<text x="620" y="25" fill="#202124" font-size="14">Lab</text>
+</g>
 <g data-node="bullseye">
 <circle cx="575" cy="275" r="15" fill="none" stroke="#3C4043" stroke-width="1"/>
 <circle cx="575" cy="275" r="9" fill="#202124"/>
@@ -18,10 +22,6 @@
 <g data-node="diamond">
 <path d="M340 240 L420 280 L340 320 L260 280 Z" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
 <text x="340" y="285" text-anchor="middle" fill="#202124" font-size="14">diamond</text>
-</g>
-<g data-node="lab">
-<rect x="600" y="0" width="140" height="110" fill="#F8F9FA" stroke="#9AA0A6" stroke-width="1"/>
-<text x="620" y="25" fill="#202124" font-size="14">Lab</text>
 </g>
 <g data-node="point">
 <circle cx="10" cy="270" r="10" fill="#202124" stroke="#3C4043" stroke-width="1"/>

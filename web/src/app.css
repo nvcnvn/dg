@@ -59,3 +59,35 @@ body.stale #paper {
 #export svg {
   display: block;
 }
+#crumbs button,
+#drill-menu button {
+  font: inherit;
+  color: #1a73e8;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+#crumbs button:hover,
+#drill-menu button:hover {
+  text-decoration: underline;
+}
+#drill-menu {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #ffffff;
+  border: 1px solid #dadce0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+#drill-menu[hidden] {
+  display: none;
+}
+#paper [data-drill] {
+  cursor: pointer;
+}
+#crumbs {
+  white-space: nowrap;
+}

@@ -6,8 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"maps"
 	"math"
+	"path"
 	"regexp"
 	"slices"
 	"strconv"
@@ -17,6 +19,7 @@ import (
 	"go.yaml.in/yaml/v3"
 
 	"github.com/nvcnvn/dg/internal/spec"
+	"github.com/nvcnvn/dg/internal/style"
 )
 
 // Layout is a layout file (spec 4.6) with its IDs decoded.
@@ -80,7 +83,9 @@ type Decoration struct {
 	Opacity     *float64
 	TextColor   string
 	FontSize    *float64
-	Range       hcl.Range
+	// Picture is the SVG text of an image decoration's src, read when the project loads.
+	Picture string
+	Range   hcl.Range
 }
 
 // DecorationTypes are the types of decorations.
@@ -117,6 +122,34 @@ func DecodeID(s string) (string, error) {
 		return "", fmt.Errorf("%q contains %q; only %%25, %%3A and %%23 are escapes", s, bad)
 	}
 	return out, nil
+}
+
+// liftKey is the layout key of the lifted edge from one drawn node to another (spec 8.3).
+func liftKey(from, to string) string {
+	return "lift:" + EncodeID(from) + ":" + EncodeID(to)
+}
+
+// ParseLiftKey returns the ends a key lift:<from>:<to> names; isLift is false for any other key.
+func ParseLiftKey(key string) (ends [2]string, isLift bool, err error) {
+	rest, isLift := strings.CutPrefix(key, "lift:")
+	if !isLift {
+		return ends, false, nil
+	}
+	parts := strings.Split(rest, ":")
+	if len(parts) != 2 {
+		return ends, true, errors.New("a lifted edge key is lift:<from>:<to>, with %, : and # in those IDs written %25, %3A and %23")
+	}
+	for i, part := range parts {
+		id, err := DecodeID(part)
+		if err == nil && part == "" {
+			err = errors.New("an ID is empty")
+		}
+		if err != nil {
+			return ends, true, err
+		}
+		ends[i] = id
+	}
+	return ends, true, nil
 }
 
 type decoder struct {
@@ -275,18 +308,14 @@ func (d *decoder) entries(n *yaml.Node, f func(id string, lift *[2]string, k, v 
 		var id string
 		var lift *[2]string
 		ok := true
-		if rest, isLift := strings.CutPrefix(k.Value, "lift:"); isLift {
-			parts := strings.Split(rest, ":")
-			if len(parts) != 2 {
-				d.errorf(k, "A lifted edge key is lift:<from>:<to>.")
-				continue
-			}
-			from, ok1 := d.id(k, parts[0])
-			to, ok2 := d.id(k, parts[1])
-			ok = ok1 && ok2
-			lift = &[2]string{from, to}
-			id = "lift:" + EncodeID(from) + ":" + EncodeID(to)
-		} else {
+		ends, isLift, err := ParseLiftKey(k.Value)
+		switch {
+		case isLift && err != nil:
+			d.errorf(k, "Invalid key %q: %v.", k.Value, err)
+			continue
+		case isLift:
+			lift, id = &ends, liftKey(ends[0], ends[1])
+		default:
 			id, ok = d.id(k, k.Value)
 		}
 		switch {
@@ -495,7 +524,9 @@ func (d *decoder) decoration(n *yaml.Node) *Decoration {
 		return nil
 	}
 	dec := &Decoration{Range: d.rng(n)}
-	d.fields(n, decorationFields, func(key string, _, v *yaml.Node) {
+	set := map[string]*yaml.Node{}
+	d.fields(n, decorationFields, func(key string, k, v *yaml.Node) {
+		set[key] = k
 		switch key {
 		case "id":
 			dec.ID = d.str(v)
@@ -559,7 +590,77 @@ func (d *decoder) decoration(n *yaml.Node) *Decoration {
 		d.errorf(n, "Decoration %q needs a type.", dec.ID)
 		return nil
 	}
+	d.checkDecoration(dec, n, set)
 	return dec
+}
+
+// decorationGeometry are the geometry fields each decoration type takes, the first ones
+// required; every type also takes in, attach, x, y, dx, dy, z and the style fields.
+var decorationGeometry = map[string][]string{
+	"text":     {"text"},
+	"rect":     {"w", "h"},
+	"ellipse":  {"w", "h"},
+	"band":     {"w", "h"},
+	"image":    {"src", "w", "h"},
+	"arrow":    {"points"},
+	"freehand": {"path"},
+}
+
+var svgPath = regexp.MustCompile(`^[MmLlHhVvCcSsQqTtAaZz0-9eE.,+\-\s]*$`)
+
+// checkDecoration reports fields dec's type does not take, missing required ones, and invalid
+// values (spec 5.7).
+func (d *decoder) checkDecoration(dec *Decoration, n *yaml.Node, set map[string]*yaml.Node) {
+	geometry := decorationGeometry[dec.Type]
+	if geometry == nil {
+		return
+	}
+	for _, key := range []string{"text", "w", "h", "src", "points", "path"} {
+		if set[key] != nil && !slices.Contains(geometry, key) {
+			d.errorf(set[key], "A %s decoration does not take %s.", dec.Type, key)
+		}
+	}
+	for _, key := range geometry {
+		if set[key] == nil {
+			d.errorf(n, "Decoration %q of type %s needs %s.", dec.ID, dec.Type, key)
+		}
+	}
+	switch {
+	case dec.Attach != "" && dec.In != "":
+		d.errorf(set["in"], "Decoration %q is attached to a node, so it takes no in.", dec.ID)
+	case dec.Attach != "" && (set["x"] != nil || set["y"] != nil):
+		d.errorf(n, "Decoration %q is attached to a node: its offset is dx and dy, not x and y.", dec.ID)
+	case dec.Attach == "" && (set["dx"] != nil || set["dy"] != nil):
+		d.errorf(n, "Decoration %q takes dx and dy only with attach.", dec.ID)
+	}
+	if dec.Type == "arrow" && set["points"] != nil && len(dec.Points) < 2 {
+		d.errorf(set["points"], "An arrow needs at least two points.")
+	}
+	if set["path"] != nil && (strings.TrimSpace(dec.Path) == "" || !svgPath.MatchString(dec.Path)) {
+		d.errorf(set["path"], "The path is not SVG path data (commands and numbers).")
+	}
+	if set["text"] != nil && dec.Text == "" {
+		d.errorf(set["text"], "The text is empty.")
+	}
+	if set["src"] != nil && (dec.Src == "" || !fs.ValidPath(path.Clean(dec.Src))) {
+		d.errorf(set["src"], "%q is not a slash-separated path inside the project.", dec.Src)
+	}
+	for _, c := range [][2]string{{"fill", dec.Fill}, {"stroke", dec.Stroke}, {"text_color", dec.TextColor}} {
+		if set[c[0]] != nil {
+			if p := style.ColorProblem(c[1]); p != "" {
+				d.errorf(set[c[0]], "The value of %s %s.", c[0], p)
+			}
+		}
+	}
+	if dec.StrokeWidth != nil && *dec.StrokeWidth < 0 {
+		d.errorf(set["stroke_width"], "The value of stroke_width must be at least 0.")
+	}
+	if dec.FontSize != nil && *dec.FontSize < 1 {
+		d.errorf(set["font_size"], "The value of font_size must be at least 1.")
+	}
+	if slices.ContainsFunc(dec.StrokeDash, func(v float64) bool { return v < 0 }) {
+		d.errorf(set["stroke_dash"], "The values of stroke_dash must be at least 0.")
+	}
 }
 
 // Encode returns l in canonical form: sorted keys, one entry per line where possible.
@@ -577,7 +678,7 @@ func (l *Layout) Encode() []byte {
 		hints[EncodeID(id)] = h
 	}
 	for k, h := range l.LiftHints {
-		hints["lift:"+EncodeID(k[0])+":"+EncodeID(k[1])] = h
+		hints[liftKey(k[0], k[1])] = h
 	}
 	if len(hints) > 0 {
 		add(root, "edge_hints", sorted(hints, func(s string) string { return s }, hintNode))

@@ -142,7 +142,7 @@
   {
     "severity": "error",
     "summary": "Invalid layout",
-    "detail": "A lifted edge key is lift:\u003cfrom\u003e:\u003cto\u003e.",
+    "detail": "Invalid key \"lift:a\": a lifted edge key is lift:\u003cfrom\u003e:\u003cto\u003e, with %, : and # in those IDs written %25, %3A and %23.",
     "file": "views/broken.layout.yaml",
     "line": 10,
     "column": 3,
@@ -151,8 +151,38 @@
   },
   {
     "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "Decoration \"t\" of type text needs text.",
+    "file": "views/broken.layout.yaml",
+    "line": 12,
+    "column": 5,
+    "end_line": 12,
+    "end_column": 5
+  },
+  {
+    "severity": "error",
     "summary": "Duplicate ID",
     "detail": "The decoration ID \"t\" is used twice in this view.",
+    "file": "views/broken.layout.yaml",
+    "line": 13,
+    "column": 5,
+    "end_line": 13,
+    "end_column": 5
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "Decoration \"t\" of type rect needs h.",
+    "file": "views/broken.layout.yaml",
+    "line": 13,
+    "column": 5,
+    "end_line": 13,
+    "end_column": 5
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "Decoration \"t\" of type rect needs w.",
     "file": "views/broken.layout.yaml",
     "line": 13,
     "column": 5,
@@ -182,11 +212,141 @@
   {
     "severity": "error",
     "summary": "Invalid layout",
-    "detail": "Unknown field \"extra\"; expected one of version, place, edge_hints, decorations.",
+    "detail": "A rect decoration does not take text.",
     "file": "views/broken.layout.yaml",
     "line": 15,
-    "column": 1,
+    "column": 39,
     "end_line": 15,
+    "end_column": 39
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "The value of fill must be \"#RGB\", \"#RRGGBB\" or \"none\".",
+    "file": "views/broken.layout.yaml",
+    "line": 15,
+    "column": 50,
+    "end_line": 15,
+    "end_column": 50
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "Decoration \"a\" is attached to a node: its offset is dx and dy, not x and y.",
+    "file": "views/broken.layout.yaml",
+    "line": 16,
+    "column": 5,
+    "end_line": 16,
+    "end_column": 5
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "An arrow needs at least two points.",
+    "file": "views/broken.layout.yaml",
+    "line": 16,
+    "column": 26,
+    "end_line": 16,
+    "end_column": 26
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "Decoration \"f\" takes dx and dy only with attach.",
+    "file": "views/broken.layout.yaml",
+    "line": 17,
+    "column": 5,
+    "end_line": 17,
+    "end_column": 5
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "The path is not SVG path data (commands and numbers).",
+    "file": "views/broken.layout.yaml",
+    "line": 17,
+    "column": 29,
+    "end_line": 17,
+    "end_column": 29
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "\"../x.svg\" is not a slash-separated path inside the project.",
+    "file": "views/broken.layout.yaml",
+    "line": 18,
+    "column": 26,
+    "end_line": 18,
+    "end_column": 26
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "Decoration \"i\" is attached to a node, so it takes no in.",
+    "file": "views/broken.layout.yaml",
+    "line": 18,
+    "column": 55,
+    "end_line": 18,
+    "end_column": 55
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "The value of stroke_width must be at least 0.",
+    "file": "views/broken.layout.yaml",
+    "line": 18,
+    "column": 73,
+    "end_line": 18,
+    "end_column": 73
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "The value of font_size must be at least 1.",
+    "file": "views/broken.layout.yaml",
+    "line": 18,
+    "column": 91,
+    "end_line": 18,
+    "end_column": 91
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "The values of stroke_dash must be at least 0.",
+    "file": "views/broken.layout.yaml",
+    "line": 18,
+    "column": 105,
+    "end_line": 18,
+    "end_column": 105
+  },
+  {
+    "severity": "error",
+    "summary": "File not found",
+    "detail": "Decoration \"m\": the picture \"missing.svg\" cannot be read.",
+    "file": "views/broken.layout.yaml",
+    "line": 19,
+    "column": 5,
+    "end_line": 19,
+    "end_column": 5
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid picture",
+    "detail": "Decoration \"n\": the picture \"model.hcl\" must be an SVG picture, whose root element is svg with xmlns=\"http://www.w3.org/2000/svg\".",
+    "file": "views/broken.layout.yaml",
+    "line": 20,
+    "column": 5,
+    "end_line": 20,
+    "end_column": 5
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid layout",
+    "detail": "Unknown field \"extra\"; expected one of version, place, edge_hints, decorations.",
+    "file": "views/broken.layout.yaml",
+    "line": 21,
+    "column": 1,
+    "end_line": 21,
     "end_column": 1
   },
   {
@@ -272,11 +432,21 @@
   {
     "severity": "warning",
     "summary": "Orphan layout entry",
+    "detail": "View \"main\" draws no lifted edge from \"a\" to \"b\".",
+    "file": "views/main.layout.yaml",
+    "line": 13,
+    "column": 3,
+    "end_line": 13,
+    "end_column": 3
+  },
+  {
+    "severity": "warning",
+    "summary": "Orphan layout entry",
     "detail": "Node \"ghost\" does not exist.",
     "file": "views/main.layout.yaml",
-    "line": 15,
+    "line": 16,
     "column": 5,
-    "end_line": 15,
+    "end_line": 16,
     "end_column": 5
   },
   {

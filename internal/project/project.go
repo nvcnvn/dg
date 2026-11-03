@@ -385,10 +385,31 @@ func (l *loader) layouts() error {
 		}
 		layout, d := view.DecodeLayout(src, rel)
 		l.diags = append(l.diags, d...)
+		l.pictures(layout)
 		l.p.Layouts[id] = layout
 		l.p.Files = append(l.p.Files, File{Path: rel, Role: RoleLayout})
 	}
 	return nil
+}
+
+// pictures reads the SVG file of each image decoration of layout, reporting one that is missing
+// or not a picture.
+func (l *loader) pictures(layout *view.Layout) {
+	for _, d := range layout.Decorations {
+		if d.Type != "image" || d.Src == "" || !fs.ValidPath(path.Clean(d.Src)) {
+			continue
+		}
+		data, err := fs.ReadFile(l.fsys, path.Clean(d.Src))
+		if err != nil {
+			l.diags = append(l.diags, spec.Errorf(d.Range, "File not found", "Decoration %q: the picture %q cannot be read.", d.ID, d.Src))
+			continue
+		}
+		if p := style.PictureProblem(string(data)); p != "" {
+			l.diags = append(l.diags, spec.Errorf(d.Range, "Invalid picture", "Decoration %q: the picture %q %s.", d.ID, d.Src, p))
+			continue
+		}
+		d.Picture = string(data)
+	}
 }
 
 // IsReadOnly reports whether the project file rel matches a read_only pattern.
@@ -408,7 +429,11 @@ func (p *Project) Resolve(id string) (*view.Resolved, diag.Diagnostics) {
 			r.Nodes[i].ReadOnly = p.IsReadOnly(p.Model.Nodes[n.ID].Range.Filename)
 		}
 		for i, e := range r.Edges {
-			r.Edges[i].ReadOnly = p.IsReadOnly(p.Model.Edges[e.ID].Range.Filename)
+			ids := e.Edges
+			if ids == nil {
+				ids = []string{e.ID}
+			}
+			r.Edges[i].ReadOnly = !slices.ContainsFunc(ids, func(id string) bool { return !p.IsReadOnly(p.Model.Edges[id].Range.Filename) })
 		}
 		if p.Font != "" {
 			data, err := readFile(p.Dir, p.Font)

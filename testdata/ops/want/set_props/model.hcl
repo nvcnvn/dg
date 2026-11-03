@@ -27,7 +27,7 @@ node "worker-1" {
 node "worker-2" {
   kind   = "worker"
   parent = node.pool
-  props  = {
+  props = {
     gpus = 4
   }
 }

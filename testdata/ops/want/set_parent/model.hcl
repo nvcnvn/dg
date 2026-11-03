@@ -2,9 +2,9 @@
 # operation must leave what it does not change byte for byte.
 
 node   "gateway" {
-  kind  =   "service" # the entry point
-  label = "Gateway"   /* shown on top */
-  tags  = [ "edge" ]
+  kind   =   "service" # the entry point
+  label  = "Gateway"   /* shown on top */
+  tags   = [ "edge" ]
   parent = node.pool
 }
 

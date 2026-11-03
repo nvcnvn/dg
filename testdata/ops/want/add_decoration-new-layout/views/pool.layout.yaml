@@ -1,0 +1,3 @@
+version: 1
+decorations:
+  - {id: hello, type: text, attach: worker-1, dx: 0, dy: -40, text: Hi}

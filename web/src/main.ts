@@ -35,7 +35,9 @@ if (new URLSearchParams(location.search).has('export')) {
     async render(view) {
       const elk = new ELK({ workerUrl: elkWorkerUrl });
       try {
-        const { drawing, family } = await render(view, elk);
+        const { drawing: d, family } = await render(view, elk);
+        // A drill-down badge is a control of the editor; a picture keeps only the collapse badge.
+        const drawing = { ...d, nodes: d.nodes.map(({ drill: _, ...n }) => n) };
         const svg = toSVG(drawing);
         await mountSVG(svg, family);
         if (blocked.length) throw new Error('blocked requests: ' + blocked.join(', '));

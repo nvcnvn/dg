@@ -39,3 +39,7 @@ view "bad" {
   include = [node, all.x, foo.bar, "a"]
   of      = kind.group
 }
+
+view "sideways" {
+  direction = "sideways"
+}

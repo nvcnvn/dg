@@ -1,0 +1,712 @@
+{
+  "view": "incident",
+  "grid": 10,
+  "nodes": [
+    {
+      "id": "core",
+      "kind": "group",
+      "label": "Core services",
+      "container": true,
+      "pin": {
+        "x": 120,
+        "y": 290
+      },
+      "style": {
+        "shape": "rect",
+        "fill": "#F8F9FA",
+        "stroke": "#9AA0A6",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 20,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "data",
+      "kind": "group",
+      "label": "Data",
+      "collapsed": true,
+      "pin": {
+        "x": 300,
+        "y": 590
+      },
+      "style": {
+        "shape": "rect",
+        "fill": "#F8F9FA",
+        "stroke": "#9AA0A6",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 20,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "edge",
+      "kind": "group",
+      "label": "Edge",
+      "container": true,
+      "pin": {
+        "x": 140,
+        "y": 10
+      },
+      "style": {
+        "shape": "rect",
+        "fill": "#F8F9FA",
+        "stroke": "#9AA0A6",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 20,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "events",
+      "kind": "queue",
+      "label": "Order events",
+      "pin": {
+        "x": 90,
+        "y": 590
+      },
+      "style": {
+        "shape": "parallelogram",
+        "fill": "#F3E8FD",
+        "stroke": "#9334E6",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "gateway",
+      "kind": "service",
+      "label": "API gateway",
+      "frame": "edge",
+      "pin": {
+        "x": 10,
+        "y": 100
+      },
+      "style": {
+        "shape": "rounded",
+        "fill": "#E8F0FE",
+        "stroke": "#1A73E8",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "inventory",
+      "kind": "service",
+      "label": "Inventory",
+      "frame": "core",
+      "pin": {
+        "x": 20,
+        "y": 100
+      },
+      "style": {
+        "shape": "rounded",
+        "fill": "#E8F0FE",
+        "stroke": "#1A73E8",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "lb",
+      "kind": "service",
+      "label": "Load balancer",
+      "frame": "edge",
+      "pin": {
+        "x": 0,
+        "y": 0
+      },
+      "style": {
+        "shape": "rounded",
+        "fill": "#E8F0FE",
+        "stroke": "#1A73E8",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "orders",
+      "kind": "service",
+      "label": "Orders",
+      "frame": "core",
+      "pin": {
+        "x": 30,
+        "y": 0
+      },
+      "style": {
+        "shape": "rounded",
+        "fill": "#E8F0FE",
+        "stroke": "#1A73E8",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "payments",
+      "kind": "service",
+      "label": "Payments",
+      "frame": "core",
+      "pin": {
+        "x": 160,
+        "y": 100
+      },
+      "style": {
+        "shape": "rounded",
+        "fill": "#FCE8E6",
+        "stroke": "#D93025",
+        "stroke_width": 3,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "psp",
+      "kind": "external",
+      "label": "Payment provider",
+      "pin": {
+        "x": 520,
+        "y": 440
+      },
+      "style": {
+        "shape": "rounded",
+        "fill": "#FCE8E6",
+        "stroke": "#D93025",
+        "stroke_width": 1,
+        "stroke_dash": [
+          6,
+          4
+        ],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "gateway-orders",
+      "kind": "default",
+      "from": {
+        "node": "gateway"
+      },
+      "to": {
+        "node": "orders"
+      },
+      "labels": {
+        "mid": "checkout"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "lb-gateway",
+      "kind": "default",
+      "from": {
+        "node": "lb"
+      },
+      "to": {
+        "node": "gateway"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "lift:inventory:data",
+      "edges": [
+        "inventory-cache"
+      ],
+      "kind": "default",
+      "from": {
+        "node": "inventory"
+      },
+      "to": {
+        "node": "data"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "lift:orders:data",
+      "edges": [
+        "orders-db"
+      ],
+      "kind": "default",
+      "from": {
+        "node": "orders"
+      },
+      "to": {
+        "node": "data"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "lift:payments:data",
+      "edges": [
+        "payments-db"
+      ],
+      "kind": "default",
+      "from": {
+        "node": "payments"
+      },
+      "to": {
+        "node": "data"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "orders-events",
+      "kind": "async",
+      "from": {
+        "node": "orders"
+      },
+      "to": {
+        "node": "events"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [
+          6,
+          4
+        ],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "orders-inventory",
+      "kind": "default",
+      "from": {
+        "node": "orders"
+      },
+      "to": {
+        "node": "inventory"
+      },
+      "labels": {
+        "mid": "reserve"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "orders-payments",
+      "kind": "default",
+      "from": {
+        "node": "orders"
+      },
+      "to": {
+        "node": "payments"
+      },
+      "labels": {
+        "mid": "charge"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "payments-events",
+      "kind": "async",
+      "from": {
+        "node": "payments"
+      },
+      "to": {
+        "node": "events"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [
+          6,
+          4
+        ],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "payments-psp",
+      "kind": "default",
+      "from": {
+        "node": "payments"
+      },
+      "to": {
+        "node": "psp"
+      },
+      "labels": {
+        "mid": "authorize"
+      },
+      "style": {
+        "stroke": "#D93025",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12,
+        "animate": "flow"
+      }
+    }
+  ],
+  "overlays": [
+    {
+      "id": "blast-radius",
+      "label": "Blast radius",
+      "members": [
+        "data",
+        "payments",
+        "psp"
+      ],
+      "style": {
+        "fill": "#FCE8E6",
+        "stroke": "#D93025",
+        "stroke_width": 1.5,
+        "stroke_dash": [
+          4,
+          4
+        ],
+        "opacity": 0.9,
+        "padding": 16
+      }
+    }
+  ],
+  "decorations": [
+    {
+      "id": "banner",
+      "type": "band",
+      "x": -20,
+      "y": -90,
+      "w": 800,
+      "h": 70,
+      "z": -1,
+      "fill": "#FFF4E5",
+      "stroke": "none",
+      "stroke_width": 0,
+      "stroke_dash": [],
+      "opacity": 1,
+      "text_color": "#202124",
+      "font_size": 14
+    },
+    {
+      "id": "alert",
+      "type": "image",
+      "x": 0,
+      "y": -70,
+      "w": 30,
+      "h": 30,
+      "z": 1,
+      "image": "\u003csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"\u003e\u003cpath d=\"M12 2 L23 21 H1 Z\" fill=\"#D93025\"/\u003e\u003cpath d=\"M12 9 V14\" stroke=\"#FFFFFF\" stroke-width=\"2.5\" stroke-linecap=\"round\"/\u003e\u003ccircle cx=\"12\" cy=\"17.5\" r=\"1.4\" fill=\"#FFFFFF\"/\u003e\u003c/svg\u003e\n",
+      "fill": "none",
+      "stroke": "none",
+      "stroke_width": 0,
+      "stroke_dash": [],
+      "opacity": 1,
+      "text_color": "#202124",
+      "font_size": 14
+    },
+    {
+      "id": "title",
+      "type": "text",
+      "x": 40,
+      "y": -70,
+      "z": 1,
+      "text": "Payment provider timeouts, 14:02 UTC",
+      "fill": "none",
+      "stroke": "none",
+      "stroke_width": 0,
+      "stroke_dash": [],
+      "opacity": 1,
+      "text_color": "#202124",
+      "font_size": 20
+    },
+    {
+      "id": "underline",
+      "type": "freehand",
+      "x": 40,
+      "y": -40,
+      "z": 1,
+      "path": "M0 0 C 120 6 240 -6 360 0",
+      "fill": "none",
+      "stroke": "#D93025",
+      "stroke_width": 2,
+      "stroke_dash": [],
+      "opacity": 1,
+      "text_color": "#202124",
+      "font_size": 14
+    },
+    {
+      "id": "legend",
+      "type": "rect",
+      "x": 520,
+      "y": 10,
+      "w": 230,
+      "h": 90,
+      "z": 1,
+      "fill": "#FFFFFF",
+      "stroke": "#DADCE0",
+      "stroke_width": 1.5,
+      "stroke_dash": [],
+      "opacity": 1,
+      "text_color": "#202124",
+      "font_size": 14
+    },
+    {
+      "id": "legend-title",
+      "type": "text",
+      "x": 530,
+      "y": 20,
+      "z": 1,
+      "text": "Legend",
+      "fill": "none",
+      "stroke": "none",
+      "stroke_width": 0,
+      "stroke_dash": [],
+      "opacity": 1,
+      "text_color": "#5F6368",
+      "font_size": 12
+    },
+    {
+      "id": "legend-degraded",
+      "type": "text",
+      "x": 530,
+      "y": 50,
+      "z": 1,
+      "text": "Red: degraded",
+      "fill": "none",
+      "stroke": "none",
+      "stroke_width": 0,
+      "stroke_dash": [],
+      "opacity": 1,
+      "text_color": "#202124",
+      "font_size": 12
+    },
+    {
+      "id": "legend-hull",
+      "type": "text",
+      "x": 530,
+      "y": 70,
+      "z": 1,
+      "text": "Shaded outline: blast radius",
+      "fill": "none",
+      "stroke": "none",
+      "stroke_width": 0,
+      "stroke_dash": [],
+      "opacity": 1,
+      "text_color": "#202124",
+      "font_size": 12
+    },
+    {
+      "id": "cause",
+      "type": "ellipse",
+      "attach": "psp",
+      "x": 0,
+      "y": 0,
+      "w": 200,
+      "h": 90,
+      "z": 1,
+      "fill": "none",
+      "stroke": "#D93025",
+      "stroke_width": 1.5,
+      "stroke_dash": [
+        4,
+        3
+      ],
+      "opacity": 1,
+      "text_color": "#202124",
+      "font_size": 14
+    },
+    {
+      "id": "cause-arrow",
+      "type": "arrow",
+      "attach": "psp",
+      "x": 0,
+      "y": 0,
+      "z": 1,
+      "points": [
+        [
+          0,
+          80
+        ],
+        [
+          0,
+          50
+        ]
+      ],
+      "fill": "none",
+      "stroke": "#D93025",
+      "stroke_width": 1.5,
+      "stroke_dash": [],
+      "opacity": 1,
+      "text_color": "#202124",
+      "font_size": 14
+    },
+    {
+      "id": "cause-note",
+      "type": "text",
+      "attach": "psp",
+      "x": 0,
+      "y": 90,
+      "z": 1,
+      "text": "Root cause: provider 5xx",
+      "fill": "none",
+      "stroke": "none",
+      "stroke_width": 0,
+      "stroke_dash": [],
+      "opacity": 1,
+      "text_color": "#D93025",
+      "font_size": 12
+    }
+  ]
+}

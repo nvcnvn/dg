@@ -71,63 +71,80 @@ func mustDecode(t *testing.T, src string) Op {
 	return op
 }
 
+// goldenOps are the operations TestGolden applies, each named after its golden directory.
+var goldenOps = []struct{ name, op string }{
+	{"create_node", `{"op": "create_node", "kind": "service", "label": "Billing API"}`},
+	{"create_node-in-view", `{"op": "create_node", "kind": "worker", "label": "Worker 3", "parent": "pool", "view": "calls", "x": 24, "y": 36}`},
+	{"create_node-in-one-line-view", `{"op": "create_node", "kind": "service", "label": "Solo", "view": "solo"}`},
+	{"create_node-quoted-id", `{"op": "create_node", "id": "ns/cache", "kind": "database"}`},
+	{"create_node-from-kind", `{"op": "create_node", "kind": "service"}`},
+	{"delete_node", `{"op": "delete_node", "id": "worker-1"}`},
+	{"delete_node-children", `{"op": "delete_node", "id": "rack"}`},
+	{"delete_node-in-list", `{"op": "delete_node", "id": "worker-2"}`},
+	{"delete_node-recursive", `{"op": "delete_node", "id": "rack", "recursive": true}`},
+	{"set_label", `{"op": "set_label", "id": "gateway", "label": "Front Door\n(public)"}`},
+	{"set_parent", `{"op": "set_parent", "id": "gateway", "parent": "pool"}`},
+	{"set_parent-remove", `{"op": "set_parent", "id": "worker-2"}`},
+	{"set_kind", `{"op": "set_kind", "id": "kube-system/dns", "kind": "database"}`},
+	{"set_kind-edge", `{"op": "set_kind", "type": "edge", "id": "w1-w2", "kind": "default"}`},
+	{"set_tags", `{"op": "set_tags", "id": "worker-2", "tags": ["critical", "new"]}`},
+	{"set_tags-remove", `{"op": "set_tags", "id": "gateway", "tags": []}`},
+	{"set_tags-edge", `{"op": "set_tags", "type": "edge", "id": "dns-gw", "tags": ["hot"]}`},
+	{"set_props", `{"op": "set_props", "id": "worker-2", "props": {"gpus": 4}}`},
+	{"set_props-remove", `{"op": "set_props", "id": "worker-1", "props": {}}`},
+	{"add_port", `{"op": "add_port", "id": "worker-2", "name": "nic0", "side": "left"}`},
+	{"add_port-quoted", `{"op": "add_port", "id": "gateway", "name": "http/2"}`},
+	{"add_port-one-line", `{"op": "add_port", "id": "cache", "name": "sql"}`},
+	{"set_label-one-line", `{"op": "set_label", "id": "cache", "label": "Cache"}`},
+	{"set_parent-new", `{"op": "set_parent", "id": "cache", "parent": "rack"}`},
+	{"remove_port", `{"op": "remove_port", "id": "worker-1", "name": "nic1"}`},
+	{"set_rows", `{"op": "set_rows", "id": "orders", "compartments": [{"rows": [{"name": "id", "type": "uuid", "key": "pk"}, {"name": "total"}]}]}`},
+	{"set_rows-compartments", `{"op": "set_rows", "id": "orders", "compartments": [{"name": "keys", "rows": [{"name": "id", "key": "pk"}]}, {"name": "methods", "rows": [{"name": "save()"}]}]}`},
+	{"connect", `{"op": "connect", "from": {"node": "gateway"}, "to": {"node": "orders", "row": "id"}, "kind": "async", "labels": {"start": "1", "end": "0..*"}, "tags": ["hot"]}`},
+	{"connect-in-view", `{"op": "connect", "id": "gw-pool", "from": {"node": "gateway"}, "to": {"node": "pool"}, "view": "calls"}`},
+	{"connect-port", `{"op": "connect", "from": {"node": "worker-2"}, "to": {"node": "worker-1", "port": "nic1"}, "labels": {"mid": "sync"}}`},
+	{"disconnect", `{"op": "disconnect", "id": "gw-w1"}`},
+	{"set_edge_labels", `{"op": "set_edge_labels", "id": "w1-w2", "labels": {"mid": "jobs", "end": "*"}}`},
+	{"set_edge_labels-remove", `{"op": "set_edge_labels", "id": "gw-w1"}`},
+	{"move", `{"op": "move", "view": "main", "id": "gateway", "x": 105, "y": -3}`},
+	{"move-new", `{"op": "move", "view": "main", "id": "worker-2", "x": 40, "y": 120}`},
+	{"move-new-layout", `{"op": "move", "view": "pool", "id": "worker-2", "x": 0, "y": 0}`},
+	{"resize", `{"op": "resize", "view": "main", "id": "pool", "w": 455, "h": 300}`},
+	{"unpin", `{"op": "unpin", "view": "main", "id": "worker-1"}`},
+	{"unpin-last", `{"op": "unpin", "view": "calls", "id": "gateway"}`},
+	{"pin_port", `{"op": "pin_port", "view": "main", "id": "worker-1", "port": "nic0", "side": "bottom", "offset": 0.333}`},
+	{"set_edge_hint", `{"op": "set_edge_hint", "view": "main", "id": "w1-w2", "hint": {"to_side": "top", "via": [[101, 49]], "label_pos": 0.25}}`},
+	{"set_edge_hint-remove", `{"op": "set_edge_hint", "view": "main", "id": "gw-w1", "hint": {}}`},
+	{"set_edge_hint-lift", `[{"op": "update_view", "id": "main", "collapse": ["node.pool"]}, {"op": "set_edge_hint", "view": "main", "id": "lift:gateway:pool", "hint": {"to_side": "left"}}]`},
+	{"rename_id-node", `{"op": "rename_id", "type": "node", "old": "worker-1", "new": "worker-a"}`},
+	{"rename_id-quoted", `{"op": "rename_id", "type": "node", "old": "pool", "new": "gpu/pool"}`},
+	{"rename_id-unquote", `{"op": "rename_id", "type": "node", "old": "kube-system/dns", "new": "dns"}`},
+	{"rename_id-special", `[{"op": "rename_id", "type": "node", "old": "kube-system/dns", "new": "a%b:c#d$e\\f"}, {"op": "move", "view": "main", "id": "a%b:c#d$e\\f", "x": 0, "y": 500}]`},
+	{"rename_id-from-special", `[{"op": "rename_id", "type": "node", "old": "kube-system/dns", "new": "a%b:c#d$e\\f"}, {"op": "move", "view": "main", "id": "a%b:c#d$e\\f", "x": 0, "y": 500}, {"op": "rename_id", "type": "node", "old": "a%b:c#d$e\\f", "new": "dns"}]`},
+	{"rename_id-edge", `{"op": "rename_id", "type": "edge", "old": "gw-w1", "new": "gateway-rpc"}`},
+	{"rename_id-view", `{"op": "rename_id", "type": "view", "old": "calls", "new": "rpc"}`},
+	{"create_view", `{"op": "create_view", "id": "storage", "title": "Storage", "include": ["kind.storage", "node[\"kube-system/dns\"]"], "edges": []}`},
+	{"create_view-overlays", `{"op": "create_view", "id": "incident", "direction": "right", "collapse": ["node.rack"], "overlays": [{"id": "blast", "members": ["tag.edge", "node[\"worker-1\"]"], "style": "hull", "label": "Blast radius"}], "styles": [{"label": "tag.edge", "props": {"fill": "#FCE8E6"}}]}`},
+	{"update_view", `{"op": "update_view", "id": "calls", "title": "Calls", "collapse": ["node.pool"], "direction": "right", "overlays": [{"id": "hot", "members": ["node.gateway"], "label": "Hot"}], "unset": ["edges"]}`},
+	{"update_view-styles", `{"op": "update_view", "id": "calls", "styles": [{"label": "node.gateway", "props": {"fill": "#FFEEEE"}}, {"label": "tag.edge", "props": {"stroke_dash": [4, 2], "stroke_width": 2}}, {"type": "edge_style", "label": "edge.gw-w1", "props": {"stroke": "#D93025", "animate": "flow"}}]}`},
+	{"update_view-one-line", `{"op": "update_view", "id": "main", "collapse": ["node.rack"]}`},
+	{"update_view-unset", `{"op": "update_view", "id": "pool", "unset": ["of", "title"]}`},
+	{"delete_view", `{"op": "delete_view", "id": "calls"}`},
+	{"add_decoration", `{"op": "add_decoration", "view": "solo", "decoration": {"type": "band", "x": -21, "y": -19, "w": 200, "h": 100, "z": -2, "fill": "#FCE8E6", "stroke_dash": [4, 2]}}`},
+	{"add_decoration-new-layout", `{"op": "add_decoration", "view": "pool", "id": "hello", "decoration": {"type": "text", "text": "Hi", "attach": "worker-1", "dx": 0, "dy": -40}}`},
+	{"update_decoration", `{"op": "update_decoration", "view": "solo", "id": "note", "decoration": {"x": 10, "y": 20, "font_size": 12}, "unset": ["attach", "dx", "dy"]}`},
+	{"delete_decoration", `{"op": "delete_decoration", "view": "solo", "id": "flow"}`},
+	{"promote_decoration", `{"op": "promote_decoration", "view": "solo", "id": "title", "kind": "note"}`},
+	{"promote_decoration-in-frame", `[{"op": "update_view", "id": "solo", "include": ["node.gateway", "node.pool"]}, {"op": "promote_decoration", "view": "solo", "id": "shelf", "kind": "group", "new": "shelf", "label": "Shelf"}]`},
+	{"batch", `[{"op": "create_node", "kind": "service", "view": "calls"}, {"op": "set_label", "id": "service", "label": "Search"}, {"op": "connect", "from": {"node": "search"}, "to": {"node": "gateway"}, "view": "calls"}]`},
+}
+
 // TestGolden applies each operation to a copy of testdata/ops/in and compares the files it
 // writes with testdata/ops/want/<case> (a removed file is <path>.removed); every other file must
 // be unchanged. Undo then restores every file byte for byte, and redo writes the same files
 // again.
 func TestGolden(t *testing.T) {
-	tests := []struct{ name, op string }{
-		{"create_node", `{"op": "create_node", "kind": "service", "label": "Billing API"}`},
-		{"create_node-in-view", `{"op": "create_node", "kind": "worker", "label": "Worker 3", "parent": "pool", "view": "calls", "x": 24, "y": 36}`},
-		{"create_node-in-one-line-view", `{"op": "create_node", "kind": "service", "label": "Solo", "view": "solo"}`},
-		{"create_node-quoted-id", `{"op": "create_node", "id": "ns/cache", "kind": "database"}`},
-		{"create_node-from-kind", `{"op": "create_node", "kind": "service"}`},
-		{"delete_node", `{"op": "delete_node", "id": "worker-1"}`},
-		{"delete_node-children", `{"op": "delete_node", "id": "rack"}`},
-		{"delete_node-in-list", `{"op": "delete_node", "id": "worker-2"}`},
-		{"delete_node-recursive", `{"op": "delete_node", "id": "rack", "recursive": true}`},
-		{"set_label", `{"op": "set_label", "id": "gateway", "label": "Front Door\n(public)"}`},
-		{"set_parent", `{"op": "set_parent", "id": "gateway", "parent": "pool"}`},
-		{"set_parent-remove", `{"op": "set_parent", "id": "worker-2"}`},
-		{"set_kind", `{"op": "set_kind", "id": "kube-system/dns", "kind": "database"}`},
-		{"set_kind-edge", `{"op": "set_kind", "type": "edge", "id": "w1-w2", "kind": "default"}`},
-		{"set_tags", `{"op": "set_tags", "id": "worker-2", "tags": ["critical", "new"]}`},
-		{"set_tags-remove", `{"op": "set_tags", "id": "gateway", "tags": []}`},
-		{"set_tags-edge", `{"op": "set_tags", "type": "edge", "id": "dns-gw", "tags": ["hot"]}`},
-		{"set_props", `{"op": "set_props", "id": "worker-2", "props": {"gpus": 4}}`},
-		{"set_props-remove", `{"op": "set_props", "id": "worker-1", "props": {}}`},
-		{"add_port", `{"op": "add_port", "id": "worker-2", "name": "nic0", "side": "left"}`},
-		{"add_port-quoted", `{"op": "add_port", "id": "gateway", "name": "http/2"}`},
-		{"add_port-one-line", `{"op": "add_port", "id": "cache", "name": "sql"}`},
-		{"set_label-one-line", `{"op": "set_label", "id": "cache", "label": "Cache"}`},
-		{"set_parent-new", `{"op": "set_parent", "id": "cache", "parent": "rack"}`},
-		{"remove_port", `{"op": "remove_port", "id": "worker-1", "name": "nic1"}`},
-		{"set_rows", `{"op": "set_rows", "id": "orders", "compartments": [{"rows": [{"name": "id", "type": "uuid", "key": "pk"}, {"name": "total"}]}]}`},
-		{"set_rows-compartments", `{"op": "set_rows", "id": "orders", "compartments": [{"name": "keys", "rows": [{"name": "id", "key": "pk"}]}, {"name": "methods", "rows": [{"name": "save()"}]}]}`},
-		{"connect", `{"op": "connect", "from": {"node": "gateway"}, "to": {"node": "orders", "row": "id"}, "kind": "async", "labels": {"start": "1", "end": "0..*"}, "tags": ["hot"]}`},
-		{"connect-in-view", `{"op": "connect", "id": "gw-pool", "from": {"node": "gateway"}, "to": {"node": "pool"}, "view": "calls"}`},
-		{"connect-port", `{"op": "connect", "from": {"node": "worker-2"}, "to": {"node": "worker-1", "port": "nic1"}, "labels": {"mid": "sync"}}`},
-		{"disconnect", `{"op": "disconnect", "id": "gw-w1"}`},
-		{"set_edge_labels", `{"op": "set_edge_labels", "id": "w1-w2", "labels": {"mid": "jobs", "end": "*"}}`},
-		{"set_edge_labels-remove", `{"op": "set_edge_labels", "id": "gw-w1"}`},
-		{"move", `{"op": "move", "view": "main", "id": "gateway", "x": 105, "y": -3}`},
-		{"move-new", `{"op": "move", "view": "main", "id": "worker-2", "x": 40, "y": 120}`},
-		{"move-new-layout", `{"op": "move", "view": "pool", "id": "worker-2", "x": 0, "y": 0}`},
-		{"resize", `{"op": "resize", "view": "main", "id": "pool", "w": 455, "h": 300}`},
-		{"unpin", `{"op": "unpin", "view": "main", "id": "worker-1"}`},
-		{"unpin-last", `{"op": "unpin", "view": "calls", "id": "gateway"}`},
-		{"pin_port", `{"op": "pin_port", "view": "main", "id": "worker-1", "port": "nic0", "side": "bottom", "offset": 0.333}`},
-		{"set_edge_hint", `{"op": "set_edge_hint", "view": "main", "id": "w1-w2", "hint": {"to_side": "top", "via": [[101, 49]], "label_pos": 0.25}}`},
-		{"set_edge_hint-remove", `{"op": "set_edge_hint", "view": "main", "id": "gw-w1", "hint": {}}`},
-		{"set_edge_hint-lift", `{"op": "set_edge_hint", "view": "main", "id": "lift:gateway:pool", "hint": {"to_side": "left"}}`},
-		{"rename_id-node", `{"op": "rename_id", "type": "node", "old": "worker-1", "new": "worker-a"}`},
-		{"rename_id-quoted", `{"op": "rename_id", "type": "node", "old": "pool", "new": "gpu/pool"}`},
-		{"rename_id-unquote", `{"op": "rename_id", "type": "node", "old": "kube-system/dns", "new": "dns"}`},
-		{"rename_id-edge", `{"op": "rename_id", "type": "edge", "old": "gw-w1", "new": "gateway-rpc"}`},
-		{"rename_id-view", `{"op": "rename_id", "type": "view", "old": "calls", "new": "rpc"}`},
-		{"create_view", `{"op": "create_view", "id": "storage", "title": "Storage", "include": ["kind.storage", "node[\"kube-system/dns\"]"], "edges": []}`},
-		{"batch", `[{"op": "create_node", "kind": "service", "view": "calls"}, {"op": "set_label", "id": "service", "label": "Search"}, {"op": "connect", "from": {"node": "search"}, "to": {"node": "gateway"}, "view": "calls"}]`},
-	}
+	tests := goldenOps
 	original := readTree(t, fixture)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -210,17 +227,39 @@ func TestRefused(t *testing.T) {
 		{"missing node", `{"op": "connect", "from": {"node": "nope"}, "to": {"node": "gateway"}}`, `node "nope" does not exist`},
 		{"missing port", `{"op": "connect", "from": {"node": "gateway", "port": "nope"}, "to": {"node": "pool"}}`, `Undefined port`},
 		{"duplicate node", `{"op": "create_node", "id": "pool", "kind": "group"}`, `node "pool" already exists`},
+		{"lift: edge ID", `{"op": "connect", "id": "lift:a:b", "from": {"node": "gateway"}, "to": {"node": "pool"}}`, `starts with lift:`},
+		{"rename edge to lift:", `{"op": "rename_id", "type": "edge", "old": "gw-w1", "new": "lift:x"}`, `starts with lift:`},
 		{"reserved ID", `{"op": "create_node", "id": "all", "kind": "group"}`, `is reserved`},
 		{"rename to an existing ID", `{"op": "rename_id", "type": "node", "old": "pool", "new": "rack"}`, `node "rack" already exists`},
 		{"rename to an invalid view ID", `{"op": "rename_id", "type": "view", "old": "calls", "new": "a/b"}`, `not a simple ID`},
 		{"not shown", `{"op": "move", "view": "calls", "id": "worker-2", "x": 0, "y": 0}`, `view "calls" does not show node "worker-2"`},
 		{"not pinned", `{"op": "resize", "view": "main", "id": "worker-2", "w": 10, "h": 10}`, `not pinned`},
 		{"not a port", `{"op": "pin_port", "view": "main", "id": "worker-1", "port": "nope", "side": "top"}`, `no port "nope"`},
+		{"lifted edge not drawn", `{"op": "set_edge_hint", "view": "main", "id": "lift:gateway:pool", "hint": {"to_side": "left"}}`, `draws no lifted edge from "gateway" to "pool"`},
 		{"edge not shown", `{"op": "set_edge_hint", "view": "calls", "id": "w1-w2", "hint": {"to_side": "top"}}`, `does not show edge`},
 		{"end not shown", `{"op": "connect", "from": {"node": "orders"}, "to": {"node": "gateway"}, "view": "calls"}`, `does not show node "orders"`},
 		{"far away", `{"op": "move", "view": "main", "id": "gateway", "x": 2000000000, "y": 0}`, `within`},
 		{"existing view", `{"op": "create_view", "id": "pool"}`, `view "pool" already exists`},
 		{"bad selector", `{"op": "create_view", "id": "v", "include": ["edge.gw-w1"]}`, `not a selector`},
+		{"unset unknown", `{"op": "update_view", "id": "main", "unset": ["color"]}`, `unset names attributes of a view`},
+		{"set and unset", `{"op": "update_view", "id": "main", "title": "T", "unset": ["title"]}`, `title is both set and unset`},
+		{"update undefined view", `{"op": "update_view", "id": "nope", "title": "T"}`, `view "nope" does not exist`},
+		{"bad direction", `{"op": "update_view", "id": "main", "direction": "sideways"}`, `direction is one of`},
+		{"bad style value", `{"op": "update_view", "id": "main", "styles": [{"label": "node.gateway", "props": {"fill": "red"}}]}`, `Invalid style value`},
+		{"unknown style property", `{"op": "update_view", "id": "main", "styles": [{"label": "node.gateway", "props": {"colour": "#FFF"}}]}`, `Unsupported argument`},
+		{"bad overlay member", `{"op": "update_view", "id": "main", "overlays": [{"id": "o", "members": ["edge.gw-w1"]}]}`, `not a selector`},
+		{"collapse a leaf", `{"op": "update_view", "id": "main", "collapse": ["node.gateway"]}`, `Not a container`},
+		{"delete undefined view", `{"op": "delete_view", "id": "nope"}`, `view "nope" does not exist`},
+		{"decoration without size", `{"op": "add_decoration", "view": "solo", "decoration": {"type": "rect"}}`, `needs w`},
+		{"duplicate decoration", `{"op": "add_decoration", "view": "solo", "id": "title", "decoration": {"type": "text", "text": "T"}}`, `already has a decoration "title"`},
+		{"decoration bad color", `{"op": "update_decoration", "view": "solo", "id": "title", "decoration": {"fill": "red"}}`, `Invalid layout`},
+		{"attach to nothing", `{"op": "add_decoration", "view": "solo", "decoration": {"type": "text", "text": "T", "attach": "nope"}}`, `node "nope" does not exist`},
+		{"undefined decoration", `{"op": "delete_decoration", "view": "solo", "id": "nope"}`, `no decoration "nope"`},
+		{"promote attached", `{"op": "promote_decoration", "view": "solo", "id": "note", "kind": "note"}`, `attached to node "gateway"`},
+		{"promote from a hidden frame", `{"op": "promote_decoration", "view": "solo", "id": "shelf", "kind": "group"}`, `which view "solo" does not draw expanded`},
+		{"promote from a collapsed frame", `[{"op": "update_view", "id": "solo", "include": ["node.gateway", "node.pool"], "collapse": ["node.pool"]}, {"op": "promote_decoration", "view": "solo", "id": "shelf", "kind": "group"}]`, `does not draw expanded`},
+		{"promote from a leaf", `[{"op": "update_decoration", "view": "solo", "id": "shelf", "decoration": {"in": "gateway"}}, {"op": "promote_decoration", "view": "solo", "id": "shelf", "kind": "group"}]`, `"gateway", which is not a container`},
+		{"promote arrow", `{"op": "promote_decoration", "view": "solo", "id": "flow", "kind": "note"}`, `has no box`},
 		{"batch", `[{"op": "set_label", "id": "gateway", "label": "G"}, {"op": "set_label", "id": "nope", "label": "N"}]`, `operation 2 (set_label): node "nope" does not exist`},
 		{"batch with an error", `[{"op": "set_label", "id": "gateway", "label": "G"}, {"op": "set_kind", "id": "pool", "kind": "service"}]`, `Parent is not a container`},
 	}
@@ -461,5 +500,98 @@ func TestCommitOutside(t *testing.T) {
 		if len(entries) > 1 || d == outside && len(entries) > 0 {
 			t.Errorf("%s holds %v", d, entries)
 		}
+	}
+}
+
+// TestReadOnlyViews checks that view and decoration operations refuse to write a read-only
+// views.hcl or layout file, naming it, and write nothing.
+func TestReadOnlyViews(t *testing.T) {
+	tests := []struct{ readOnly, op, file string }{
+		{"views.hcl", `{"op": "create_view", "id": "v"}`, "views.hcl"},
+		{"views.hcl", `{"op": "update_view", "id": "main", "title": "T"}`, "views.hcl"},
+		{"views.hcl", `{"op": "delete_view", "id": "main"}`, "views.hcl"},
+		{"views/*", `{"op": "delete_view", "id": "main"}`, "views/main.layout.yaml"},
+		{"views/*", `{"op": "add_decoration", "view": "main", "decoration": {"type": "text", "text": "T"}}`, "views/main.layout.yaml"},
+		{"views/*", `{"op": "update_decoration", "view": "main", "id": "t", "decoration": {"x": 10}}`, "views/main.layout.yaml"},
+		{"views/*", `{"op": "delete_decoration", "view": "main", "id": "t"}`, "views/main.layout.yaml"},
+		{"views/*", `{"op": "promote_decoration", "view": "main", "id": "t", "kind": "note"}`, "views/main.layout.yaml"},
+		{"model.hcl", `{"op": "promote_decoration", "view": "main", "id": "t", "kind": "note"}`, "model.hcl"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.op, func(t *testing.T) {
+			dir := t.TempDir()
+			files := map[string]string{
+				"dg.hcl":                 fmt.Sprintf("project \"p\" {\n  models    = [\"model.hcl\"]\n  read_only = [%q]\n}\n", tt.readOnly),
+				"model.hcl":              "node \"a\" {}\n",
+				"views.hcl":              "view \"main\" {}\n",
+				"views/main.layout.yaml": "version: 1\ndecorations:\n  - {id: t, type: text, x: 0, y: 0, text: T}\n",
+			}
+			for name, src := range files {
+				if err := errors.Join(os.MkdirAll(filepath.Dir(filepath.Join(dir, name)), 0o755), os.WriteFile(filepath.Join(dir, name), []byte(src), 0o644)); err != nil {
+					t.Fatal(err)
+				}
+			}
+			before := readTree(t, dir)
+			_, err := Apply(dir, mustDecode(t, tt.op), NewSession())
+			if err == nil || !strings.Contains(err.Error(), tt.file+" is read-only") {
+				t.Fatalf("error %v, want %s is read-only", err, tt.file)
+			}
+			sameTree(t, readTree(t, dir), before, "after the refusal")
+		})
+	}
+}
+
+// TestUpdateViewKeepsOverlays checks that update_view leaves an overlay block it does not change
+// as it is written, comments included, and replaces the others.
+func TestUpdateViewKeepsOverlays(t *testing.T) {
+	dir := t.TempDir()
+	views := "view \"v\" {\n  overlay \"keep\" {\n    members = [node.a] # the first\n  }\n\n  overlay \"gone\" {\n    members = [node.a]\n  }\n}\n"
+	for name, src := range map[string]string{"model.hcl": "node \"a\" {}\n", "views.hcl": views} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(src), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	op := `{"op": "update_view", "id": "v", "overlays": [{"id": "keep", "members": ["node.a"]}, {"id": "new", "members": ["all"], "label": "All"}]}`
+	if _, err := Apply(dir, mustDecode(t, op), NewSession()); err != nil {
+		t.Fatal(err)
+	}
+	got, err := os.ReadFile(filepath.Join(dir, "views.hcl"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "view \"v\" {\n  overlay \"keep\" {\n    members = [node.a] # the first\n  }\n  overlay \"new\" {\n    members = [all]\n    label   = \"All\"\n  }\n}\n"
+	if string(got) != want {
+		t.Errorf("views.hcl:\n%s\nwant:\n%s", got, want)
+	}
+}
+
+// TestStaysCanonical applies each golden operation to the fixture in canonical form (dg fmt)
+// and checks that every file it writes is still canonical.
+func TestStaysCanonical(t *testing.T) {
+	for _, tt := range goldenOps {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := copyFixture(t)
+			p, _, err := project.Load(dir)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, _, err := Format(p, false); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := Apply(dir, mustDecode(t, tt.op), NewSession()); err != nil {
+				t.Fatal(err)
+			}
+			if p, _, err = project.Load(dir); err != nil {
+				t.Fatal(err)
+			}
+			changed, _, err := Format(p, true)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, name := range changed {
+				data, _ := os.ReadFile(filepath.Join(dir, name))
+				t.Errorf("%s is not canonical after the operation:\n%s", name, data)
+			}
+		})
 	}
 }

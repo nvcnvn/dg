@@ -1,0 +1,594 @@
+{
+  "view": "components",
+  "grid": 10,
+  "breadcrumbs": [
+    [
+      "main"
+    ],
+    [
+      "containers"
+    ]
+  ],
+  "nodes": [
+    {
+      "id": "accounts",
+      "kind": "component",
+      "label": "Accounts Summary Controller\n[Component: Spring MVC Rest Controller]\n\nProvides customers with a summary of their bank accounts.",
+      "frame": "api",
+      "style": {
+        "shape": "rounded",
+        "fill": "#85BBF0",
+        "stroke": "#78A8D8",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#000000",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 12,
+        "min_w": 200,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "api",
+      "kind": "app-host",
+      "label": "API Application\n[Container: Java and Spring MVC]\n\nProvides Internet banking functionality via a JSON/HTTPS API.",
+      "container": true,
+      "style": {
+        "shape": "rect",
+        "fill": "none",
+        "stroke": "#444444",
+        "stroke_width": 1,
+        "stroke_dash": [
+          8,
+          4
+        ],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#444444",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 20,
+        "min_w": 200,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "database",
+      "kind": "store",
+      "label": "Database\n[Container: Oracle Database Schema]\n\nStores user registration information, hashed authentication credentials, access logs, etc.",
+      "style": {
+        "shape": "cylinder",
+        "fill": "#438DD5",
+        "stroke": "#3C7FC0",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#FFFFFF",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 12,
+        "min_w": 200,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "email",
+      "kind": "external-system",
+      "label": "E-mail System\n[Software System]\n\nThe internal Microsoft Exchange e-mail system.",
+      "style": {
+        "shape": "rounded",
+        "fill": "#999999",
+        "stroke": "#8A8A8A",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#FFFFFF",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 12,
+        "min_w": 200,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "facade",
+      "kind": "component",
+      "label": "Mainframe Banking System Facade\n[Component: Spring Bean]\n\nA facade onto the mainframe banking system.",
+      "frame": "api",
+      "style": {
+        "shape": "rounded",
+        "fill": "#85BBF0",
+        "stroke": "#78A8D8",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#000000",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 12,
+        "min_w": 200,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "mailer",
+      "kind": "component",
+      "label": "E-mail Component\n[Component: Spring Bean]\n\nSends e-mails to users.",
+      "frame": "api",
+      "style": {
+        "shape": "rounded",
+        "fill": "#85BBF0",
+        "stroke": "#78A8D8",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#000000",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 12,
+        "min_w": 200,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "mainframe",
+      "kind": "system",
+      "label": "Mainframe Banking System\n[Software System]\n\nStores all of the core banking information about customers, accounts, transactions, etc.",
+      "collapsed": true,
+      "style": {
+        "shape": "rounded",
+        "fill": "#999999",
+        "stroke": "#8A8A8A",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#FFFFFF",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 12,
+        "min_w": 200,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "mobile-app",
+      "kind": "app",
+      "label": "Mobile App\n[Container: Xamarin]\n\nProvides a limited subset of the Internet banking functionality to customers via their mobile device.",
+      "style": {
+        "shape": "rounded",
+        "fill": "#438DD5",
+        "stroke": "#3C7FC0",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#FFFFFF",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 12,
+        "min_w": 200,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "reset",
+      "kind": "component",
+      "label": "Reset Password Controller\n[Component: Spring MVC Rest Controller]\n\nAllows users to reset their passwords with a single use URL.",
+      "frame": "api",
+      "style": {
+        "shape": "rounded",
+        "fill": "#85BBF0",
+        "stroke": "#78A8D8",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#000000",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 12,
+        "min_w": 200,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "security",
+      "kind": "component",
+      "label": "Security Component\n[Component: Spring Bean]\n\nProvides functionality related to signing in, changing passwords, etc.",
+      "frame": "api",
+      "style": {
+        "shape": "rounded",
+        "fill": "#85BBF0",
+        "stroke": "#78A8D8",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#000000",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 12,
+        "min_w": 200,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "signin",
+      "kind": "component",
+      "label": "Sign In Controller\n[Component: Spring MVC Rest Controller]\n\nAllows users to sign in to the Internet Banking System.",
+      "frame": "api",
+      "style": {
+        "shape": "rounded",
+        "fill": "#85BBF0",
+        "stroke": "#78A8D8",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#000000",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 12,
+        "min_w": 200,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "spa",
+      "kind": "app",
+      "label": "Single-Page Application\n[Container: JavaScript and Angular]\n\nProvides all of the Internet banking functionality to customers via their web browser.",
+      "style": {
+        "shape": "rounded",
+        "fill": "#438DD5",
+        "stroke": "#3C7FC0",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#FFFFFF",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 12,
+        "min_w": 200,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "accounts-facade",
+      "kind": "uses",
+      "from": {
+        "node": "accounts"
+      },
+      "to": {
+        "node": "facade"
+      },
+      "labels": {
+        "mid": "Uses"
+      },
+      "style": {
+        "stroke": "#707070",
+        "stroke_width": 1.5,
+        "stroke_dash": [
+          6,
+          4
+        ],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 11
+      }
+    },
+    {
+      "id": "lift:facade:mainframe",
+      "edges": [
+        "facade-core"
+      ],
+      "kind": "uses",
+      "from": {
+        "node": "facade"
+      },
+      "to": {
+        "node": "mainframe"
+      },
+      "labels": {
+        "mid": "Makes API calls to\n[XML/HTTPS]"
+      },
+      "style": {
+        "stroke": "#707070",
+        "stroke_width": 1.5,
+        "stroke_dash": [
+          6,
+          4
+        ],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 11
+      }
+    },
+    {
+      "id": "mailer-email",
+      "kind": "uses",
+      "from": {
+        "node": "mailer"
+      },
+      "to": {
+        "node": "email"
+      },
+      "labels": {
+        "mid": "Sends e-mail using"
+      },
+      "style": {
+        "stroke": "#707070",
+        "stroke_width": 1.5,
+        "stroke_dash": [
+          6,
+          4
+        ],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 11
+      }
+    },
+    {
+      "id": "mobile-accounts",
+      "kind": "uses",
+      "from": {
+        "node": "mobile-app"
+      },
+      "to": {
+        "node": "accounts"
+      },
+      "labels": {
+        "mid": "Makes API calls to\n[JSON/HTTPS]"
+      },
+      "style": {
+        "stroke": "#707070",
+        "stroke_width": 1.5,
+        "stroke_dash": [
+          6,
+          4
+        ],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 11
+      }
+    },
+    {
+      "id": "mobile-signin",
+      "kind": "uses",
+      "from": {
+        "node": "mobile-app"
+      },
+      "to": {
+        "node": "signin"
+      },
+      "labels": {
+        "mid": "Makes API calls to\n[JSON/HTTPS]"
+      },
+      "style": {
+        "stroke": "#707070",
+        "stroke_width": 1.5,
+        "stroke_dash": [
+          6,
+          4
+        ],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 11
+      }
+    },
+    {
+      "id": "reset-mailer",
+      "kind": "uses",
+      "from": {
+        "node": "reset"
+      },
+      "to": {
+        "node": "mailer"
+      },
+      "labels": {
+        "mid": "Uses"
+      },
+      "style": {
+        "stroke": "#707070",
+        "stroke_width": 1.5,
+        "stroke_dash": [
+          6,
+          4
+        ],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 11
+      }
+    },
+    {
+      "id": "reset-security",
+      "kind": "uses",
+      "from": {
+        "node": "reset"
+      },
+      "to": {
+        "node": "security"
+      },
+      "labels": {
+        "mid": "Uses"
+      },
+      "style": {
+        "stroke": "#707070",
+        "stroke_width": 1.5,
+        "stroke_dash": [
+          6,
+          4
+        ],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 11
+      }
+    },
+    {
+      "id": "security-database",
+      "kind": "uses",
+      "from": {
+        "node": "security"
+      },
+      "to": {
+        "node": "database"
+      },
+      "labels": {
+        "mid": "Reads from and writes to\n[SQL/TCP]"
+      },
+      "style": {
+        "stroke": "#707070",
+        "stroke_width": 1.5,
+        "stroke_dash": [
+          6,
+          4
+        ],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 11
+      }
+    },
+    {
+      "id": "signin-security",
+      "kind": "uses",
+      "from": {
+        "node": "signin"
+      },
+      "to": {
+        "node": "security"
+      },
+      "labels": {
+        "mid": "Uses"
+      },
+      "style": {
+        "stroke": "#707070",
+        "stroke_width": 1.5,
+        "stroke_dash": [
+          6,
+          4
+        ],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 11
+      }
+    },
+    {
+      "id": "spa-accounts",
+      "kind": "uses",
+      "from": {
+        "node": "spa"
+      },
+      "to": {
+        "node": "accounts"
+      },
+      "labels": {
+        "mid": "Makes API calls to\n[JSON/HTTPS]"
+      },
+      "style": {
+        "stroke": "#707070",
+        "stroke_width": 1.5,
+        "stroke_dash": [
+          6,
+          4
+        ],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 11
+      }
+    },
+    {
+      "id": "spa-reset",
+      "kind": "uses",
+      "from": {
+        "node": "spa"
+      },
+      "to": {
+        "node": "reset"
+      },
+      "labels": {
+        "mid": "Makes API calls to\n[JSON/HTTPS]"
+      },
+      "style": {
+        "stroke": "#707070",
+        "stroke_width": 1.5,
+        "stroke_dash": [
+          6,
+          4
+        ],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 11
+      }
+    },
+    {
+      "id": "spa-signin",
+      "kind": "uses",
+      "from": {
+        "node": "spa"
+      },
+      "to": {
+        "node": "signin"
+      },
+      "labels": {
+        "mid": "Makes API calls to\n[JSON/HTTPS]"
+      },
+      "style": {
+        "stroke": "#707070",
+        "stroke_width": 1.5,
+        "stroke_dash": [
+          6,
+          4
+        ],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 11
+      }
+    }
+  ]
+}

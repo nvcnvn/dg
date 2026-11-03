@@ -20,7 +20,8 @@ func TestResolveExamples(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, dir := range dirs {
+	// testdata/lift has a view for each lifting and merging case of spec 8.3.
+	for _, dir := range append(dirs, filepath.Join("..", "..", "testdata", "lift")) {
 		p, diags, err := project.Load(dir)
 		if err != nil || diags.HasErrors() {
 			t.Fatalf("load %s: %v %v", dir, err, diags)

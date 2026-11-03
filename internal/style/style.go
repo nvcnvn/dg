@@ -48,6 +48,16 @@ type Edge struct {
 	Animate     string    `json:"animate,omitempty"`
 }
 
+// Overlay is the computed style of an overlay.
+type Overlay struct {
+	Fill        string    `json:"fill"`
+	Stroke      string    `json:"stroke"`
+	StrokeWidth float64   `json:"stroke_width"`
+	StrokeDash  []float64 `json:"stroke_dash"`
+	Opacity     float64   `json:"opacity"`
+	Padding     float64   `json:"padding"`
+}
+
 // Setting is one property value of a rule and where it is set.
 type Setting struct {
 	Value cty.Value
@@ -388,6 +398,18 @@ func DrawnEdge(props map[string]Setting) Edge {
 		Routing:     str(props, "routing"),
 		FontSize:    num(props, "font_size"),
 		Animate:     animate(props),
+	}
+}
+
+// DrawnOverlay returns an overlay's style from its settings.
+func DrawnOverlay(props map[string]Setting) Overlay {
+	return Overlay{
+		Fill:        str(props, "fill"),
+		Stroke:      str(props, "stroke"),
+		StrokeWidth: num(props, "stroke_width"),
+		StrokeDash:  list(props, "stroke_dash"),
+		Opacity:     num(props, "opacity"),
+		Padding:     num(props, "padding"),
 	}
 }
 

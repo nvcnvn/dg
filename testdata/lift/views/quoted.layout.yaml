@@ -1,0 +1,3 @@
+version: 1
+edge_hints:
+  lift:client:rack%3Aa%25b%23c: {from_side: bottom}

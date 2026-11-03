@@ -15,8 +15,11 @@ export interface Size {
 
 export interface Box extends Point, Size {}
 
-// GAP separates an icon or picture from the label under it.
+// GAP separates an icon or picture from the label under it, and a label from the collapse badge
+// under it.
 export const GAP = 4;
+// BADGE is the side of a collapsed container's "+" badge and of a drill-down badge.
+export const BADGE = 12;
 
 export function ceilTo(v: number, grid: number): number {
   return Math.ceil(v / grid) * grid;
@@ -62,6 +65,10 @@ export function measureNode(n: ViewNode, m: TextMeasure, grid: number, custom?: 
   const picture = s.shape === 'image' && !n.container ? pictureSide(s.font_size) : 0;
   const top = Math.max(icon, picture);
   const content = { w: Math.max(text?.w ?? 0, top), h: top + (top && text ? GAP : 0) + (text?.h ?? 0) };
+  if (n.collapsed) {
+    content.w = Math.max(content.w, BADGE);
+    content.h += (content.h ? GAP : 0) + BADGE;
+  }
   const pin = n.pin;
 
   if (n.container) {
@@ -93,6 +100,14 @@ export function measureNode(n: ViewNode, m: TextMeasure, grid: number, custom?: 
   }
   size = { w: pin?.w ?? size.w, h: pin?.h ?? size.h };
   return { text, icon, picture, content, size, origin: { x: 0, y: 0 }, table };
+}
+
+// drillBadge returns where a node's drill-down badge goes: the top right corner of its content
+// area, or of its box for a container.
+export function drillBadge(n: ViewNode, b: Box, custom?: CustomShape): Box {
+  const area = n.container ? b : innerBox(n.style.shape, b, custom);
+  const inset = 3;
+  return { x: Math.round(area.x + area.w - BADGE - inset), y: Math.round(area.y + inset), w: BADGE, h: BADGE };
 }
 
 // containerSize fits a container to its label and its children, whose boxes are relative to
@@ -184,6 +199,8 @@ export interface ContentLayout {
   align: 'center' | 'left';
   icon?: Box;
   picture?: Box;
+  // badge is the "+" badge of a collapsed container, under its label.
+  badge?: Box;
 }
 
 // contentLayout lays out a node's content in box b: a container's at its top-left corner, its
@@ -208,5 +225,7 @@ export function contentLayout(n: ViewNode, m: NodeMeasure, b: Box, custom?: Cust
   }
   const top = area.y + (area.h - m.content.h) / 2;
   const icon = m.icon ? { x: area.x + (area.w - m.icon) / 2, y: top, w: m.icon, h: m.icon } : undefined;
-  return { textBox: { x: area.x, y: top + (icon ? m.icon + GAP : 0), w: area.w, h: th }, align: 'center', icon };
+  const textBox = { x: area.x, y: top + (icon ? m.icon + GAP : 0), w: area.w, h: th };
+  const badge = n.collapsed ? { x: Math.round(area.x + (area.w - BADGE) / 2), y: Math.round(textBox.y + th + (th ? GAP : 0)), w: BADGE, h: BADGE } : undefined;
+  return { textBox, align: 'center', icon, ...(badge ? { badge } : {}) };
 }

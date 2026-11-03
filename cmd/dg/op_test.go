@@ -70,6 +70,13 @@ func TestOp(t *testing.T) {
 		{args: []string{"op", "set_kind", "--id", "pool", "--kind", "service", "--json"}, code: 1, stdout: `"summary": "Parent is not a container"`},
 		{args: []string{"op", "batch"}, stdin: `[{"op": "create_node", "kind": "service", "label": "Search"}, {"op": "connect", "from": {"node": "search"}, "to": {"node": "api"}}]`, stdout: "create_node search\nconnect search-api\nwrote model.hcl\n"},
 		{args: []string{"op", "batch"}, stdin: `{"op": "unpin", "view": "main", "id": "pool"}`, stdout: "unpin pool\n"},
+		{args: []string{"op", "update_view", "--id", "main", "--collapse", "node.pool", "--direction", "right"}, stdout: "update_view main\nwrote views.hcl\n"},
+		{args: []string{"op", "update_view", "--id", "main", "--unset", "collapse", "--overlays", `[{"id": "hot", "members": ["tag.hot"], "label": "Hot"}]`}, stdout: "update_view main\nwrote views.hcl\n"},
+		{args: []string{"op", "add_decoration", "--view", "main", "--decoration", `{"type": "text", "x": 3, "y": -61, "text": "Title"}`}, stdout: "add_decoration text\nwrote views/main.layout.yaml\n"},
+		{args: []string{"op", "update_decoration", "--view", "main", "--id", "text", "--decoration", `{"font_size": 20}`}, stdout: "update_decoration text\nwrote views/main.layout.yaml\n"},
+		{args: []string{"op", "promote_decoration", "--view", "main", "--id", "text", "--kind", "note"}, stdout: "promote_decoration title x=0 y=-60\nwrote model.hcl\nwrote views/main.layout.yaml\n"},
+		{args: []string{"op", "create_view", "--id", "old"}, stdout: "create_view old\nwrote views.hcl\n"},
+		{args: []string{"op", "delete_view", "--id", "old"}, stdout: "delete_view old\nwrote views.hcl\n"},
 		{args: []string{"op", "move", "-C", filepath.Join(dir, "missing"), "--view", "main", "--id", "a", "--x", "0", "--y", "0"}, code: 2},
 	}
 	for _, st := range steps {
@@ -110,12 +117,12 @@ func withStdin(t *testing.T, input string, f func() int) int {
 	return f()
 }
 
-// rebuild runs testdata/rebuild/c4-container.sh into a new directory with this test binary as
-// dg, applying the operations or, with record set, recording them there.
-func rebuild(t *testing.T, record string) string {
+// rebuild runs testdata/rebuild/<example>.sh into a new directory with this test binary as dg,
+// applying the operations or, with record set, recording them there.
+func rebuild(t *testing.T, example, record string) string {
 	t.Helper()
 	dir := t.TempDir()
-	cmd := exec.Command("bash", "../../testdata/rebuild/c4-container.sh", dir)
+	cmd := exec.Command("bash", "../../testdata/rebuild/"+example+".sh", dir)
 	cmd.Env = append(os.Environ(), "DG="+os.Args[0], "DG_TEST_AS_DG=1", "DG_TEST_RECORD="+record)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("the script failed: %v\n%s", err, out)
@@ -129,30 +136,45 @@ var c4Goldens = map[string]string{
 	"sign-in": "../../testdata/export/c4-container-sign-in.svg",
 }
 
-// TestRebuild rebuilds examples/c4-container with dg op alone and exports every view, which
-// must match the goldens of the example.
+// TestRebuild rebuilds examples with dg op alone and exports every view, which must match the
+// goldens of the example.
 func TestRebuild(t *testing.T) {
 	if testing.Short() {
 		t.Skip("starts Chromium")
 	}
-	dir := rebuild(t, "")
-	var stdout, stderr bytes.Buffer
-	if code := run([]string{"check", "--strict", "-C", dir}, &stdout, &stderr); code != 0 {
-		t.Fatalf("dg check: %s%s", stdout.String(), stderr.String())
-	}
-	out := t.TempDir()
-	if code := run([]string{"export", "-C", dir, "--all", "--out", out}, &stdout, &stderr); code != 0 {
-		t.Fatalf("dg export: %s", stderr.String())
-	}
-	for v, golden := range c4Goldens {
-		got, _ := os.ReadFile(filepath.Join(out, v+".svg"))
-		want, err := os.ReadFile(golden)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !bytes.Equal(got, want) {
-			t.Errorf("view %s differs from %s", v, golden)
-		}
+	for example, goldens := range map[string]map[string]string{
+		"c4-container": c4Goldens,
+		"c4": {
+			"main":       "../../testdata/export/c4.svg",
+			"containers": "../../testdata/export/c4-containers.svg",
+			"components": "../../testdata/export/c4-components.svg",
+		},
+		"incident": {
+			"main":     "../../testdata/export/incident.svg",
+			"incident": "../../testdata/export/incident-incident.svg",
+		},
+	} {
+		t.Run(example, func(t *testing.T) {
+			dir := rebuild(t, example, "")
+			var stdout, stderr bytes.Buffer
+			if code := run([]string{"check", "--strict", "-C", dir}, &stdout, &stderr); code != 0 {
+				t.Fatalf("dg check: %s%s", stdout.String(), stderr.String())
+			}
+			out := t.TempDir()
+			if code := run([]string{"export", "-C", dir, "--all", "--out", out}, &stdout, &stderr); code != 0 {
+				t.Fatalf("dg export: %s", stderr.String())
+			}
+			for v, golden := range goldens {
+				got, _ := os.ReadFile(filepath.Join(out, v+".svg"))
+				want, err := os.ReadFile(golden)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !bytes.Equal(got, want) {
+					t.Errorf("view %s differs from %s", v, golden)
+				}
+			}
+		})
 	}
 }
 
@@ -163,7 +185,7 @@ func TestRebuildMCP(t *testing.T) {
 		t.Skip("starts Chromium")
 	}
 	record := filepath.Join(t.TempDir(), "ops.jsonl")
-	dir := rebuild(t, record)
+	dir := rebuild(t, "c4-container", record)
 	lines, err := os.ReadFile(record)
 	if err != nil {
 		t.Fatal(err)
@@ -216,6 +238,10 @@ func FuzzOpArgs(f *testing.F) {
 		"create_view\x00--id\x00v\x00--include\x00node.a\x00--edges\x00edge_kind.k",
 		"move\x00--view\x00main\x00--id\x00a\x00--x\x001e3\x00--y\x00-0",
 		"set_tags\x00--id\x00a",
+		"update_view\x00--id\x00main\x00--collapse\x00node.g\x00--unset\x00edges\x00--overlays\x00[{\"id\":\"o\",\"members\":[\"all\"]}]\x00--direction\x00right",
+		"add_decoration\x00--view\x00main\x00--decoration\x00{\"type\":\"arrow\",\"points\":[[0,0],[1,1]]}",
+		"update_decoration\x00--view\x00main\x00--id\x00t\x00--unset\x00attach",
+		"promote_decoration\x00--view\x00main\x00--id\x00t\x00--kind\x00note\x00--new\x00n\x00--label\x00L",
 	} {
 		f.Add(seed)
 	}

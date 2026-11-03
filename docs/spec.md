@@ -269,11 +269,11 @@ shape "gpu-node" {
 
 **Node style properties:** `shape`, `fill`, `stroke`, `stroke_width`, `stroke_dash`, `corner_radius`, `opacity`, `text_color`, `font_size`, `font_weight`, `icon`, `image`, `padding`, `min_w`, `min_h`, `max_w`, `z`. `icon` and `image` (the picture for the `image` shape) take `file("…")`, an SVG resolved relative to the file that calls it; other picture formats are not supported. A picture (also a custom shape's `svg`) must be well-formed XML whose root element is `svg` in the SVG namespace, which a browser needs to draw it; otherwise `dg check` reports an error at the `file` call. The app draws pictures from `data:` URIs of that text.
 **Container properties:** `layout`, `direction` (`horizontal` | `vertical`), `gap`, `stretch`, `columns`, `align` (`start` | `center` | `end`), `label_side` (`top` | `left`; `left` draws the label rotated along the left edge, as on a swimlane).
-**Overlay style properties:** `fill`, `stroke`, `stroke_width`, `stroke_dash`, `opacity`, `padding`.
+**Overlay style properties:** `fill`, `stroke`, `stroke_width`, `stroke_dash`, `opacity`, `padding`. An overlay is styled by `overlay_style "hull"` with the properties of the overlay style it names set over it, so `hull` holds every default.
 **Values:** colors are `#RGB`, `#RRGGBB` or `none`; sizes, widths, gaps and padding are numbers of at least 0, `font_size` at least 1; `opacity` is 0–1; `font_weight` is 100–900 in steps of 100; `z` and `columns` are whole numbers; `stroke_dash` is a list of numbers.
 **Custom shapes:** a shape's name may not be a built-in shape. Each of its `anchors` must name a port of every kind whose style (by kind, section 8.4 step 1–2) uses the shape; ports without an anchor are placed by section 7.5. `text_box` defaults to `[0, 0, 1, 1]` and `stretch` to `nine-slice`. The picture's natural size is its `viewBox`, else its `width` and `height`, else 100 by 100. `nine-slice` cuts the picture a quarter of its width and height in from each edge: corners keep their natural size (scaled down only when the box is smaller than half the picture), edges stretch along their side, the center both ways. `uniform` scales the picture to fit and keeps the box at its aspect ratio; `none` draws it at its natural size, centered, in a box at least that large. A custom shape's `fill` and `stroke` are not drawn; the picture has its own.
 
-**Drawing:** labels break at `\n` and wrap at `max_w` minus twice `padding` (`max_w = 0`: no wrapping), by words, a word wider than the line broken between characters; lines are `ceil(1.4 × font_size)` apart. An `icon` is drawn above the label, `2 × font_size` square. The `image` shape draws its picture above the label, at least `6 × font_size` square, and no outline; `text` draws no outline. `point` and `bullseye` draw no label and are sized by `min_w` and `min_h`. `corner_radius` applies to `rounded`. `table` draws rows as section 5.4 says, and a node without rows as `rect`. Nodes are drawn in order of `z`, then depth in the containment tree, then ID; edges are drawn over nodes.
+**Drawing:** labels break at `\n` and wrap at `max_w` minus twice `padding` (`max_w = 0`: no wrapping), by words, a word wider than the line broken between characters; lines are `ceil(1.4 × font_size)` apart. An `icon` is drawn above the label, `2 × font_size` square. The `image` shape draws its picture above the label, at least `6 × font_size` square, and no outline; `text` draws no outline. `point` and `bullseye` draw no label and are sized by `min_w` and `min_h`. `corner_radius` applies to `rounded`. `table` draws rows as section 5.4 says, and a node without rows as `rect`. Expanded containers are drawn first, then the other nodes, each in order of `z`, then depth in the containment tree, then ID; overlays are drawn between the two (section 5.8), and edges over nodes. So `z` orders containers among containers and other nodes among other nodes: no `z` raises a container above a leaf.
 **Edge style properties:** `stroke`, `stroke_width`, `stroke_dash`, `arrow_start`, `arrow_end`, `routing`, `font_size`, `animate`.
 **Animation** (`animate`): `none` (default) or `flow`. `flow` draws the edge dashed (its `stroke_dash`, or `[6, 4]` when it has no value above 0) and moves the dashes along the route from `from` toward `to` by one dash period every half second, so every animated edge repeats with the same half-second period. The period is the pattern's length: the sum of its values, twice that for an odd number of values, which SVG repeats. At time `t` seconds the dash offset is `−period × 2t` (CSS `stroke-dashoffset` animated linearly from 0 to minus the period over 500 ms, repeating), so time 0 is the edge drawn still and the drawing at half a second equals it. Markers are never dashed. Animation is style, so it is selected by kind or tag (`edge_style "tag.hot" { animate = "flow" }`), never set in the model.
 **Arrow markers** (`arrow_start`, `arrow_end`): `none`, `arrow` (open), `triangle`, `triangle-open`, `diamond`, `diamond-open`, `circle`, `circle-open`, and crow's-foot `crow-one`, `crow-zero-one`, `crow-many`, `crow-one-many`, `crow-zero-many`. A marker lies along the last segment of the route at its end, in the edge's `stroke` and `stroke_width`, never dashed; `-open` markers are filled white, the others with the stroke color. Crow's-foot markers read outward from the node: `crow-one` two bars, `crow-zero-one` a bar then a ring, `crow-many` a foot spread across the end, `crow-one-many` a foot then a bar, `crow-zero-many` a foot then a ring.
@@ -356,9 +356,10 @@ view "pool" {
 }
 
 view "rdma" {
-  title   = "RDMA fabric"
-  include = [kind.gpu-node, kind.switch, kind.storage]
-  edges   = [edge_kind.rdma]
+  title     = "RDMA fabric"
+  include   = [kind.gpu-node, kind.switch, kind.storage]
+  edges     = [edge_kind.rdma]
+  direction = "right"                    # layers of the first layout run left to right (section 7.4)
 }
 
 view "incident" {
@@ -382,6 +383,10 @@ view "incident" {
 **Selectors** (used in `include`, `exclude`, `collapse`, overlay `members`): `all`, `node.<id>` / `node["<id>"]`, `kind.<kind>` (includes sub-kinds), `tag.<tag>`, `children.<id>` (direct children), `descendants.<id>`. `edges` uses `edge_kind.<kind>`, `tag.<tag>` and `edge.<id>`; by default all edges whose endpoints are both visible are included.
 
 `include` defaults to `[all]`, or to `[descendants.X]` when `of = node.X` is set.
+
+`direction` (`down`, `right`, `up` or `left`) sets the way the layers of the view's first layout run (section 7.4).
+
+View style rules (`style` and `edge_style` blocks in a view) take the labels of section 4.3, `node.<id>` and `edge.<id>` included, and apply only in that view (section 8.4).
 
 If no view is defined, the project behaves as if `views.hcl` contained `view "main" { include = [all] }`, so a model with no views still draws. The first operation that writes `views.hcl` writes that block out.
 
@@ -484,15 +489,20 @@ A node of the built-in kind `junction` (shape `point`, no label) used for buses 
 
 Types: `text`, `rect`, `ellipse`, `band` (shaded background area), `image`, `arrow` (unattached), `freehand` (SVG path).
 - IDs are unique within their view.
-- Fields: every type takes `x`, `y`, relative to the canvas or to the frame named by `in:`. `rect`, `ellipse`, `band` and `image` take `w`, `h`; `text` takes `text`; `image` takes `src` (a project-relative path); `arrow` takes `points` (a list of `[x, y]`); `freehand` takes `path` (SVG path data).
-- A decoration may set `fill`, `stroke`, `stroke_width`, `stroke_dash`, `opacity`, `text_color` and `font_size` inline.
-- `z`: draw order relative to nodes (negative = behind nodes; default `-1` for `band`, `1` otherwise).
-- `attach: <node-id>` with `dx`, `dy` (offset from the node's center) makes the decoration follow the node. It is not drawn while that node is not drawn.
-- **Promote to model**: converts a decoration into a model node; its geometry becomes the new node's placement in that view.
+- Fields: `text` takes `text`; `rect`, `ellipse` and `band` take `w` and `h`; `image` takes `src` (a project-relative path to an SVG file, which must be a picture as for `icon`, section 4.3) and `w`, `h`; `arrow` takes `points` (at least two `[x, y]`); `freehand` takes `path` (SVG path data: commands and numbers). Each of these is required by its type and refused on the others.
+- **Position:** `x`, `y` (default 0) relative to the canvas, or to the content origin of the node named by `in:` (a container's, else its box's top left corner). With `attach: <node-id>` the position is the node's center moved by `dx`, `dy` instead, so the decoration follows the node; an attached decoration takes neither `in` nor `x`, `y`, and `dx`, `dy` need `attach`.
+- **Geometry:** a box (`rect`, `ellipse`, `band`, `image`) or a text block has its top left corner at the position, or, attached, is centered on it. An arrow's points and a freehand path are relative to the position. Text breaks at `\n` only.
+- A decoration may set `fill`, `stroke`, `stroke_width`, `stroke_dash`, `opacity`, `text_color` and `font_size` inline. Defaults: `text` color `#202124`, `font_size` 14; `rect`, `ellipse`, `arrow` and `freehand` stroke `#5F6368`, width 1.5, no fill; `band` fill `#F1F3F4`, no stroke; `opacity` 1. An arrow has an `arrow` marker at its last point.
+- `z`: draw order relative to nodes: a negative `z` is drawn behind every node, any other over every node and edge, each group in order of `z`, then layout file order. Default `-1` for `band`, `1` otherwise.
+- A decoration is not drawn while its `attach` or `in` node is not drawn.
+- **Promote to model** (`promote_decoration`): converts a `text`, `rect`, `ellipse`, `band` or `image` decoration into a model node pinned at its position (and its `w`, `h`), labeled by the text of a `text` decoration; a decoration `in:` a container becomes a child of it. Attached decorations, arrows and freehand lines have no position a node can take, and a decoration `in:` a node that is not a container, or a container the view does not draw expanded, has no frame the node can take; these are refused.
 
 ### 5.8 Overlay (view only)
 
 A named outline drawn around the boxes of its members, computed at render time from selectors. Used for groupings that overlap or cut across containment. Never stored as geometry.
+- The outline is the convex hull of the member boxes grown by the style's `padding`, with round corners of that radius; its label is drawn above the left end of its top edge, at 12 pixels in the stroke color.
+- Overlays are drawn over expanded containers and under every other node, so an overlay's fill shows inside the containers it crosses.
+- Members hidden by a collapse are represented by their collapsed container; an overlay with no drawn member is not drawn (section 8.3).
 
 ---
 
@@ -502,7 +512,7 @@ A named outline drawn around the boxes of its members, computed at render time f
 
 - **Simple IDs:** match `^[A-Za-z_][A-Za-z0-9_-]*$`; referenced as `node.api`.
 - **Quoted IDs:** any other non-empty string up to 200 characters without control characters; referenced with index syntax `node["kube-system/coredns"]`. Intended for generated models.
-- Reserved, cannot be simple IDs: `all`, `node`, `kind`, `tag`, `children`, `descendants`, `edge_kind`, `port`, `row`, `lift`.
+- Reserved, cannot be simple IDs: `all`, `node`, `kind`, `tag`, `children`, `descendants`, `edge_kind`, `port`, `row`, `lift`. An edge ID may not start with `lift:`, which names lifted edges (section 8.3).
 - Node IDs and edge IDs are separate namespaces. Port and row names are unique within their node and may be simple or quoted.
 - Kind, edge kind, tag, view, overlay and decoration IDs must be simple IDs.
 
@@ -587,7 +597,7 @@ Set in style (`layout = ...`), applying to a container's **direct** children onl
 
 ### 7.4 Placement of unpinned nodes
 
-- If a view has **no** pinned nodes at all: run `elkjs` (layered algorithm) once, with nodes and edges given in sorted ID order, and `stack`/`grid` containers laid out by their policy first and passed as fixed-size boxes. Each edge carries the sizes of its start, middle and end labels, so the layers leave room for them, and self-loops of leaf nodes are passed too. Layers run top to bottom, except in a view where some edge ends at a row: rows attach at their left and right ends, so its layers run left to right, further apart to hold the markers at both ends of an edge. An edge with `triangle-open` at one end only (inheritance, realization) is given to elk from that end, so the general element is drawn above the specific ones. The result is not saved.
+- If a view has **no** pinned nodes at all: run `elkjs` (layered algorithm) once, with nodes and edges given in sorted ID order, and `stack`/`grid` containers laid out by their policy first and passed as fixed-size boxes. Each edge carries the sizes of its start, middle and end labels, so the layers leave room for them, and self-loops of leaf nodes are passed too. Layers run the way the view's `direction` says (section 4.5); without one, top to bottom, except in a view where some edge ends at a row: rows attach at their left and right ends, so its layers run left to right. Layers of a view with an edge at a row are further apart, to hold the markers at both ends of an edge. An edge with `triangle-open` at one end only (inheritance, realization) is given to elk from that end, so the general element is in an earlier layer than the specific ones (above them when the layers run down). The result is not saved.
 - Otherwise the spiral placer fills frames innermost first, so a container's size is known before it is placed. Within a frame, for each unpinned node in **sorted ID order**: start from the centroid of its already-placed neighbors in that frame (a neighbor in another frame counts as its ancestor in this frame, if any; fallback: the center of a container's pinned content area, else of what is already placed in the frame, else the frame's content origin), then search outward in a spiral on the grid until it keeps four grid units of clearance from everything placed in its frame, the room an edge and its label need between two boxes. Inside a container coordinates stay at least 0.
 - In a view with nothing pinned, the editor sends the first drag as one batch (FR-12) that pins every visible node where it is drawn, plus the drag itself. Otherwise pinning one node would hand every other node from the elk layout to the spiral placer and the picture would jump.
 - `dg op` has no geometry: a `move` from the command line pins only the node it names. Agents read drawn positions with `dg export --format json`, which gives every node's frame and its drawn position relative to that frame's content origin (`frame`, `rel`), the coordinates `move` takes. An agent that wants the elk layout kept pins every node at its `rel` in one batch, as the editor's first drag does.
@@ -634,16 +644,17 @@ A node is in a view if it matches `include` and not `exclude`, and is not inside
 ### 8.2 Drill-down
 
 `of = node.X` declares that a view shows the inside of container `X`.
-- In every other view, `X` shows a drill-down badge; clicking it opens the view. If several views have `of = node.X`, the editor shows a menu.
-- The editor shows breadcrumbs: for a view with `of = node.X`, the views whose `of` targets are ancestors of `X`, outermost first.
+- In every other view, `X` shows a drill-down badge (a magnifying glass in the top right corner of its content area, or of its box when it is expanded); clicking it opens the view. If several views have `of = node.X`, the editor shows a menu of them. The badge is a control of the editor: exports do not draw it (the collapse badge, which says the box holds more, they do).
+- The editor shows breadcrumbs for a view with `of = node.X`: the levels of views it leads back to, outermost first, then the view itself. The level above a view with `of = node.Y` is the views with `of` on the nearest ancestor of `Y` that some view targets, only those that draw `Y` when some do; when no ancestor of `Y` is targeted, it is the views without `of` that draw `Y`, collapsed or with its badge, and nothing is above that level. A level of one view is a link to it; a level of several is one crumb that opens a menu of them.
 
 ### 8.3 Collapse and edge lifting
 
-`collapse = [...]` draws each selected container as a single box with a "+" badge and hides its descendants, including collapsed ones.
-- An edge endpoint hidden inside a collapsed container is **lifted** to the outermost collapsed container that holds it (ports and rows are dropped).
+`collapse = [...]` draws each selected container as a single box with a "+" badge under its label and hides its descendants, including collapsed ones. A collapsed container is a leaf for sizing, placement and routing (sections 7.2, 7.5); the badge is part of its measured content.
+- The `edges` filter selects model edges before lifting.
+- An edge endpoint hidden inside a collapsed container is **lifted** to the outermost collapsed container that holds it (ports and rows are dropped); when that container is not visible either, the edge is not drawn.
 - An edge whose two drawn endpoints are the same collapsed container is hidden.
-- Lifted edges with the same drawn `from` and `to` are merged into one. With N = 1 it keeps its labels and style; with N > 1 it is labeled `×N` and styled by its edges' kind if they share one, otherwise by `default`.
-- A lifted edge's layout key is `lift:<from>:<to>` (in drawn direction, IDs encoded per section 4.6).
+- Lifted edges with the same drawn `from` and `to` are merged into one. With N = 1 it keeps its labels and style; with N > 1 it is labeled `×N` (a middle label) and styled by its edges' kind if they share one, otherwise by `default`, without their tags or `edge.<id>` rules. An end that was not lifted keeps the port or row its edges share. An edge drawn between the same nodes without lifting stays a separate edge.
+- A lifted edge's ID in the resolved view and its layout key is `lift:<from>:<to>` (in drawn direction, IDs encoded per section 4.6); the resolved edge lists the model edges it stands for.
 - An overlay member hidden by a collapse is represented by its drawn collapsed container. An overlay with no drawn members is not drawn.
 
 ### 8.4 Style cascade
@@ -721,11 +732,12 @@ Each requirement has acceptance criteria (AC).
 - rows declared on a kind without `rows = true`;
 - properties the kind does not declare, or of the wrong type;
 - unknown style properties or invalid style values;
+- decorations without a field their type requires, with a field it does not take, with invalid values, or whose picture cannot be read (section 5.7);
 - `of` or `collapse` naming a non-container;
 - layout files with no matching view definition.
 
 Warnings:
-- layout entries naming IDs that no longer exist (orphans);
+- layout entries naming IDs that no longer exist, and `lift:` hints of lifted edges the view does not draw (orphans);
 - style labels naming undefined kinds; selectors that match nothing;
 - stale frames (section 7.1);
 - `x`/`y` on children of `stack`/`grid` containers;
@@ -744,7 +756,7 @@ When a model file does not parse, references, selectors and layout entries are n
 
 ### B. Resolution (Go)
 
-**FR-4 Resolve a view.** Produce the resolved view: visible nodes with kind, label, merged style (section 8.4), frame, ports, rows, pin data from the layout (relative coordinates, order lists), collapse state, drill-down targets, read-only flags; visible and lifted edges with labels, style, hints; decorations; overlays with member IDs.
+**FR-4 Resolve a view.** Produce the resolved view: visible nodes with kind, label, merged style (section 8.4), frame, ports, rows, pin data from the layout (relative coordinates, order lists), collapse state, drill-down targets, read-only flags; visible and lifted edges with labels, style, hints; decorations with their defaults; overlays with member IDs and style; breadcrumbs and the view's `direction`.
 - AC: no absolute coordinates are computed in Go.
 - AC: lifting and merging follow section 8.3 exactly.
 
@@ -809,13 +821,17 @@ When a model file does not parse, references, selectors and layout entries are n
 | `reorder {view, container, order}` | update `order` |
 | `unpin {view, id}` | remove from `place` |
 | `pin_port {view, id, port, side, offset?}` | update `ports` in `place` of a pinned node; `offset` kept to two decimals |
-| `set_edge_hint {view, id, hint}` | replace the edge's entry in `edge_hints` (`id` may be a `lift:` key); `via` rounded to the grid, `label_pos` to two decimals; an empty hint removes it |
+| `set_edge_hint {view, id, hint}` | replace the edge's entry in `edge_hints` (`id` may be a `lift:` key); `via` rounded to the grid, `label_pos` to two decimals; an empty hint removes it; refused for an edge or lifted edge the view does not draw, unless the hint is empty |
 | `rename_id {type, old, new}` | atomic refactor of a node, edge or view ID (section 6.4) |
-| `create_view {id, title?, include?, exclude?, collapse?, edges?, of?}` / `update_view` / `delete_view {id, ...}` | edit `views.hcl` (selectors written as in it, such as `node.api` or `edge_kind.uses`); `delete_view` also removes its layout file |
-| `add_decoration` / `update_decoration` / `delete_decoration {view, ...}` | update `decorations` |
-| `promote_decoration {view, id, kind}` | create node, pin it, remove decoration |
+| `create_view {id, title?, include?, exclude?, collapse?, edges?, of?, direction?, overlays?, styles?}` | append a view block to `views.hcl` (selectors written as in it, such as `node.api` or `edge_kind.uses`; `overlays` a list of `{id, members, style?, label?}`; `styles` a list of view style rules `{type?: style or edge_style, label, props}`) |
+| `update_view {id, title?, include?, exclude?, collapse?, edges?, of?, direction?, overlays?, styles?, unset?}` | set the attributes given; `overlays` and `styles` replace the view's overlay blocks and style rules, keeping a block whose content is unchanged as it is; `unset` names attributes to remove (or `overlays`, `styles`); a new attribute goes before the view's nested blocks |
+| `delete_view {id}` | remove the view block and its layout file |
+| `add_decoration {view, id?, decoration}` | append a decoration (`decoration` holds its fields as in layout files, `type` required); the ID is generated from the type when omitted; coordinates and sizes rounded to the grid |
+| `update_decoration {view, id, decoration?, unset?}` | set the fields given, remove those `unset` names |
+| `delete_decoration {view, id}` | remove a decoration |
+| `promote_decoration {view, id, kind, new?, label?}` | create a node (ID `new`, else generated), pin it where the decoration was, remove the decoration (section 5.7) |
 
-Operations take JSON objects whose `op` field names the operation and whose other fields are its arguments; an unknown or missing field is an error. Coordinates and sizes lie within ±10⁹. New blocks go at the end of the file of the node they relate to (the parent, or the `from` node) when it is writable, else of the first writable model file, else of a new `model.hcl`, and are written in canonical format. An edit writes only the tokens it changes, spaced canonically and indented like their neighbors; a block on one line is first spread over several lines so it can take more; `rename_id` changes only the tokens of the names. Every other byte stays as it is, except that `hclwrite` keeps leading whitespace as a count of spaces, so a tab in an edited file becomes a space. A layout file left empty is removed.
+Operations take JSON objects whose `op` field names the operation and whose other fields are its arguments; an unknown or missing field is an error. Coordinates and sizes lie within ±10⁹. New blocks go at the end of the file of the node they relate to (the parent, or the `from` node) when it is writable, else of the first writable model file, else of a new `model.hcl`, and are written in canonical format. An edit writes only the tokens it changes, spaced canonically and indented like their neighbors, and aligns the `=` signs and trailing comments of the run of attributes it touches as `dg fmt` does, so a canonical file stays canonical; a block on one line is first spread over several lines so it can take more; `rename_id` changes only the tokens of the names. Every other byte stays as it is, except that `hclwrite` keeps leading whitespace as a count of spaces, so a tab in an edited file becomes a space. A layout file left empty is removed.
 
 Writers of one project are serialized: an operation, undo or redo holds a lock from reading the files to writing them, within the process and across processes (an advisory lock on the project directory, on Windows on a file in the user's cache directory named after the project's path, so no lock file is written into the project). A writer waits up to 10 seconds for another, then fails saying so. The check that files are unchanged since read still covers writers that take no lock, such as a text editor.
 
@@ -833,12 +849,12 @@ Writers of one project are serialized: an operation, undo or redo holds a lock f
 
 **FR-14 Export (`dg export --view <id> | --all --format svg|png|gif|json [--out path]`).** Go starts headless Chromium via `chromedp`, loads the embedded app in export mode, waits for geometry and routing, and reads back SVG, a PNG screenshot, a GIF, or JSON geometry (every node's box, port positions, the `y` of each row's line, whose ends are the box's left and right edges, and edge routes in canvas coordinates; and every node's `frame`, omitted for the canvas, and `rel`, its drawn position relative to the frame's content origin, as `move` takes it). With `--all`, `--out` is a directory that receives one `<view>.<format>` file per view, all written together, and nothing is written unless every view resolves. A picture the browser cannot draw fails the export, naming its node.
 - SVG keeps edge animation as CSS, in a `<style>` element. PNG and GIF are screenshots of the drawing on white, one pixel per unit; PNG shows the animation at time 0. GIF holds one half-second animation period as 10 frames of 50 milliseconds, looping forever; each frame is captured with the animation clock set to that frame's time, never the wall clock (the app pauses every animation at that time), and encoded with Go's `image/gif`: one palette of the 255 colors most frequent across the frames, each pixel the nearest of them without dithering, and in every frame after the first the pixels that did not change are transparent. The editor runs the same animation in real time.
-- AC: output matches the editor (no selection, unpinned nodes not faded).
+- AC: output matches the editor (no selection, unpinned nodes not faded, no drill-down badges).
 - The app writes the SVG and JSON from its computed geometry, not by copying a DOM, so the output holds no editor state.
 - AC: JSON geometry lets an agent pin nodes relative to the drawn layout without opening the editor.
 - AC: export works with no network: Chromium resolves no host name, and the app's content security policy allows only its embedded files.
 
-**FR-15 Operations (`dg op <operation> [flags] [--json]`).** Direct mapping of FR-12: each field of an operation is a flag of the same name (`--id`, `--kind`, `--view`, `--x`; lists such as `--tags` and `--include` are repeated; `--props` and `--compartments` take JSON), except the ends of `connect` (`--from`, `--from-port`, `--from-row`, `--to`, …), labels (`--start-label`, `--label`, `--end-label`) and the hint of `set_edge_hint` (`--from-side`, `--to-side`, `--via x,y` repeated, `--label-pos`). `dg op batch` reads a JSON list of operations (or one operation) from standard input or `--file`. `dg op --help` lists the operations and `dg op <operation> --help` its flags and JSON form. `--json` prints `{"results", "files", "warnings"}` (warnings the operation added), or `{"error", "diagnostics"}` when it is refused. Exit code 0: applied; 1: refused or invalid; 2: dg failed. `dg vocabulary` prints, as JSON, the kinds (with inherited ports, properties and the `container` and `rows` flags), edge kinds, tags and views the project defines.
+**FR-15 Operations (`dg op <operation> [flags] [--json]`).** Direct mapping of FR-12: each field of an operation is a flag of the same name (`--id`, `--kind`, `--view`, `--x`; lists such as `--tags`, `--include` and `--unset` are repeated; `--props`, `--compartments`, `--overlays`, `--styles` and `--decoration` take JSON), except the ends of `connect` (`--from`, `--from-port`, `--from-row`, `--to`, …), labels (`--start-label`, `--label`, `--end-label`) and the hint of `set_edge_hint` (`--from-side`, `--to-side`, `--via x,y` repeated, `--label-pos`). `dg op batch` reads a JSON list of operations (or one operation) from standard input or `--file`. `dg op --help` lists the operations and `dg op <operation> --help` its flags and JSON form. `--json` prints `{"results", "files", "warnings"}` (warnings the operation added), or `{"error", "diagnostics"}` when it is refused. Exit code 0: applied; 1: refused or invalid; 2: dg failed. `dg vocabulary` prints, as JSON, the kinds (with inherited ports, properties and the `container` and `rows` flags), edge kinds, tags and views the project defines.
 - AC: an agent can build a full model and views using only `dg op`, `dg vocabulary`, `dg check`, and `dg export`.
 
 ### G. Integrations
@@ -920,9 +936,9 @@ The order follows two rules. First, export comes before editing: once `dg export
    *Done when:* the animated SVG is golden; the GIF is byte-identical across runs and loops without a jump (the drawing at the end of the period equals the first frame); `examples/c4-container` has an animated variant (the `sign-in` view, a dynamic diagram whose interactions are animated).
 6. **M6 — Operations and agent surface.** FR-12 except `update_view`, `delete_view`, the decoration operations and `reorder`; `create_view` is pulled forward from M7 so operations can rebuild a project's views; `batch`; inverses and the undo log `dg serve` will use; read-only enforcement; `rename_id`; FR-15 `dg op` and `dg vocabulary`; FR-16 MCP server; frames and frame-relative positions in JSON export.
    *Done when:* every operation has a golden `hclwrite` round-trip; applying an operation then its inverse restores every file byte for byte; a refused operation leaves every file untouched; a file changed between read and write is reloaded and the operation re-applied; `dg op` arguments and MCP requests are fuzzed; `testdata/rebuild/c4-container.sh` rebuilds `examples/c4-container` using only `dg op`, starting from a directory holding only its `dg.hcl` and `c4` pack (operations edit models, views and layouts, not packs), and every view (`main`, `pinned`, `sign-in`) matches its golden SVG; an in-process MCP client builds the same diagram through the MCP tools.
-7. **M7 — Views.** Section 8 in full: collapse, edge lifting and merging, drill-down badges, breadcrumbs and view switcher, overlays, view style rules, decorations (including attached); the view operations other than `create_view` and the decoration operations, including `promote_decoration`.
+7. **M7 — Views.** Section 8 in full: collapse, edge lifting and merging, drill-down badges, breadcrumbs and view switcher, overlays, view style rules, decorations (including attached), a view's `direction`; the view operations other than `create_view` and the decoration operations, including `promote_decoration`.
    *Done when:* every lifting and merging case in section 8.3 has a golden resolved view; `examples/c4` shows three levels (system context with collapsed systems, a container view with `of` on a system, a component view with `of` on a container) navigable by drill-down; an incident example draws an overlay.
-8. **M8 — Container policies.** `stack` and `grid`, `order`, the `reorder` operation; JSON export marks the children of `stack` and `grid` containers, which `move` refuses.
+8. **M8 — Container policies.** `stack` and `grid`, `order`, the `reorder` operation; JSON export marks the children of `stack` and `grid` containers, which `move` refuses. A view with `of` on a `stack` or `grid` container lays its children out by that container's policy.
    *Done when:* `examples/swimlane`, `examples/flowchart` and `examples/state-machine` match their goldens; children missing from `order` are appended in sorted ID order; `x`/`y` on a `stack` child is ignored with a warning.
 9. **M9 — Language server and VS Code extension.** FR-17 and FR-18, with the diagram panel read-only.
    *Done when:* language server tests replay recorded JSON-RPC sessions (completion at given positions, rename edits, diagnostics identical to `dg check`); an extension test opens `examples/c4` in VS Code, receives diagnostics and opens the diagram panel; a platform-specific VSIX installs and runs offline.
@@ -973,4 +989,9 @@ The order follows two rules. First, export comes before editing: once `dg export
 | Concurrent writers | serialized by an advisory lock on the project directory (Windows: a file in the user's cache directory), waited for up to 10 seconds | A lock file in the project: litters the user's repository. No lock, relying on the unchanged-since-read check: two writers can both pass it, and parallel `dg op` runs lost changes while reporting success. |
 | MCP `op` tool schema | the union of every operation's fields, each described per operation; required fields in the tool's description and checked by dg | `oneOf` with one schema per operation: the Anthropic API refuses `oneOf` at the top of a tool's input schema. |
 | PNG and GIF size | one pixel per unit, on white, also for MCP | A `--scale` flag: no use yet; an agent sees the text at the size it is drawn. |
+| Overlay outline | the convex hull of the padded member boxes, round-cornered (bubble sets are an open decision) | The bounding rectangle: covers far more that is not a member. The union of the padded boxes: separate islands for members apart, which reads as several overlays. A concave hull: its shape depends on a tuning parameter and jumps as nodes move. |
+| Merged lifted edges | one edge labeled `×N`, keyed `lift:<from>:<to>` whatever N | Joining the labels of the merged edges: long and unreadable at three or more. The key of the first edge when N = 1: its hint would follow it out of the lifted edge when a second edge joins. |
+| Breadcrumbs | levels of views leading back to where `X` is drawn, a level of several views one crumb with a menu | Only the views with `of` on ancestors: a container view whose system has no such view leads nowhere. Every view of every level in one row: reads as a path through views that are alternatives. |
+| Badges in exports | the collapse badge only | Both badges: a drill-down badge does nothing in a picture. Neither: a collapsed box would look like a leaf. |
+| Layout direction | a view's `direction` attribute, defaulting to the rules of section 7.4 | The rules only: a view cannot choose. A style property of edge kinds: direction belongs to a view, not to the kinds it shows. |
 | Spiral clearance | four grid units | Two grid units: with libavoid's buffer around each box no edge fits between two neighbors, and libavoid draws a straight line through them. |

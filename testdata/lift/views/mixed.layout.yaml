@@ -1,0 +1,3 @@
+version: 1
+edge_hints:
+  lift:client:sys: {to_side: left}

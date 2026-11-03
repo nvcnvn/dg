@@ -12,11 +12,27 @@ views/broken.layout.yaml:9:3: warning: Orphan layout entry: Edge "e" does not ex
 views/broken.layout.yaml:9:18: error: Invalid layout: "middle" is not one of top, right, bottom, left.
 views/broken.layout.yaml:9:37: error: Invalid layout: 2 is not between 0 and 1.
 views/broken.layout.yaml:9:46: error: Invalid layout: A point is [x, y].
-views/broken.layout.yaml:10:3: error: Invalid layout: A lifted edge key is lift:<from>:<to>.
+views/broken.layout.yaml:10:3: error: Invalid layout: Invalid key "lift:a": a lifted edge key is lift:<from>:<to>, with %, : and # in those IDs written %25, %3A and %23.
+views/broken.layout.yaml:12:5: error: Invalid layout: Decoration "t" of type text needs text.
 views/broken.layout.yaml:13:5: error: Duplicate ID: The decoration ID "t" is used twice in this view.
+views/broken.layout.yaml:13:5: error: Invalid layout: Decoration "t" of type rect needs h.
+views/broken.layout.yaml:13:5: error: Invalid layout: Decoration "t" of type rect needs w.
 views/broken.layout.yaml:14:5: error: Invalid layout: A decoration needs an id that is a simple ID.
 views/broken.layout.yaml:14:12: error: Invalid layout: "blob" is not one of text, rect, ellipse, band, image, arrow, freehand.
-views/broken.layout.yaml:15:1: error: Invalid layout: Unknown field "extra"; expected one of version, place, edge_hints, decorations.
+views/broken.layout.yaml:15:39: error: Invalid layout: A rect decoration does not take text.
+views/broken.layout.yaml:15:50: error: Invalid layout: The value of fill must be "#RGB", "#RRGGBB" or "none".
+views/broken.layout.yaml:16:5: error: Invalid layout: Decoration "a" is attached to a node: its offset is dx and dy, not x and y.
+views/broken.layout.yaml:16:26: error: Invalid layout: An arrow needs at least two points.
+views/broken.layout.yaml:17:5: error: Invalid layout: Decoration "f" takes dx and dy only with attach.
+views/broken.layout.yaml:17:29: error: Invalid layout: The path is not SVG path data (commands and numbers).
+views/broken.layout.yaml:18:26: error: Invalid layout: "../x.svg" is not a slash-separated path inside the project.
+views/broken.layout.yaml:18:55: error: Invalid layout: Decoration "i" is attached to a node, so it takes no in.
+views/broken.layout.yaml:18:73: error: Invalid layout: The value of stroke_width must be at least 0.
+views/broken.layout.yaml:18:91: error: Invalid layout: The value of font_size must be at least 1.
+views/broken.layout.yaml:18:105: error: Invalid layout: The values of stroke_dash must be at least 0.
+views/broken.layout.yaml:19:5: error: File not found: Decoration "m": the picture "missing.svg" cannot be read.
+views/broken.layout.yaml:20:5: error: Invalid picture: Decoration "n": the picture "model.hcl" must be an SVG picture, whose root element is svg with xmlns="http://www.w3.org/2000/svg".
+views/broken.layout.yaml:21:1: error: Invalid layout: Unknown field "extra"; expected one of version, place, edge_hints, decorations.
 views/main.layout.yaml:3:3: warning: Stale frame: Node "a" is stored relative to the canvas, but its frame in this view is node "g".
 views/main.layout.yaml:3:58: warning: Orphan layout entry: Port "p9" does not exist.
 views/main.layout.yaml:4:3: warning: Ignored position: Node "b" is in "lanes", a stack container, so its x and y are ignored.
@@ -25,7 +41,8 @@ views/main.layout.yaml:6:3: warning: Orphan layout entry: Node "gone" does not e
 views/main.layout.yaml:7:3: warning: Orphan layout entry: Ordered node "gone" does not exist.
 views/main.layout.yaml:11:3: warning: Orphan layout entry: Edge "old" does not exist.
 views/main.layout.yaml:12:3: warning: Orphan layout entry: Node "nobody" does not exist.
-views/main.layout.yaml:15:5: warning: Orphan layout entry: Node "ghost" does not exist.
+views/main.layout.yaml:13:3: warning: Orphan layout entry: View "main" draws no lifted edge from "a" to "b".
+views/main.layout.yaml:16:5: warning: Orphan layout entry: Node "ghost" does not exist.
 views/orphan.layout.yaml:1:1: error: Layout without view: No view "orphan" is defined for this layout file.
 views/syntax.layout.yaml:2:1: error: Invalid layout: did not find expected ',' or '}'.
 exit 1

@@ -1,0 +1,228 @@
+{
+  "view": "main",
+  "grid": 10,
+  "nodes": [
+    {
+      "id": "banking",
+      "kind": "system",
+      "label": "Internet Banking System\n[Software System]\n\nAllows customers to view information about their bank accounts, and make payments.",
+      "collapsed": true,
+      "drill": [
+        "containers"
+      ],
+      "pin": {
+        "x": 250,
+        "y": 260
+      },
+      "style": {
+        "shape": "rounded",
+        "fill": "#1168BD",
+        "stroke": "#0B4884",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#FFFFFF",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 12,
+        "min_w": 200,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "customer",
+      "kind": "c4-person",
+      "label": "Personal Banking Customer\n[Person]\n\nA customer of the bank, with personal bank accounts.",
+      "pin": {
+        "x": 250,
+        "y": 0
+      },
+      "style": {
+        "shape": "person",
+        "fill": "#08427B",
+        "stroke": "#073B6F",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#FFFFFF",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 220,
+        "z": 0
+      }
+    },
+    {
+      "id": "email",
+      "kind": "external-system",
+      "label": "E-mail System\n[Software System]\n\nThe internal Microsoft Exchange e-mail system.",
+      "pin": {
+        "x": 520,
+        "y": 540
+      },
+      "style": {
+        "shape": "rounded",
+        "fill": "#999999",
+        "stroke": "#8A8A8A",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#FFFFFF",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 12,
+        "min_w": 200,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "mainframe",
+      "kind": "system",
+      "label": "Mainframe Banking System\n[Software System]\n\nStores all of the core banking information about customers, accounts, transactions, etc.",
+      "collapsed": true,
+      "pin": {
+        "x": 0,
+        "y": 540
+      },
+      "style": {
+        "shape": "rounded",
+        "fill": "#999999",
+        "stroke": "#8A8A8A",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#FFFFFF",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 12,
+        "min_w": 200,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "email-customer",
+      "kind": "uses",
+      "from": {
+        "node": "email"
+      },
+      "to": {
+        "node": "customer"
+      },
+      "labels": {
+        "mid": "Sends e-mails to"
+      },
+      "style": {
+        "stroke": "#707070",
+        "stroke_width": 1.5,
+        "stroke_dash": [
+          6,
+          4
+        ],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 11
+      }
+    },
+    {
+      "id": "lift:banking:email",
+      "edges": [
+        "mailer-email"
+      ],
+      "kind": "uses",
+      "from": {
+        "node": "banking"
+      },
+      "to": {
+        "node": "email"
+      },
+      "labels": {
+        "mid": "Sends e-mail using"
+      },
+      "style": {
+        "stroke": "#707070",
+        "stroke_width": 1.5,
+        "stroke_dash": [
+          6,
+          4
+        ],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 11
+      }
+    },
+    {
+      "id": "lift:banking:mainframe",
+      "edges": [
+        "facade-core"
+      ],
+      "kind": "uses",
+      "from": {
+        "node": "banking"
+      },
+      "to": {
+        "node": "mainframe"
+      },
+      "labels": {
+        "mid": "Makes API calls to\n[XML/HTTPS]"
+      },
+      "style": {
+        "stroke": "#707070",
+        "stroke_width": 1.5,
+        "stroke_dash": [
+          6,
+          4
+        ],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 11
+      }
+    },
+    {
+      "id": "lift:customer:banking",
+      "edges": [
+        "customer-mobile",
+        "customer-spa",
+        "customer-web"
+      ],
+      "kind": "uses",
+      "from": {
+        "node": "customer"
+      },
+      "to": {
+        "node": "banking"
+      },
+      "labels": {
+        "mid": "×3"
+      },
+      "style": {
+        "stroke": "#707070",
+        "stroke_width": 1.5,
+        "stroke_dash": [
+          6,
+          4
+        ],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 11
+      }
+    }
+  ]
+}

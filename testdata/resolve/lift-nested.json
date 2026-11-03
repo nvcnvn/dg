@@ -1,0 +1,228 @@
+{
+  "view": "nested",
+  "grid": 10,
+  "nodes": [
+    {
+      "id": "client",
+      "kind": "service",
+      "label": "client",
+      "ports": [
+        {
+          "name": "out",
+          "side": "right"
+        }
+      ],
+      "style": {
+        "shape": "rounded",
+        "fill": "#E8F0FE",
+        "stroke": "#1A73E8",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "disk",
+      "kind": "storage",
+      "label": "disk",
+      "frame": "rack:a%b#c",
+      "style": {
+        "shape": "cylinder",
+        "fill": "#FEF7E0",
+        "stroke": "#E37400",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "ext",
+      "kind": "external",
+      "label": "ext",
+      "style": {
+        "shape": "rounded",
+        "fill": "#F1F3F4",
+        "stroke": "#5F6368",
+        "stroke_width": 1,
+        "stroke_dash": [
+          6,
+          4
+        ],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "rack:a%b#c",
+      "kind": "group",
+      "label": "rack:a%b#c",
+      "container": true,
+      "style": {
+        "shape": "rect",
+        "fill": "#F8F9FA",
+        "stroke": "#9AA0A6",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 20,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "sys",
+      "kind": "group",
+      "label": "sys",
+      "collapsed": true,
+      "style": {
+        "shape": "rect",
+        "fill": "#F8F9FA",
+        "stroke": "#9AA0A6",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 20,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "client-disk",
+      "kind": "default",
+      "from": {
+        "node": "client"
+      },
+      "to": {
+        "node": "disk"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "client-sys",
+      "kind": "default",
+      "from": {
+        "node": "client"
+      },
+      "to": {
+        "node": "sys"
+      },
+      "labels": {
+        "mid": "direct"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "lift:client:sys",
+      "edges": [
+        "client-handler",
+        "client-queue",
+        "client-web"
+      ],
+      "kind": "default",
+      "from": {
+        "node": "client"
+      },
+      "to": {
+        "node": "sys"
+      },
+      "labels": {
+        "mid": "×3"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "lift:sys:ext",
+      "edges": [
+        "handler-ext",
+        "store-ext"
+      ],
+      "kind": "async",
+      "from": {
+        "node": "sys"
+      },
+      "to": {
+        "node": "ext"
+      },
+      "labels": {
+        "mid": "×2"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [
+          6,
+          4
+        ],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    }
+  ]
+}

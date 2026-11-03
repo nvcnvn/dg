@@ -5,8 +5,8 @@ view "pool" {
   of    = node["gpu/pool"]
   include = [
     descendants["gpu/pool"], # the workers
-    node["worker-2"], # the spare
-    node.gateway,     # the caller
+    node["worker-2"],        # the spare
+    node.gateway,            # the caller
   ]
 }
 

@@ -1,0 +1,28 @@
+view "main" { include = [all] }
+
+view "pool" {
+  title = "Inside the pool"
+  of    = node.pool
+  include = [
+    descendants.pool, # the workers
+    node["worker-2"], # the spare
+    node.gateway,     # the caller
+  ]
+}
+
+view "calls" {
+  include   = [ node.gateway,node["worker-1"], node.pool ]
+  title     = "Calls"
+  direction = "right"
+  collapse  = [node.pool]
+
+  style "node.gateway" {
+    fill = "#FFEEEE"
+  }
+  overlay "hot" {
+    members = [node.gateway]
+    label   = "Hot"
+  }
+}
+
+view "solo" { include = [node.gateway] }

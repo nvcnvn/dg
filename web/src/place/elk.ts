@@ -17,10 +17,10 @@ const spacing: Record<string, string> = {
   'elk.layered.spacing.edgeNodeBetweenLayers': '20',
 };
 
-// A view with edges between rows is laid out left to right, since rows attach at their left and
-// right ends, with room between the layers for the markers at both ends of an edge.
+// A view with edges between rows leaves room between the layers for the markers at both ends of
+// an edge, and its layers run left to right unless it sets a direction, since rows attach at
+// their left and right ends.
 const rowSpacing: Record<string, string> = {
-  'elk.direction': 'RIGHT',
   'elk.layered.spacing.nodeNodeBetweenLayers': '100',
   'elk.layered.spacing.edgeNodeBetweenLayers': '40',
 };
@@ -28,7 +28,6 @@ const rowSpacing: Record<string, string> = {
 const rootOptions: Record<string, string> = {
   ...spacing,
   'elk.algorithm': 'layered',
-  'elk.direction': 'DOWN',
   'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
   'elk.edgeRouting': 'ORTHOGONAL',
   'elk.randomSeed': '1',
@@ -49,7 +48,8 @@ const placement = { start: 'TAIL', mid: 'CENTER', end: 'HEAD' };
 export function elkGraph(view: ResolvedView, measures: Map<string, NodeMeasure>, labels: Map<string, EdgeLabelSizes> = new Map()): ElkNode {
   const elkNodes = new Map<string, ElkNode>();
   const rows = view.edges.some((e) => e.from.row || e.to.row);
-  const root: ElkNode = { id: ROOT, layoutOptions: rows ? { ...rootOptions, ...rowSpacing } : rootOptions, children: [], edges: [] };
+  const direction = { 'elk.direction': (view.direction ?? (rows ? 'right' : 'down')).toUpperCase() };
+  const root: ElkNode = { id: ROOT, layoutOptions: { ...rootOptions, ...(rows ? rowSpacing : {}), ...direction }, children: [], edges: [] };
   for (const n of view.nodes) {
     const m = measures.get(n.id)!;
     const en: ElkNode = { id: nodeKey(n.id), width: m.size.w, height: m.size.h };
@@ -60,6 +60,7 @@ export function elkGraph(view: ResolvedView, measures: Map<string, NodeMeasure>,
       en.layoutOptions = {
         ...spacing,
         ...(rows ? rowSpacing : {}),
+        ...direction,
         'elk.padding': `[top=${m.origin.y},left=${m.origin.x},bottom=${pad},right=${pad}]`,
         'elk.nodeSize.constraints': '[MINIMUM_SIZE]',
         'elk.nodeSize.minimum': `(${m.size.w},${m.size.h})`,
