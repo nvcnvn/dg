@@ -28,4 +28,6 @@ style.hcl:48:14: error: Anchor without port: Shape "gpu" has anchor "nic9", but 
 style.hcl:52:1: error: Invalid ID: The shape "rect" is a built-in shape.
 style.hcl:53:9: error: Error in function call: Call to function "file" failed: "../outside.svg" is not a relative path inside the project.
 style.hcl:57:9: error: Error in function call: Call to function "file" failed: cannot read "shapes/missing.svg".
+style.hcl:61:10: error: Invalid style value: The value of icon is not well-formed SVG: XML syntax error on line 3: unexpected EOF.
+style.hcl:65:9: error: Invalid style value: The value of svg must be an SVG picture, whose root element is svg with xmlns="http://www.w3.org/2000/svg".
 exit 1

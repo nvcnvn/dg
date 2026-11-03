@@ -1,5 +1,5 @@
 import { cmp, type Box } from '../geometry/geometry';
-import { attrs, defsMarkup, edgeMarkup, nodeMarkup, num, type DrawnEdge, type DrawnNode, type FontMetrics, type Shapes } from './markup';
+import { attrs, defsMarkup, edgeMarkup, flowCSS, flowPeriods, nodeMarkup, num, type DrawnEdge, type DrawnNode, type FontMetrics, type Shapes } from './markup';
 
 // Drawing is a view with all geometry computed, nodes in draw order. family names the font
 // an exported SVG asks for.
@@ -20,12 +20,15 @@ export function toSVG(d: Drawing): string {
     'font-family': `${d.family}, sans-serif`,
   });
   const defs = defsMarkup(d.nodes, d);
+  const periods = flowPeriods(d.edges);
+  const css = flowCSS(periods);
   return (
     [
       `<svg xmlns="http://www.w3.org/2000/svg"${root}>`,
+      ...(css ? [`<style>\n${css}</style>`] : []),
       ...(defs.length ? ['<defs>', ...defs, '</defs>'] : []),
       ...d.nodes.flatMap((n) => nodeMarkup(n, d, d)),
-      ...d.edges.flatMap((e) => edgeMarkup(e, d)),
+      ...d.edges.flatMap((e) => edgeMarkup(e, d, periods)),
       '</svg>',
     ].join('\n') + '\n'
   );
@@ -44,4 +47,46 @@ export function toJSON(d: Drawing): string {
   const edges = [...d.edges].sort((a, b) => cmp(a.id, b.id)).map((e) => ({ id: e.id, points: e.points.map((p) => [p.x, p.y]) }));
   const json = JSON.stringify({ view: d.view, nodes, edges }, null, 2);
   return json.replace(/\[\s+(-?[\d.e+-]+),\s+(-?[\d.e+-]+)\s+\]/g, '[$1, $2]') + '\n';
+}
+
+// checkStyle throws unless the page applied style, which a content security policy can refuse.
+export function checkStyle(style: HTMLStyleElement | SVGStyleElement | null) {
+  if (style && !style.sheet) throw new Error('the page refused the edge animation style');
+}
+
+// mountSVG shows svg alone on white at the page's top left, text in family, paused at time 0, once its pictures load.
+export async function mountSVG(svg: string, family: string): Promise<void> {
+  const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
+  const el = document.importNode(doc.documentElement, true);
+  el.setAttribute('font-family', `${family}, sans-serif`);
+  let host = document.getElementById('export');
+  if (!host) {
+    host = document.createElement('div');
+    host.id = 'export';
+    document.body.append(host);
+  }
+  host.replaceChildren(el);
+  checkStyle(el.querySelector('style'));
+  await Promise.all(
+    [...el.querySelectorAll('image')].map(
+      (im) =>
+        new Promise((done, fail) => {
+          im.addEventListener('load', done);
+          im.addEventListener('error', () => {
+            const owner = im.closest('[data-node]')?.getAttribute('data-node');
+            fail(new Error(owner === undefined || owner === null ? `the picture of shape ${im.id.replace('dg-shape-', '')} did not load` : `the picture of node "${owner}" did not load`));
+          });
+        }),
+    ),
+  );
+  await setClock(0);
+}
+
+// setClock pauses every animation of the page at ms milliseconds and waits for that frame to be drawn.
+export async function setClock(ms: number): Promise<void> {
+  for (const a of document.getAnimations()) {
+    a.pause();
+    a.currentTime = ms;
+  }
+  await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
 }

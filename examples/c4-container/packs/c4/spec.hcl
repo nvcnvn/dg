@@ -20,3 +20,6 @@ kind "boundary" {
 }
 
 edge_kind "uses" {}
+
+# A numbered step of a dynamic diagram: one interaction of a scenario, drawn animated.
+edge_kind "interaction" {}

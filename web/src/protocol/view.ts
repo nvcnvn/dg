@@ -107,6 +107,7 @@ export interface EdgeStyle {
   arrow_end: string;
   routing: 'orthogonal' | 'polyline' | 'straight';
   font_size: number;
+  animate?: 'flow';
 }
 
 export interface CustomShape {

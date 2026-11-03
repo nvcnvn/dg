@@ -1,8 +1,11 @@
 package style
 
 import (
+	"encoding/xml"
 	"fmt"
+	"io"
 	"slices"
+	"strings"
 
 	"github.com/zclconf/go-cty/cty"
 
@@ -35,8 +38,8 @@ var NodeProps = map[string]Prop{
 	"text_color":    {color, now},
 	"font_size":     {number(1, inf), now},
 	"font_weight":   {weight, now},
-	"icon":          {isString, now},
-	"image":         {isString, now},
+	"icon":          {picture, now},
+	"image":         {picture, now},
 	"padding":       {number(0, inf), now},
 	"min_w":         {number(0, inf), now},
 	"min_h":         {number(0, inf), now},
@@ -60,7 +63,7 @@ var EdgeProps = map[string]Prop{
 	"arrow_end":    {enum(markers...), now},
 	"routing":      {enum("orthogonal", "polyline", "straight"), now},
 	"font_size":    {number(1, inf), now},
-	"animate":      {enum("none", "flow"), except(5, "none")},
+	"animate":      {enum("none", "flow"), now},
 }
 
 // OverlayProps are the properties of overlay_style blocks; overlays are drawn from M7.
@@ -99,6 +102,32 @@ func known(v cty.Value) bool { return v.IsWhollyKnown() && !v.IsNull() }
 func isString(v cty.Value) string {
 	if !known(v) || v.Type() != cty.String {
 		return "must be a string"
+	}
+	return ""
+}
+
+// picture accepts the text of an SVG file: well-formed XML whose root element is svg in the SVG
+// namespace, which a browser needs to draw it as a picture.
+func picture(v cty.Value) string {
+	if p := isString(v); p != "" {
+		return p
+	}
+	dec := xml.NewDecoder(strings.NewReader(v.AsString()))
+	var root xml.Name
+	for {
+		tok, err := dec.Token()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return "is not well-formed SVG: " + err.Error()
+		}
+		if el, ok := tok.(xml.StartElement); ok && root.Local == "" {
+			root = el.Name
+		}
+	}
+	if root != (xml.Name{Space: "http://www.w3.org/2000/svg", Local: "svg"}) {
+		return `must be an SVG picture, whose root element is svg with xmlns="http://www.w3.org/2000/svg"`
 	}
 	return ""
 }

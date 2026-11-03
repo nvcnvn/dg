@@ -6,7 +6,7 @@ import elkWorkerUrl from 'elkjs/lib/elk-worker.min.js?url';
 import libavoidUrl from '../node_modules/libavoid-js/dist/libavoid.wasm?url';
 import { avoidRouter } from './canvas/avoid';
 import { startEditor } from './canvas/editor';
-import { toJSON, toSVG, type Drawing } from './canvas/export';
+import { mountSVG, setClock, toJSON, toSVG, type Drawing } from './canvas/export';
 import { canvasMeasure, loadFonts } from './canvas/measure';
 import type { Elk } from './place/elk';
 import type { ResolvedView } from './protocol/view';
@@ -14,7 +14,10 @@ import { draw } from './render';
 
 declare global {
   interface Window {
-    dg?: { render(view: ResolvedView): Promise<{ svg: string; json: string; too_small: string[] }> };
+    dg?: {
+      render(view: ResolvedView): Promise<{ svg: string; json: string; too_small: string[] }>;
+      setClock(ms: number): Promise<void>;
+    };
   }
 }
 
@@ -32,13 +35,16 @@ if (new URLSearchParams(location.search).has('export')) {
     async render(view) {
       const elk = new ELK({ workerUrl: elkWorkerUrl });
       try {
-        const { drawing } = await render(view, elk);
+        const { drawing, family } = await render(view, elk);
+        const svg = toSVG(drawing);
+        await mountSVG(svg, family);
         if (blocked.length) throw new Error('blocked requests: ' + blocked.join(', '));
-        return { svg: toSVG(drawing), json: toJSON(drawing), too_small: drawing.nodes.filter((n) => n.tooSmall).map((n) => n.id) };
+        return { svg, json: toJSON(drawing), too_small: drawing.nodes.filter((n) => n.tooSmall).map((n) => n.id) };
       } finally {
         elk.terminateWorker();
       }
     },
+    setClock,
   };
 } else {
   const elk = new ELK({ workerUrl: elkWorkerUrl });

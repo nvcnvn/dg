@@ -250,10 +250,35 @@ export function nodeMarkup(n: DrawnNode, m: FontMetrics, s: Shapes): string[] {
   return out;
 }
 
-export function edgeMarkup(e: DrawnEdge, m: FontMetrics): string[] {
+const FLOW_DASH = [6, 4];
+const FLOW_PERIOD_MS = 500;
+
+// flowDash returns an animated edge's dash pattern as written and its period (spec 4.3).
+export function flowDash(st: EdgeStyle): { dash: number[]; period: number } {
+  const d = st.stroke_dash.map((v) => Number(dec(v)));
+  const pattern = d.some((v) => v > 0) ? d : FLOW_DASH;
+  const sum = pattern.reduce((a, b) => a + b, 0);
+  // SVG repeats a pattern with an odd number of values, so its period is twice the sum.
+  return { dash: pattern, period: Number(dec(pattern.length % 2 ? 2 * sum : sum)) };
+}
+
+// flowPeriods returns the distinct dash periods of the animated edges, sorted; edge animation i is named dg-flow-<i>.
+export function flowPeriods(edges: DrawnEdge[]): number[] {
+  return [...new Set(edges.filter((e) => e.style.animate === 'flow').map((e) => flowDash(e.style).period))].sort((a, b) => a - b);
+}
+
+// flowCSS returns the animation of each period: the dash offset from 0 to minus the period, linear, repeating every FLOW_PERIOD_MS.
+export function flowCSS(periods: number[]): string {
+  return periods.map((p, i) => `@keyframes dg-flow-${i} { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -${dec(p)}px; } }\n.dg-flow-${i} { animation: dg-flow-${i} ${FLOW_PERIOD_MS}ms linear infinite; }\n`).join('');
+}
+
+// edgeMarkup draws an edge; periods are the drawing's flowPeriods.
+export function edgeMarkup(e: DrawnEdge, m: FontMetrics, periods: number[]): string[] {
   const st = e.style;
   const stroke = { fill: 'none', stroke: st.stroke, 'stroke-width': dec(st.stroke_width) };
-  const out = [`<g${attrs({ 'data-edge': e.id })}>`, `<path${attrs({ d: path(e.points), ...stroke, 'stroke-dasharray': dash(st.stroke_dash) })}/>`];
+  const flow = st.animate === 'flow' ? flowDash(st) : undefined;
+  const line = { d: path(e.points), class: flow && `dg-flow-${periods.indexOf(flow.period)}`, ...stroke, 'stroke-dasharray': dash(flow?.dash ?? st.stroke_dash) };
+  const out = [`<g${attrs({ 'data-edge': e.id })}>`, `<path${attrs(line)}/>`];
   const paint = (filled: boolean) => ({ fill: filled ? st.stroke : LABEL_BACKGROUND, stroke: st.stroke, 'stroke-width': dec(st.stroke_width) });
   for (const p of e.markers) {
     if ('line' in p) out.push(`<path${attrs({ d: path(p.line), ...stroke })}/>`);

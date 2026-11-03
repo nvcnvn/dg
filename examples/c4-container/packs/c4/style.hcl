@@ -54,3 +54,9 @@ edge_style "uses" {
   stroke_dash = [6, 4]
   font_size   = 11
 }
+
+edge_style "interaction" {
+  stroke    = "#1168BD"
+  font_size = 11
+  animate   = "flow"
+}

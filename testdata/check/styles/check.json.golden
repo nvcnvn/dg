@@ -298,6 +298,26 @@
     "column": 9,
     "end_line": 57,
     "end_column": 14
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid style value",
+    "detail": "The value of icon is not well-formed SVG: XML syntax error on line 3: unexpected EOF.",
+    "file": "style.hcl",
+    "line": 61,
+    "column": 10,
+    "end_line": 61,
+    "end_column": 35
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid style value",
+    "detail": "The value of svg must be an SVG picture, whose root element is svg with xmlns=\"http://www.w3.org/2000/svg\".",
+    "file": "style.hcl",
+    "line": 65,
+    "column": 9,
+    "end_line": 65,
+    "end_column": 32
   }
 ]
 exit 1

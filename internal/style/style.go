@@ -45,6 +45,7 @@ type Edge struct {
 	ArrowEnd    string    `json:"arrow_end"`
 	Routing     string    `json:"routing"`
 	FontSize    float64   `json:"font_size"`
+	Animate     string    `json:"animate,omitempty"`
 }
 
 // Setting is one property value of a rule and where it is set.
@@ -206,7 +207,7 @@ func decodeShape(b shapeBlock, ctx *hcl.EvalContext) (*Shape, hcl.Diagnostics) {
 		}
 		return v, true
 	}
-	if v, ok := value(b.SVG, isString); ok {
+	if v, ok := value(b.SVG, picture); ok {
 		sh.SVG = v.AsString()
 	}
 	if v, ok := value(b.TextBox, numbers(4, 0, 1)); ok {
@@ -386,7 +387,16 @@ func DrawnEdge(props map[string]Setting) Edge {
 		ArrowEnd:    str(props, "arrow_end"),
 		Routing:     str(props, "routing"),
 		FontSize:    num(props, "font_size"),
+		Animate:     animate(props),
 	}
+}
+
+// animate returns the edge's animation, or "" for none.
+func animate(props map[string]Setting) string {
+	if a := str(props, "animate"); a != "none" {
+		return a
+	}
+	return ""
 }
 
 func str(props map[string]Setting, name string) string {

@@ -92,7 +92,6 @@ the decision in `docs/spec.md`).
   obstacle and request set, which a persistent router can diff against its state.
 - **Milestone:** M3; decide in M10.
 
-
 ## Layout direction of a view
 
 - **Question:** elk lays out layers top to bottom, or left to right when an edge ends at a row,
@@ -113,3 +112,16 @@ the decision in `docs/spec.md`).
 - **Default:** (a). Loops reach two grid units out (three with the longest markers) and the placer
   keeps four grid units between nodes, so crossings need an edge squeezed between neighbors.
 - **Milestone:** M4.
+
+## Pixel size, background and colors of PNG and GIF
+
+- **Question:** PNG and GIF exports are drawn at one pixel per unit on white, and a GIF uses one
+  palette of the 255 colors most frequent across its frames, without dithering, so a drawing with
+  many colors bands (about 30 fills put the worst channel error at 47). Should the scale (for
+  high-density screens and agents reading the picture over MCP), the background or the
+  quantization be selectable or better?
+- **Options:** (a) fixed; (b) a `--scale` flag (1 to 4) for both; (c) also `--background none`
+  for PNG (a GIF has one transparent color, which antialiased edges cannot use well); (d)
+  per-frame palettes, median-cut quantization or ordered dithering for GIF.
+- **Default:** (a).
+- **Milestone:** M5; decide in M6, where MCP returns PNG to agents.

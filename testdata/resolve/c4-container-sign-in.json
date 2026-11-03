@@ -1,0 +1,217 @@
+{
+  "view": "sign-in",
+  "grid": 10,
+  "nodes": [
+    {
+      "id": "api",
+      "kind": "app",
+      "label": "API Application\n[Container: Java and Spring MVC]\n\nProvides Internet banking functionality via a JSON/HTTPS API.",
+      "frame": "banking",
+      "style": {
+        "shape": "rounded",
+        "fill": "#438DD5",
+        "stroke": "#3C7FC0",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#FFFFFF",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 12,
+        "min_w": 200,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "banking",
+      "kind": "boundary",
+      "label": "Internet Banking System\n[Software System]",
+      "container": true,
+      "style": {
+        "shape": "rect",
+        "fill": "none",
+        "stroke": "#444444",
+        "stroke_width": 1,
+        "stroke_dash": [
+          8,
+          4
+        ],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#444444",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 20,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "customer",
+      "kind": "c4-person",
+      "label": "Personal Banking Customer\n[Person]\n\nA customer of the bank, with personal bank accounts.",
+      "style": {
+        "shape": "person",
+        "fill": "#08427B",
+        "stroke": "#073B6F",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#FFFFFF",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 220,
+        "z": 0
+      }
+    },
+    {
+      "id": "database",
+      "kind": "store",
+      "label": "Database\n[Container: Oracle Database Schema]\n\nStores user registration information, hashed credentials, access logs, etc.",
+      "frame": "banking",
+      "style": {
+        "shape": "cylinder",
+        "fill": "#438DD5",
+        "stroke": "#3C7FC0",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#FFFFFF",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 12,
+        "min_w": 200,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "spa",
+      "kind": "app",
+      "label": "Single-Page Application\n[Container: JavaScript and Angular]\n\nProvides all of the Internet banking functionality to customers via their web browser.",
+      "frame": "banking",
+      "style": {
+        "shape": "rounded",
+        "fill": "#438DD5",
+        "stroke": "#3C7FC0",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#FFFFFF",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 12,
+        "min_w": 200,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "sign-in-1",
+      "kind": "interaction",
+      "from": {
+        "node": "customer"
+      },
+      "to": {
+        "node": "spa"
+      },
+      "labels": {
+        "mid": "1. Submits credentials to"
+      },
+      "style": {
+        "stroke": "#1168BD",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 11,
+        "animate": "flow"
+      }
+    },
+    {
+      "id": "sign-in-2",
+      "kind": "interaction",
+      "from": {
+        "node": "spa"
+      },
+      "to": {
+        "node": "api"
+      },
+      "labels": {
+        "mid": "2. Sends credentials to\n[JSON/HTTPS]"
+      },
+      "style": {
+        "stroke": "#1168BD",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 11,
+        "animate": "flow"
+      }
+    },
+    {
+      "id": "sign-in-3",
+      "kind": "interaction",
+      "from": {
+        "node": "api"
+      },
+      "to": {
+        "node": "database"
+      },
+      "labels": {
+        "mid": "3. Validates credentials\nagainst\n[SQL/TCP]"
+      },
+      "style": {
+        "stroke": "#1168BD",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 11,
+        "animate": "flow"
+      }
+    },
+    {
+      "id": "sign-in-4",
+      "kind": "interaction",
+      "from": {
+        "node": "api"
+      },
+      "to": {
+        "node": "spa"
+      },
+      "labels": {
+        "mid": "4. Returns a session token"
+      },
+      "style": {
+        "stroke": "#1168BD",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 11,
+        "animate": "flow"
+      }
+    }
+  ]
+}

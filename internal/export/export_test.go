@@ -6,8 +6,13 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"image"
+	"image/draw"
+	"image/gif"
+	"image/png"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -26,16 +31,23 @@ func TestExamples(t *testing.T) {
 	}
 	for name, v := range exampleViews(t) {
 		t.Run(name, func(t *testing.T) {
-			first, err := Render(context.Background(), v)
+			first, err := Render(context.Background(), v, "png")
 			if err != nil {
 				t.Fatal(err)
 			}
-			second, err := Render(context.Background(), v)
+			second, err := Render(context.Background(), v, "png")
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !bytes.Equal(first.SVG, second.SVG) || !bytes.Equal(first.JSON, second.JSON) {
+			if !bytes.Equal(first.SVG, second.SVG) || !bytes.Equal(first.JSON, second.JSON) || !bytes.Equal(first.PNG, second.PNG) {
 				t.Fatal("two exports of the same view differ")
+			}
+			pic, err := png.DecodeConfig(bytes.NewReader(first.PNG))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if size := fmt.Sprintf(`width="%d" height="%d"`, pic.Width, pic.Height); !bytes.Contains(first.SVG, []byte(size)) {
+				t.Errorf("the PNG is %dx%d, the SVG is not %s", pic.Width, pic.Height, size)
 			}
 			golden(t, filepath.Join("..", "..", "testdata", "export", name+".svg"), first.SVG)
 			golden(t, filepath.Join("..", "..", "testdata", "export", name+".json"), first.JSON)
@@ -81,6 +93,119 @@ func notYet(t *testing.T, dir, id string, diags diag.Diagnostics) bool {
 		}
 	}
 	return diags.HasErrors()
+}
+
+// TestAnimation exports the animated view of examples/c4-container as a GIF: byte-identical
+// across runs, one half-second period in 10 frames of 50 milliseconds looping forever, each frame
+// differing from the one before, and the drawing at the end of the period, past the last frame,
+// equal to the first frame, so the loop back to the first frame is one more equal step.
+func TestAnimation(t *testing.T) {
+	if testing.Short() {
+		t.Skip("starts Chromium")
+	}
+	p, diags, err := project.Load(filepath.Join("..", "..", "examples", "c4-container"))
+	if err != nil || diags.HasErrors() {
+		t.Fatal(err, diags)
+	}
+	v, diags := p.Resolve("sign-in")
+	if diags.HasErrors() {
+		t.Fatal(diags)
+	}
+	first, err := Render(context.Background(), v, "gif")
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := Render(context.Background(), v, "gif")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(first.GIF, second.GIF) {
+		t.Fatal("two GIF exports of the same view differ")
+	}
+	g, err := gif.DecodeAll(bytes.NewReader(first.GIF))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(g.Image) != GIFFrames || g.LoopCount != 0 {
+		t.Fatalf("%d frames looping %d times, want %d looping forever (0)", len(g.Image), g.LoopCount, GIFFrames)
+	}
+	shown := make([][]byte, len(g.Image))
+	canvas := image.NewRGBA(g.Image[0].Bounds())
+	for i, img := range g.Image {
+		if g.Delay[i] != 5 {
+			t.Errorf("frame %d shown for %d hundredths of a second, want 5", i, g.Delay[i])
+		}
+		draw.Draw(canvas, img.Bounds(), img, img.Bounds().Min, draw.Over)
+		shown[i] = slices.Clone(canvas.Pix)
+	}
+	for i := range shown {
+		if bytes.Equal(shown[i], shown[(i+GIFFrames-1)%GIFFrames]) {
+			t.Errorf("frame %d looks like the frame before it", i)
+		}
+	}
+
+	period := fmt.Sprintf(" %dms linear infinite;", (GIFFrames * GIFDelay).Milliseconds())
+	if !bytes.Contains(first.SVG, []byte(period)) {
+		t.Errorf("the SVG's animation period is not the GIF's %d frames of %s:\n%s", GIFFrames, GIFDelay, first.SVG)
+	}
+
+	ctx, stop, err := openApp(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer stop()
+	viewJSON, err := json.Marshal(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := chromedp.Run(ctx, chromedp.Evaluate[chromedp.Void]("window.dg.render("+string(viewJSON)+").then(() => {})", chromedp.EvalAwaitPromise)); err != nil {
+		t.Fatal(err)
+	}
+	start, err := capture(ctx, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// One iteration held at its end shows the keyframes' last offset rather than wrapping to the
+	// next iteration's first.
+	stopAtEnd := "document.getAnimations().forEach((a) => a.effect.updateTiming({ iterations: 1, fill: 'forwards' }))"
+	if _, err := chromedp.Run(ctx, chromedp.Evaluate[chromedp.Void](stopAtEnd)); err != nil {
+		t.Fatal(err)
+	}
+	end, err := capture(ctx, GIFFrames*GIFDelay)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(start, end) {
+		t.Error("the drawing at the end of the period differs from the drawing at time 0")
+	}
+	before, err := capture(ctx, (GIFFrames-1)*GIFDelay)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Equal(start, before) {
+		t.Error("the drawing one frame before the end of the period equals the drawing at time 0")
+	}
+}
+
+// TestBrokenPicture checks that a picture the browser cannot draw fails the export naming its
+// node; dg check refuses such files, so the view is changed after resolving.
+func TestBrokenPicture(t *testing.T) {
+	if testing.Short() {
+		t.Skip("starts Chromium")
+	}
+	p, diags, err := project.Load(filepath.Join("..", "..", "examples", "hello"))
+	if err != nil || diags.HasErrors() {
+		t.Fatal(err, diags)
+	}
+	v, diags := p.Resolve(view.DefaultView)
+	if diags.HasErrors() {
+		t.Fatal(diags)
+	}
+	v.Nodes[0].Style.Icon = `<svg xmlns="http://www.w3.org/2000/svg"><rect`
+	_, err = Render(context.Background(), v, "png")
+	if want := fmt.Sprintf("the picture of node %q did not load", v.Nodes[0].ID); err == nil || !strings.Contains(err.Error(), want) {
+		t.Errorf("export error %v, want one containing %q", err, want)
+	}
 }
 
 func TestAppIsOffline(t *testing.T) {
@@ -158,7 +283,7 @@ func TestProjectFont(t *testing.T) {
 		if diags.HasErrors() {
 			t.Fatal(diags)
 		}
-		res, err := Render(context.Background(), v)
+		res, err := Render(context.Background(), v, "svg")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -221,7 +346,7 @@ place:
 	if diags.HasErrors() {
 		t.Fatal(diags)
 	}
-	res, err := Render(context.Background(), v)
+	res, err := Render(context.Background(), v, "svg")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -338,7 +463,7 @@ func rowEnds(t *testing.T, dir string) map[string][2]rowEnd {
 	if diags.HasErrors() {
 		t.Fatal(diags)
 	}
-	res, err := Render(context.Background(), v)
+	res, err := Render(context.Background(), v, "svg")
 	if err != nil {
 		t.Fatal(err)
 	}

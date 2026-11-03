@@ -2,10 +2,13 @@
 package export
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"image"
+	"image/png"
 	"net"
 	"net/http"
 	"os"
@@ -21,32 +24,46 @@ import (
 // Timeout bounds one export, from starting Chromium to reading the result.
 const Timeout = 60 * time.Second
 
-// Result is a drawn view. TooSmall lists the containers whose pinned size does not hold their
-// children (spec 7.2 rule 5).
+// GIF holds one animation period (spec 4.3) as GIFFrames frames of GIFDelay each.
+const (
+	GIFFrames = 10
+	GIFDelay  = 50 * time.Millisecond
+)
+
+// Result is a drawn view, and TooSmall the containers too small for their children (spec 7.2).
 type Result struct {
 	SVG      []byte
 	JSON     []byte
+	PNG      []byte // only for format "png": the drawing at animation time 0
+	GIF      []byte // only for format "gif": one frame per GIFDelay of animation time
 	TooSmall []string
 }
 
-// Render draws v and returns it as SVG and as JSON geometry.
-func Render(ctx context.Context, v *view.Resolved) (*Result, error) {
+// Render draws v as SVG, JSON geometry and, when format is "png" or "gif", that picture.
+func Render(ctx context.Context, v *view.Resolved, format string) (*Result, error) {
 	viewJSON, err := json.Marshal(v)
 	if err != nil {
 		return nil, err
 	}
 	ctx, cancel := context.WithTimeout(ctx, Timeout)
 	defer cancel()
-	type result struct {
+	type drawn struct {
 		SVG      string   `json:"svg"`
 		JSON     string   `json:"json"`
 		TooSmall []string `json:"too_small"`
 	}
-	var out result
+	var out drawn
+	res := &Result{}
 	ctx, stop, err := openApp(ctx)
 	if err == nil {
 		defer stop()
-		out, err = chromedp.Run(ctx, chromedp.Evaluate[result]("window.dg.render("+string(viewJSON)+")", chromedp.EvalAwaitPromise))
+		out, err = chromedp.Run(ctx, chromedp.Evaluate[drawn]("window.dg.render("+string(viewJSON)+")", chromedp.EvalAwaitPromise))
+	}
+	if err == nil && format == "png" {
+		res.PNG, err = capture(ctx, 0)
+	}
+	if err == nil && format == "gif" {
+		res.GIF, err = captureGIF(ctx)
 	}
 	if errors.Is(err, context.DeadlineExceeded) {
 		return nil, fmt.Errorf("export timed out after %s", Timeout)
@@ -54,7 +71,31 @@ func Render(ctx context.Context, v *view.Resolved) (*Result, error) {
 	if err != nil {
 		return nil, fmt.Errorf("export: %w", err)
 	}
-	return &Result{SVG: []byte(out.SVG), JSON: []byte(out.JSON), TooSmall: out.TooSmall}, nil
+	res.SVG, res.JSON, res.TooSmall = []byte(out.SVG), []byte(out.JSON), out.TooSmall
+	return res, nil
+}
+
+// capture returns a PNG screenshot of the drawn view with the animation clock at t.
+func capture(ctx context.Context, t time.Duration) ([]byte, error) {
+	_, err := chromedp.Run(ctx, chromedp.Evaluate[chromedp.Void](fmt.Sprintf("window.dg.setClock(%d)", t.Milliseconds()), chromedp.EvalAwaitPromise))
+	if err != nil {
+		return nil, err
+	}
+	return chromedp.Run(ctx, chromedp.Screenshot(chromedp.CSS("#export > svg")))
+}
+
+func captureGIF(ctx context.Context) ([]byte, error) {
+	frames := make([]image.Image, GIFFrames)
+	for i := range frames {
+		data, err := capture(ctx, time.Duration(i)*GIFDelay)
+		if err != nil {
+			return nil, err
+		}
+		if frames[i], err = png.Decode(bytes.NewReader(data)); err != nil {
+			return nil, err
+		}
+	}
+	return encodeGIF(frames, GIFDelay)
 }
 
 // openApp serves the embedded app on a loopback port and opens it in export

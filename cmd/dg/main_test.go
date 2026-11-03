@@ -2,6 +2,9 @@ package main
 
 import (
 	"bytes"
+	"image"
+	_ "image/gif"
+	_ "image/png"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,14 +16,18 @@ func TestRun(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(broken, "model.hcl"), []byte("node \"a\" {\n  kind = \"nope\"\n}\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	out := filepath.Join(t.TempDir(), "hello.svg")
+	tmp := t.TempDir()
+	out := filepath.Join(tmp, "hello.svg")
+	allDir := filepath.Join(tmp, "all")
 	tests := []struct {
-		name       string
-		args       []string
-		chromium   bool
-		code       int
-		stderr     string
-		file, want string
+		name     string
+		args     []string
+		chromium bool
+		code     int
+		stderr   string
+		// files maps each file the command writes to its golden file, or to "" for a PNG or GIF,
+		// which is decoded instead.
+		files map[string]string
 	}{
 		{name: "no command", code: 1, stderr: "usage"},
 		{name: "unknown command", args: []string{"draw"}, code: 1, stderr: `unknown command "draw"`},
@@ -40,9 +47,33 @@ func TestRun(t *testing.T) {
 			name:     "export to a file",
 			args:     []string{"export", "-C", "../../examples/hello", "--out", out},
 			chromium: true,
-			file:     out,
-			want:     "../../testdata/export/hello.svg",
+			files:    map[string]string{out: "../../testdata/export/hello.svg"},
 		},
+		{
+			name:     "export a PNG",
+			args:     []string{"export", "-C", "../../examples/hello", "--format", "png", "--out", filepath.Join(tmp, "hello.png")},
+			chromium: true,
+			files:    map[string]string{filepath.Join(tmp, "hello.png"): ""},
+		},
+		{
+			name:     "export a GIF",
+			args:     []string{"export", "-C", "../../examples/c4-container", "--view", "sign-in", "--format", "gif", "--out", filepath.Join(tmp, "sign-in.gif")},
+			chromium: true,
+			files:    map[string]string{filepath.Join(tmp, "sign-in.gif"): ""},
+		},
+		{
+			name:     "export every view",
+			args:     []string{"export", "-C", "../../examples/c4-container", "--all", "--out", allDir},
+			chromium: true,
+			files: map[string]string{
+				filepath.Join(allDir, "main.svg"):    "../../testdata/export/c4-container.svg",
+				filepath.Join(allDir, "pinned.svg"):  "../../testdata/export/c4-container-pinned.svg",
+				filepath.Join(allDir, "sign-in.svg"): "../../testdata/export/c4-container-sign-in.svg",
+			},
+		},
+		{name: "export every view needs a directory", args: []string{"export", "-C", "../../examples/hello", "--all"}, code: 1, stderr: "--all needs --out"},
+		{name: "export every view or one", args: []string{"export", "-C", "../../examples/hello", "--all", "--view", "main", "--out", allDir}, code: 1, stderr: "--all and --view exclude each other"},
+		{name: "export every view refuses what is not drawn yet", args: []string{"export", "-C", "../../testdata/check/valid", "--all", "--out", filepath.Join(tmp, "refused")}, code: 1, stderr: "drawn from M7"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -56,19 +87,24 @@ func TestRun(t *testing.T) {
 			if !strings.Contains(stderr.String(), tt.stderr) {
 				t.Errorf("stderr %q does not contain %q", stderr.String(), tt.stderr)
 			}
-			if tt.file == "" {
-				return
-			}
-			got, err := os.ReadFile(tt.file)
-			if err != nil {
-				t.Fatal(err)
-			}
-			want, err := os.ReadFile(tt.want)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !bytes.Equal(got, want) {
-				t.Errorf("%s differs from %s", tt.file, tt.want)
+			for file, golden := range tt.files {
+				got, err := os.ReadFile(file)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if golden == "" {
+					if _, format, err := image.Decode(bytes.NewReader(got)); err != nil || format != strings.TrimPrefix(filepath.Ext(file), ".") {
+						t.Errorf("%s is not a %s picture: %v", file, filepath.Ext(file), err)
+					}
+					continue
+				}
+				want, err := os.ReadFile(golden)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !bytes.Equal(got, want) {
+					t.Errorf("%s differs from %s", file, golden)
+				}
 			}
 		})
 	}

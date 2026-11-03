@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { edgeStyle, nodeStyle } from '../fixtures';
 import type { NodeStyle } from '../protocol/view';
 import { toJSON, toSVG, type Drawing } from './export';
-import { nodeMarkup, type DrawnNode } from './markup';
+import { flowDash, nodeMarkup, type DrawnNode } from './markup';
 
 const font = { size: 14, weight: 400 };
 
@@ -100,5 +100,36 @@ describe('toJSON', () => {
     expect(json.nodes.map((n: { id: string }) => n.id)).toEqual(['a"<&>', 'b']);
     expect(json.nodes[1].ports).toEqual([{ name: 'p', side: 'left', x: 200, y: 20 }]);
     expect(json.edges).toEqual([{ id: 'e', points: [[100, 20], [200, 20]] }]);
+  });
+});
+
+describe('animated edges', () => {
+  it.each([
+    [[], [6, 4], 10],
+    [[0, 0], [6, 4], 10],
+    [[6, 3], [6, 3], 9],
+    [[5], [5], 10],
+    [[1.234, 2], [1.23, 2], 3.23],
+  ])('dash %j is drawn as %j with period %d', (stroke_dash, dash, period) => {
+    expect(flowDash(edgeStyle({ stroke_dash, animate: 'flow' }))).toEqual({ dash, period });
+  });
+
+  it('moves the dashes one period toward the end each half second, markers solid', () => {
+    const e = drawing.edges[0];
+    const svg = toSVG({ ...drawing, edges: [{ ...e, style: edgeStyle({ animate: 'flow' }) }, { ...e, id: 'f', style: edgeStyle({ animate: 'flow', stroke_dash: [5] }) }] });
+    expect(svg).toContain('<style>\n@keyframes dg-flow-0 { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -10px; } }\n.dg-flow-0 { animation: dg-flow-0 500ms linear infinite; }\n</style>');
+    expect(svg).toContain('<path d="M100 20 L200 20" class="dg-flow-0" fill="none" stroke="#3C4043" stroke-width="1.5" stroke-dasharray="6 4"/>');
+    expect(svg).toContain('class="dg-flow-0" fill="none" stroke="#3C4043" stroke-width="1.5" stroke-dasharray="5"/>');
+    expect(svg.match(/@keyframes/g)).toHaveLength(1);
+    expect(svg).toContain('<path d="M190 25 L200 20 L190 15" fill="none"');
+    expect(toSVG(drawing)).not.toContain('<style>');
+  });
+
+  it('names animations by sorted period, whatever the period', () => {
+    const e = drawing.edges[0];
+    const svg = toSVG({ ...drawing, edges: [{ ...e, style: edgeStyle({ animate: 'flow', stroke_dash: [1e21, 1] }) }, { ...e, id: 'f', style: edgeStyle({ animate: 'flow', stroke_dash: [3, 1.5] }) }] });
+    expect(svg).toContain('@keyframes dg-flow-0 { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -4.5px; } }');
+    expect(svg).toMatch(/@keyframes dg-flow-1 \{ from \{ stroke-dashoffset: 0; \} to \{ stroke-dashoffset: -\d+px; \} \}\n\.dg-flow-1 \{/);
+    expect(svg).toMatch(/class="dg-flow-1"[^>]*stroke-dasharray="\d+ 1"/);
   });
 });

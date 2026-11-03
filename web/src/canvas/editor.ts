@@ -2,8 +2,8 @@ import { dia } from '@joint/core';
 import type { Diagnostic, ServerMessage, ViewInfo } from '../protocol/client';
 import { connect } from '../protocol/client';
 import type { ResolvedView } from '../protocol/view';
-import type { Drawing } from './export';
-import { defsMarkup, edgeMarkup, nodeMarkup, shiftNode } from './markup';
+import { checkStyle, type Drawing } from './export';
+import { defsMarkup, edgeMarkup, flowCSS, flowPeriods, nodeMarkup, shiftNode } from './markup';
 
 const UNPINNED_OPACITY = 0.55;
 
@@ -30,6 +30,7 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
     height: 1,
   });
 
+  const flowStyle = document.head.appendChild(document.createElement('style'));
   let serverDiags: Diagnostic[] = [];
   let tooSmall: string[] = [];
   let pending: ResolvedView | undefined;
@@ -74,9 +75,12 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
           z: i,
         }),
     );
+    const periods = flowPeriods(d.edges);
     const edges = d.edges.map(
-      (e, i) => new Markup({ id: 'e:' + e.id, position: { x: 0, y: 0 }, size: { width: 1, height: 1 }, markup: edgeMarkup(e, d).join(''), z: nodes.length + i }),
+      (e, i) => new Markup({ id: 'e:' + e.id, position: { x: 0, y: 0 }, size: { width: 1, height: 1 }, markup: edgeMarkup(e, d, periods).join(''), z: nodes.length + i }),
     );
+    flowStyle.textContent = flowCSS(periods);
+    checkStyle(flowStyle);
     graph.resetCells([...nodes, ...edges]);
     paper.setDimensions(d.bounds.w, d.bounds.h);
     paper.translate(-d.bounds.x, -d.bounds.y);

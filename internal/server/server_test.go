@@ -232,6 +232,29 @@ func TestEditor(t *testing.T) {
 	}
 }
 
+// TestEditorAnimation checks in Chromium that the editor animates an edge with animate = "flow"
+// in real time.
+func TestEditorAnimation(t *testing.T) {
+	if testing.Short() {
+		t.Skip("starts Chromium")
+	}
+	dir, url := start(t)
+	ctx, cancel := chromedp.NewContext(context.Background())
+	defer cancel()
+	ctx, cancelTimeout := context.WithTimeout(ctx, 60*time.Second)
+	defer cancelTimeout()
+	if err := chromedp.Do(ctx, chromedp.Navigate(url), chromedp.Poll[chromedp.Void](`document.querySelector('[data-edge="ab"]') !== null`)); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "style.hcl"), []byte("edge_style \"default\" {\n  animate = \"flow\"\n}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	running := `document.querySelector('[data-edge="ab"] path').getAnimations().some((a) => a.animationName === 'dg-flow-0' && a.playState === 'running' && a.currentTime > 0)`
+	if err := chromedp.Do(ctx, chromedp.Poll[chromedp.Void](running)); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func jsString(s string) string {
 	data, _ := json.Marshal(s)
 	return string(data)

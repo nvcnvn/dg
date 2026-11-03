@@ -56,3 +56,11 @@ shape "rect" {
 shape "missing" {
   svg = file("shapes/missing.svg")
 }
+
+style "tag.broken" {
+  icon = file("shapes/broken.svg")
+}
+
+shape "page" {
+  svg = file("shapes/page.svg")
+}

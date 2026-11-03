@@ -50,3 +50,12 @@ body.disconnected #status::before {
 body.stale #paper {
   outline: 2px dashed #b3261e;
 }
+#export {
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: #ffffff;
+}
+#export svg {
+  display: block;
+}

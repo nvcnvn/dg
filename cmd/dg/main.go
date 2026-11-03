@@ -10,6 +10,7 @@ import (
 	"io"
 	"maps"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -25,7 +26,7 @@ const usage = `usage: dg <command> [flags]
 commands:
   check    validate the project
   fmt      format the project's files
-  export   draw a view as SVG or JSON geometry
+  export   draw a view, or every view, as SVG, PNG, GIF or JSON geometry
   serve    show the views in the browser, redrawn when a file changes
 `
 
@@ -170,16 +171,27 @@ func runFmt(args []string, stdout, stderr io.Writer) error {
 
 func runExport(args []string, stdout, stderr io.Writer) error {
 	var viewID, format, out string
+	var all bool
 	dir, err := flags("export", args, stderr, func(fl *flag.FlagSet) {
-		fl.StringVar(&viewID, "view", view.DefaultView, "view to export")
-		fl.StringVar(&format, "format", "svg", "output format: svg or json")
-		fl.StringVar(&out, "out", "", "output file (default standard output)")
+		fl.StringVar(&viewID, "view", "", "view to export (default \""+view.DefaultView+"\")")
+		fl.BoolVar(&all, "all", false, "export every view into the --out directory, one <view>.<format> file each")
+		fl.StringVar(&format, "format", "svg", "output format: svg, png, gif or json")
+		fl.StringVar(&out, "out", "", "output file, or directory with --all (default standard output)")
 	})
 	if err != nil {
 		return err
 	}
-	if format != "svg" && format != "json" {
-		return fmt.Errorf("export: unknown format %q (want svg or json)", format)
+	if !slices.Contains([]string{"svg", "png", "gif", "json"}, format) {
+		return fmt.Errorf("export: unknown format %q (want svg, png, gif or json)", format)
+	}
+	if all && out == "" {
+		return errors.New("export: --all needs --out, the directory to write into")
+	}
+	if all && viewID != "" {
+		return errors.New("export: --all and --view exclude each other")
+	}
+	if viewID == "" {
+		viewID = view.DefaultView
 	}
 
 	p, diags, err := load(dir)
@@ -189,29 +201,48 @@ func runExport(args []string, stdout, stderr io.Writer) error {
 	if err := report(stderr, diags); err != nil {
 		return err
 	}
-	if p.Views[viewID] == nil {
+	ids := []string{viewID}
+	if all {
+		ids = slices.Sorted(maps.Keys(p.Views))
+	} else if p.Views[viewID] == nil {
 		return fmt.Errorf("export: view %q is not defined (views: %s)", viewID, strings.Join(slices.Sorted(maps.Keys(p.Views)), ", "))
 	}
-	v, diags := p.Resolve(viewID)
-	if err := report(stderr, diags); err != nil {
-		return err
+	resolved := make([]*view.Resolved, len(ids))
+	var failed bool
+	for i, id := range ids {
+		v, diags := p.Resolve(id)
+		failed = report(stderr, diags) != nil || failed
+		resolved[i] = v
 	}
-	res, err := export.Render(context.Background(), v)
-	if err != nil {
-		return internalError{err}
+	if failed {
+		return errDiagnostics
 	}
-	for _, id := range res.TooSmall {
-		fmt.Fprintln(stderr, p.TooSmall(viewID, id))
+	files := map[string][]byte{}
+	for i, v := range resolved {
+		res, err := export.Render(context.Background(), v, format)
+		if err != nil {
+			return internalError{fmt.Errorf("view %s: %w", ids[i], err)}
+		}
+		for _, id := range res.TooSmall {
+			fmt.Fprintln(stderr, p.TooSmall(ids[i], id))
+		}
+		data := map[string][]byte{"svg": res.SVG, "png": res.PNG, "gif": res.GIF, "json": res.JSON}[format]
+		if !all && out == "" {
+			_, err = stdout.Write(data)
+			return err
+		}
+		path := out
+		if all {
+			path = filepath.Join(out, ids[i]+"."+format)
+		}
+		files[path] = data
 	}
-	data := res.SVG
-	if format == "json" {
-		data = res.JSON
+	if all {
+		if err := os.MkdirAll(out, 0o755); err != nil {
+			return internalError{err}
+		}
 	}
-	if out == "" {
-		_, err = stdout.Write(data)
-		return err
-	}
-	return ops.WriteFile(out, data)
+	return ops.WriteFiles(files)
 }
 
 // report prints errors and warnings, and returns errDiagnostics if there are errors.

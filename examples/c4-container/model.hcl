@@ -119,3 +119,33 @@ edge "email-customer" {
   kind  = "uses"
   label = "Sends e-mails to"
 }
+
+# The steps of signing in, shown by the sign-in view.
+
+edge "sign-in-1" {
+  from  = node.customer
+  to    = node.spa
+  kind  = "interaction"
+  label = "1. Submits credentials to"
+}
+
+edge "sign-in-2" {
+  from  = node.spa
+  to    = node.api
+  kind  = "interaction"
+  label = "2. Sends credentials to\n[JSON/HTTPS]"
+}
+
+edge "sign-in-3" {
+  from  = node.api
+  to    = node.database
+  kind  = "interaction"
+  label = "3. Validates credentials\nagainst\n[SQL/TCP]"
+}
+
+edge "sign-in-4" {
+  from  = node.api
+  to    = node.spa
+  kind  = "interaction"
+  label = "4. Returns a session token"
+}
