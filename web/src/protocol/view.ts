@@ -5,6 +5,8 @@ export interface ResolvedView {
   grid: number;
   // direction is the way the layers of the first layout run, when the view sets it.
   direction?: 'down' | 'right' | 'up' | 'left';
+  // of is the container whose inside the view shows.
+  of?: string;
   // breadcrumbs are the levels of views this view leads back to, outermost first.
   breadcrumbs?: string[][];
   // policy is set in a view whose of is a stack or grid container it does not draw: the

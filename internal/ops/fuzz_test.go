@@ -26,6 +26,10 @@ func FuzzOp(f *testing.F) {
 	}
 	for _, seed := range []string{
 		`{"op": "create_node", "kind": "service", "label": "Billing API", "view": "calls", "x": 10, "y": 10}`,
+		`[{"op": "set_kind", "id": "pool", "kind": "lane-set"}, {"op": "create_node", "kind": "worker", "parent": "pool", "view": "pool", "before": "worker-2"}]`,
+		`{"op": "show_node", "view": "calls", "id": "cache"}`,
+		`[{"op": "update_view", "id": "main", "exclude": ["node.gateway", "kind.worker"]}, {"op": "show_node", "view": "main", "id": "gateway"}]`,
+		`{"op": "hide_node", "view": "pool", "id": "worker-2"}`,
 		`{"op": "delete_node", "id": "pool", "recursive": true}`,
 		`{"op": "delete_node", "id": "rack"}`,
 		`{"op": "set_label", "id": "gateway", "label": "${x}"}`,

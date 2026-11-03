@@ -21,3 +21,12 @@ view "calls" {
 }
 
 view "solo" { include = [node.gateway] }
+
+view "listed" {
+  include = [
+    node.gateway, # first
+    node.cache,   # second
+    node["gpu/pool"],
+    node["worker-1"],
+  ]
+}

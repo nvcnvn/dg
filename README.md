@@ -23,7 +23,8 @@ tests that start Chromium. Golden files are rewritten with
 `testdata/check`, `dg fmt` output in `testdata/fmt/want`, resolved views and exports of every
 view of every example (PNG and GIF exports are not golden: the tests compare two runs).
 `go test ./internal/ops -update` rewrites the operation goldens in `testdata/ops/want` (the files
-each operation writes to a copy of `testdata/ops/in`). `testdata/lift` has a view for each case of
+each operation writes to a copy of `testdata/ops/in`) and `web/src/protocol/ops.ts`, the web app's
+types of the operations, which a test keeps equal to their definitions. `testdata/lift` has a view for each case of
 edge lifting and merging; its resolved views are goldens like the examples'.
 `go test ./internal/lsp -update` rewrites the language server's recorded sessions'
 goldens: each `testdata/lsp/*.jsonl` names a project on its first line and holds the client's
@@ -81,6 +82,7 @@ bin/dg op connect -C my-diagram --from api --to db --label "SQL" --json
 bin/dg op move -C my-diagram --view main --id db --x 200 --y 0
 bin/dg op reorder -C my-diagram --view main --container lanes \
   --order intake --order review                                        # stack or grid order
+bin/dg op hide_node -C my-diagram --view main --id db                   # exclude it from the view
 bin/dg op update_view -C my-diagram --id main \
   --collapse node.backend --unset edges                                # collapse, show every edge
 bin/dg op add_decoration -C my-diagram --view main \
@@ -121,12 +123,30 @@ is dropped:
   them; an undo keeps edits made since in a text editor elsewhere in the same files;
 - pan with the scroll bars, the middle button or Space+drag; zoom with Ctrl/⌘+wheel, +, − and 0.
 
+Model edits write the model files and `views.hcl`, each also one undo step:
+
+- drag a kind from the palette onto the canvas or into a container (or press Enter on it) to create
+  a node there; type its label, which also gives it its ID;
+- double-click a node or an edge's label, or press F2, to edit the label in place;
+- the inspector edits the selection: label, kind, tags, the properties its kind declares, ports, and
+  the rows of a table or class;
+- Connect (or C) draws edges by dragging from a node, port or row to another, of the kind chosen
+  beside it;
+- Ctrl/⌘+C and Ctrl/⌘+V copy and paste nodes with the edges among them, at the pointer;
+- Alt/Option while dragging moves a node into the container under the pointer, or out onto the
+  canvas; a toast offers to undo it;
+- the right-click menu (or Shift+F10) hides nodes from the view, deletes them, renames IDs, adds
+  ports, opens drill-down views, and promotes, attaches or detaches decorations; Delete deletes the
+  selection; "Add node…" shows a node of the model the view leaves out; "Decoration…" adds one;
+  "New view…" creates a view;
+- a node in a `read_only` file shows a lock: it can be moved, not edited.
+
 `dg lsp` serves the Language Server Protocol for a project's HCL files, on the editor's unsaved
 buffers: the diagnostics of `dg check`, completion of kinds, IDs, ports, rows, selectors and
 styles, hover, go to definition and find references, rename through `rename_id` (layout files
 included), and formatting as `dg fmt`. The VS Code extension runs it in a folder with `dg.hcl`;
 its command "dg: Open diagram" opens the `dg serve` editor in a panel beside the text, redrawn
-when a file is saved.
+when a file is saved; edits in the panel write the files the text editors show.
 
 `dg export --format` is `svg` (edge animation kept as CSS), `png` (animation at time 0), `gif`
 (one half-second animation period in 10 frames, looping) or `json` (geometry).

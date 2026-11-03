@@ -1,6 +1,7 @@
 {
   "view": "components",
   "grid": 10,
+  "of": "api",
   "breadcrumbs": [
     [
       "main"

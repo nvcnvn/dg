@@ -119,6 +119,22 @@ export async function run(): Promise<void> {
     await win.send("Input.dispatchKeyEvent", { type, modifiers: mod, key: "z", code: "KeyZ", windowsVirtualKeyCode: 90, nativeVirtualKeyCode: 90 });
   }
   await waitFor("the text editor to show the layout before the move", () => layoutDoc.getText() === original);
+
+  // The panel edits the model (FR-18): a label edited in place in the panel is written to the
+  // model file, which the open text editor shows.
+  await waitFor("the panel to draw the layout before the move", () => evaluate<boolean>(frame, `document.body.classList.contains('editable') && !document.getElementById('redo').disabled`));
+  const box = await evaluate<[number, number]>(
+    frame,
+    `(() => { const r = document.querySelector('[data-node="customer"]').getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; })()`,
+  );
+  const [cx, cy] = [panel[0] + box[0], panel[1] + box[1]];
+  for (const clickCount of [1, 2]) {
+    for (const type of ["mousePressed", "mouseReleased"]) await win.send("Input.dispatchMouseEvent", { type, x: cx, y: cy, button: "left", buttons: type === "mousePressed" ? 1 : 0, clickCount });
+  }
+  await waitFor("the label editor in the panel", () => evaluate<boolean>(frame, `document.activeElement?.classList.contains('dg-inline') === true`));
+  await win.send("Input.insertText", { text: "Customer" });
+  for (const type of ["rawKeyDown", "char", "keyUp"]) await win.send("Input.dispatchKeyEvent", { type, key: "Enter", code: "Enter", text: "\r", windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13 });
+  await waitFor("the text editor to show the new label", () => doc.getText().includes('label = "Customer"\n'));
   frame.close();
   win.close();
 }

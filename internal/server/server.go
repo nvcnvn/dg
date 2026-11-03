@@ -19,8 +19,10 @@ import (
 	"time"
 
 	"github.com/coder/websocket"
+	ctyjson "github.com/zclconf/go-cty/cty/json"
 
 	"github.com/nvcnvn/dg/internal/diag"
+	"github.com/nvcnvn/dg/internal/model"
 	"github.com/nvcnvn/dg/internal/ops"
 	"github.com/nvcnvn/dg/internal/project"
 	"github.com/nvcnvn/dg/internal/view"
@@ -39,6 +41,9 @@ type Server struct {
 	good    *project.Project // the latest load without errors
 	loadErr error            // set when the latest load failed outright
 	clients map[*client]bool
+	// modelData is the model message of the project modelOf, kept so it is encoded once.
+	modelOf   *project.Project
+	modelData []byte
 
 	// edit serializes the operations, undos and redos of every client with the messages they
 	// send; it guards the history and the session they share (FR-10).
@@ -48,10 +53,11 @@ type Server struct {
 }
 
 type client struct {
-	conn *websocket.Conn
-	mu   sync.Mutex // serializes view and sending
-	view string
-	last []byte // the last snapshot sent
+	conn  *websocket.Conn
+	mu    sync.Mutex // serializes view and sending
+	view  string
+	last  []byte // the last snapshot sent
+	model []byte // the last model message sent
 }
 
 // New loads the project in dir.
@@ -236,6 +242,10 @@ func (s *Server) update(ctx context.Context, c *client) {
 			all.Sort()
 		}
 		if !rdiags.HasErrors() {
+			if m := s.modelMessage(p); !bytes.Equal(m, c.model) {
+				c.model = m
+				c.write(ctx, m)
+			}
 			c.sendSnapshot(ctx, snapshotMessage{Type: "snapshot", Views: views(p), Resolved: r})
 		}
 	}
@@ -380,6 +390,101 @@ type snapshotMessage struct {
 	Type     string         `json:"type"`
 	Views    []viewInfo     `json:"views"`
 	Resolved *view.Resolved `json:"resolved"`
+}
+
+// modelMessage returns the model message of p, encoded once per load.
+func (s *Server) modelMessage(p *project.Project) []byte {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.modelOf != p {
+		data, err := json.Marshal(modelMessage{Type: "model", Model: modelOf(p)})
+		if err != nil {
+			panic(fmt.Sprintf("encoding the model message: %v", err))
+		}
+		s.modelOf, s.modelData = p, data
+	}
+	return s.modelData
+}
+
+// modelMessage tells a client the model it edits; it is sent before the snapshot that needs it,
+// when it differs from the last one the client got.
+type modelMessage struct {
+	Type  string    `json:"type"`
+	Model modelInfo `json:"model"`
+}
+
+// modelInfo is what the editor needs of the whole project to edit the model: the vocabulary
+// for its palette and inspector, and every node and edge, drawn in the view or not.
+type modelInfo struct {
+	Kinds     []project.KindInfo `json:"kinds"`
+	EdgeKinds []string           `json:"edge_kinds"`
+	Tags      []string           `json:"tags"`
+	Nodes     []nodeInfo         `json:"nodes"`
+	Edges     []edgeInfo         `json:"edges"`
+}
+
+type nodeInfo struct {
+	ID           string                     `json:"id"`
+	Kind         string                     `json:"kind"`
+	Label        string                     `json:"label"`
+	Parent       string                     `json:"parent,omitempty"`
+	Tags         []string                   `json:"tags,omitempty"`
+	Props        map[string]json.RawMessage `json:"props,omitempty"`
+	Ports        []view.Port                `json:"ports,omitempty"`
+	Compartments []view.Compartment         `json:"compartments,omitempty"`
+	ReadOnly     bool                       `json:"read_only,omitempty"`
+}
+
+type edgeInfo struct {
+	ID       string       `json:"id"`
+	Kind     string       `json:"kind"`
+	From     view.End     `json:"from"`
+	To       view.End     `json:"to"`
+	Labels   model.Labels `json:"labels"`
+	Tags     []string     `json:"tags,omitempty"`
+	ReadOnly bool         `json:"read_only,omitempty"`
+}
+
+// modelOf returns the model info of p, nodes and edges in ID order. A node's ports are its
+// instance ports.
+func modelOf(p *project.Project) modelInfo {
+	v := p.Vocabulary()
+	out := modelInfo{Kinds: v.Kinds, EdgeKinds: v.EdgeKinds, Tags: v.Tags, Nodes: []nodeInfo{}, Edges: []edgeInfo{}}
+	for _, id := range slices.Sorted(maps.Keys(p.Model.Nodes)) {
+		n := p.Model.Nodes[id]
+		info := nodeInfo{ID: id, Kind: n.Kind, Label: n.Label, Tags: n.Tags, ReadOnly: p.IsReadOnly(n.Range.Filename)}
+		if n.Parent != nil {
+			info.Parent = n.Parent.Node
+		}
+		for _, prop := range n.Props {
+			if data, err := ctyjson.Marshal(prop.Value, prop.Value.Type()); err == nil {
+				if info.Props == nil {
+					info.Props = map[string]json.RawMessage{}
+				}
+				info.Props[prop.Name] = data
+			}
+		}
+		for _, port := range n.Ports {
+			info.Ports = append(info.Ports, view.Port{Name: port.Name, Side: port.Side})
+		}
+		for _, c := range n.Compartments {
+			rc := view.Compartment{Name: c.Name, Rows: []view.Row{}}
+			for _, r := range c.Rows {
+				rc.Rows = append(rc.Rows, view.Row{Name: r.Name, Type: r.Type, Key: r.Key})
+			}
+			info.Compartments = append(info.Compartments, rc)
+		}
+		out.Nodes = append(out.Nodes, info)
+	}
+	for _, id := range slices.Sorted(maps.Keys(p.Model.Edges)) {
+		e := p.Model.Edges[id]
+		out.Edges = append(out.Edges, edgeInfo{
+			ID: id, Kind: e.Kind, Labels: e.Labels, Tags: e.Tags, ReadOnly: p.IsReadOnly(e.Range.Filename),
+			From: view.End{Node: e.From.Node, Port: e.From.Port, Row: e.From.Row},
+			To:   view.End{Node: e.To.Node, Port: e.To.Port, Row: e.To.Row},
+		})
+	}
+	return out
 }
 
 type diagnosticsMessage struct {

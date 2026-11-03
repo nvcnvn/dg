@@ -25,6 +25,7 @@ type Op struct {
 	Kind         string             `json:"kind,omitempty"`
 	Label        *string            `json:"label,omitempty"`
 	Parent       string             `json:"parent,omitempty"`
+	Before       string             `json:"before,omitempty"`
 	View         string             `json:"view,omitempty"`
 	X            *int               `json:"x,omitempty"`
 	Y            *int               `json:"y,omitempty"`
@@ -129,8 +130,9 @@ var (
 
 // Defs are the operations, in the order help lists them.
 var Defs = []Def{
-	{"create_node", "Append a node block. With view, also make the view show it (adding node.<id> to its include if needed) and, with x and y, pin it there.", []Field{
-		fKind.req(), fNode.help("ID of the new node (generated from the label, or the kind, when omitted)"), fLabel, fParent, fView.help("view to show the node in"), fX, fY}},
+	{"create_node", "Append a node block. With view, also make the view show it (adding node.<id> to its include if needed) and, with x and y, pin it there; where a stack or grid container places it in the view, it goes in the container's order, before before or last.", []Field{
+		fKind.req(), fNode.help("ID of the new node (generated from the label, or the kind, when omitted)"), fLabel, fParent, fView.help("view to show the node in"), fX, fY,
+		{Name: "before", Schema: strSchema, Help: "with view, where a stack or grid container places the new node: the sibling it goes before in the container's order (default: last)", Example: `"review"`}}},
 	{"delete_node", "Remove a node with its edges, layout entries, decorations attached to it or placed in it, view selectors and node.<id> view rules. Refused while a view has of on it.", []Field{
 		fNode.req(), {Name: "recursive", Schema: `{"type":"boolean"}`, Help: "also delete the node's descendants; otherwise its children move to its parent, unpinned", Example: `true`}}},
 	{"set_label", "Change a node's label. A node created in the same batch without a label or ID takes a new ID from this first label (spec 6.3).", []Field{fNode.req(), fLabel.req()}},
@@ -174,6 +176,8 @@ var Defs = []Def{
 		fStyles.help(fStyles.Help + "; replaces every style rule of the view, keeping unchanged ones as they are written"),
 		fUnset.help("attributes to remove: title, include, exclude, collapse, edges, of, direction, overlays, styles")}},
 	{"delete_view", "Remove a view from views.hcl, and its layout file.", []Field{fViewID.req()}},
+	{"show_node", "Make a view show an existing node: remove node.<id> from its exclude and, when its selectors still do not show the node, add node.<id> to its include. Refused when the view still does not show it (excluded by another selector, or inside a collapsed container).", []Field{fView.req(), fNode.req()}},
+	{"hide_node", "Make a view stop showing a node: remove node.<id> from its include and, when its selectors still show the node, add node.<id> to its exclude.", []Field{fView.req(), fNode.req()}},
 	{"add_decoration", "Add a decoration to a view's layout file (spec 5.7).", []Field{fView.req(),
 		fDecorationID.help("ID of the new decoration (generated from its type when omitted)"),
 		fDecoration.help(fDecoration.Help + "; type is required").req()}},

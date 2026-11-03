@@ -1,10 +1,15 @@
 import { dia } from '@joint/core';
 import { scene, type Op, type Scene } from '../edit/edit';
-import type { Diagnostic, ServerMessage, ViewInfo } from '../protocol/client';
+import { createOps, nodeSelector, type DecorationType } from '../edit/model';
+import type { Point } from '../geometry/geometry';
+import type { Diagnostic, ModelInfo, Result, ServerMessage, ViewInfo } from '../protocol/client';
 import { connect } from '../protocol/client';
 import type { ResolvedView } from '../protocol/view';
+import { actions, type Selection } from './actions';
+import { h } from './dialog';
 import { checkStyle, layerMarkup, layers, type Drawing } from './export';
 import { interact } from './interact';
+import { inspector, palette } from './panels';
 import { defsMarkup, flowCSS, flowPeriods, nodeMarkup, shiftNode } from './markup';
 
 const UNPINNED_OPACITY = 0.55;
@@ -12,12 +17,15 @@ const UNPINNED_OPACITY = 0.55;
 const Markup = dia.Element.define('dg.Markup', {});
 const namespace = { dg: { Markup } };
 
+// WIDE is the narrowest window, in pixels, that shows the palette and the inspector at first.
+const WIDE = 1000;
+
 // startEditor runs the editor: it draws each snapshot the server sends on a JointJS paper, with
 // the markup the SVG export uses, fading unpinned nodes in a view with pinned ones, and lists
-// diagnostics. Layout gestures (canvas/interact.ts) send operations; undo and redo go to the
-// server, whose history the clients share (FR-10). While the project has errors the last good
-// drawing stays, read-only. The view switcher, the breadcrumbs and the drill-down badges select
-// views (spec 8.2).
+// diagnostics. Gestures on the canvas (canvas/interact.ts), the palette, the inspector
+// (canvas/panels.ts) and the toolbar send operations; undo and redo go to the server, whose
+// history the clients share (FR-10). While the project has errors the last good drawing stays,
+// read-only. The view switcher, the breadcrumbs and the drill-down badges select views (spec 8.2).
 export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: Drawing; family: string }>) {
   const select = document.getElementById('views') as HTMLSelectElement;
   const crumbs = document.getElementById('crumbs')!;
@@ -31,6 +39,12 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
   const unpin = document.getElementById('unpin') as HTMLButtonElement;
   const zoomLabel = document.getElementById('zoom')!;
   const ctxMenu = document.getElementById('context-menu')!;
+  const newView = document.getElementById('new-view') as HTMLButtonElement;
+  const addNode = document.getElementById('add-node') as HTMLButtonElement;
+  const connectBtn = document.getElementById('connect') as HTMLButtonElement;
+  const edgeKind = document.getElementById('edge-kind') as HTMLSelectElement;
+  const addDecoration = document.getElementById('add-decoration') as HTMLSelectElement;
+  const toastEl = document.getElementById('toast')!;
   const graph = new dia.Graph({}, { cellNamespace: namespace });
   const paper = new dia.Paper({
     el: document.getElementById('paper')!,
@@ -47,12 +61,17 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
   const flowStyle = document.head.appendChild(document.createElement('style'));
   let serverDiags: Diagnostic[] = [];
   let tooSmall: string[] = [];
-  let pending: ResolvedView | undefined;
+  let model: ModelInfo = { kinds: [], edge_kinds: [], tags: [], nodes: [], edges: [] };
+  let pending: { view: ResolvedView; model: ModelInfo } | undefined;
   let drawing = false;
   let shown: ResolvedView | undefined;
   let received: ResolvedView | undefined;
   let current: { scene: Scene; family: string } | undefined;
-  let ready: { view: ResolvedView; drawing: Drawing; family: string } | undefined;
+  let ready: { view: ResolvedView; model: ModelInfo; drawing: Drawing; family: string } | undefined;
+  // then are the callbacks of requests waiting for their ack; after, the callback of the request
+  // answered last, waiting for the drawing its change brings.
+  const then = new Map<number, (results: Result[]) => void>();
+  let after: (() => void) | undefined;
   let open = false;
   // waiting is the seq of the request the server has not answered yet; redraw is set when a
   // snapshot arrived since it was sent, whose drawing ends the wait.
@@ -82,12 +101,18 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
   let canUndo = false;
   let canRedo = false;
   const controls = () => {
-    document.body.classList.toggle('editable', editable());
-    undo.disabled = !canUndo || !editable();
-    redo.disabled = !canRedo || !editable();
-    unpin.disabled = !editable() || !ui.can('unpin');
-    arrange.disabled = !editable() || !ui.can(2);
+    const on = editable();
+    document.body.classList.toggle('editable', on);
+    undo.disabled = !canUndo || !on;
+    redo.disabled = !canRedo || !on;
+    unpin.disabled = !on || !ui.can('unpin');
+    arrange.disabled = !on || !ui.can(2);
     for (const o of arrange.options) if (o.value === 'x' || o.value === 'y') o.disabled = !ui.can(3);
+    for (const c of [newView, addNode, connectBtn, edgeKind, addDecoration]) c.disabled = !on;
+    connectBtn.setAttribute('aria-pressed', String(ui.connecting()));
+    const s = current?.scene;
+    pal.update(s?.model.kinds ?? [], on);
+    panel.show(s, ui.selection(), !open || document.body.classList.contains('stale') || !s);
   };
 
   const show = (d: Drawing, family: string) => {
@@ -122,7 +147,7 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
     checkStyle(flowStyle);
     graph.resetCells(cells);
     fit(d);
-    if (paper.el.dataset.view !== d.view) window.scrollTo(0, 0);
+    if (paper.el.dataset.view !== d.view) paper.el.parentElement!.scrollTo(0, 0);
     paper.el.dataset.view = d.view;
     ui.shown();
   };
@@ -137,13 +162,14 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
   };
 
   // display shows a drawing of view now, or after the gesture in progress.
-  const display = (view: ResolvedView, d: Drawing, family: string) => {
+  const display = (view: ResolvedView, model: ModelInfo, d: Drawing, family: string) => {
     if (ui.busy()) {
-      ready = { view, drawing: d, family };
+      ready = { view, model, drawing: d, family };
       return;
     }
     ready = undefined;
-    current = { scene: scene(view, d), family };
+    current = { scene: scene(view, d, model), family };
+    showKinds(model.edge_kinds);
     show(d, family);
     shown = view;
     tooSmall = d.nodes.filter((n) => n.tooSmall).map((n) => n.id);
@@ -154,16 +180,21 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
     drawing = true;
     try {
       while (pending) {
-        const view = pending;
+        const { view, model } = pending;
         pending = undefined;
         try {
           const { drawing: d, family } = await render(view);
-          display(view, d, family);
+          display(view, model, d, family);
         } catch (err) {
           status.textContent = `Drawing failed: ${err}`;
         }
         if (!pending) redraw = false;
         showDiagnostics();
+        if (!pending && waiting === undefined && after) {
+          const f = after;
+          after = undefined;
+          f();
+        }
       }
     } finally {
       drawing = false;
@@ -243,32 +274,91 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
     select.value = current;
   };
 
-  const ui = interact(paper, document.getElementById('canvas')!, ctxMenu, {
+  const send = (op: Op, f?: (results: Result[]) => void) => request({ type: 'op', op }, f);
+  const setStatus = (message: string) => {
+    status.textContent = message;
+  };
+  // toast shows message with a button that undoes the change it tells of (spec 7.6), until the
+  // next change or drawing, after which undo would mean something else.
+  const toast = (message: string) => {
+    const button = h('button', { type: 'button', onclick: () => (hideToast(), request({ type: 'undo' })) }, 'Undo');
+    toastEl.replaceChildren(h('span', {}, message), button);
+    toastEl.hidden = false;
+  };
+  const hideToast = () => {
+    toastEl.hidden = true;
+  };
+  const host = {
     scene: () => current?.scene,
     editable,
-    send: (op: Op) => request({ type: 'op', op }),
+    send,
+    select: (sel: Selection) => ui.select(sel),
+    selectView: (id: string) => conn.selectView(id),
+    status: setStatus,
+  };
+  const act = actions(host);
+
+  const ui = interact(paper, document.getElementById('canvas')!, ctxMenu, {
+    ...host,
     restore: () => current && show(current.scene.drawing, current.family),
     ended: () => {
-      if (ready) display(ready.view, ready.drawing, ready.family);
+      if (ready) display(ready.view, ready.model, ready.drawing, ready.family);
+      controls();
     },
-  }, () => current && fit(current.scene.drawing), () => controls());
+    toast,
+    edgeKind: () => edgeKind.value,
+  }, act, () => current && fit(current.scene.drawing), () => controls());
 
-  const request = (r: Parameters<typeof conn.send>[0]) => {
+  // create creates a node of kind at p, then selects it and edits its label in place, so the
+  // first label gives it its ID (spec 6.3).
+  const create = (kind: string, p: Point) => {
+    const s = current?.scene;
+    const op = s && createOps(s, kind, p);
+    if (!op || !editable()) return;
+    send(op, (results) => {
+      const id = results.find((r) => r.op === 'create_node')?.id;
+      if (id) ui.editLabel(id);
+    });
+  };
+  const pal = palette(document.getElementById('palette')!, (kind) => create(kind, ui.center()), (kind, client) => {
+    const p = ui.at(client);
+    if (p) create(kind, p);
+  });
+  const panel = inspector(document.getElementById('inspector')!, host, act);
+
+  const showKinds = (kinds: string[]) => {
+    if ([...edgeKind.options].map((o) => o.value).join('\n') === kinds.join('\n')) return;
+    const was = edgeKind.value || 'default';
+    edgeKind.replaceChildren(...kinds.map((k) => h('option', { value: k }, k)));
+    edgeKind.value = kinds.includes(was) ? was : kinds[0] ?? '';
+  };
+
+  // request sends r unless the editor cannot edit now; f gets the results of an operation once
+  // the drawing it brings is shown.
+  const request = (r: Parameters<typeof conn.send>[0], f?: (results: Result[]) => void) => {
     if (!editable()) return false;
     waiting = conn.send(r);
+    if (waiting !== undefined && f) then.set(waiting, f);
     status.textContent = '';
     controls();
     return waiting !== undefined;
   };
 
   // answered ends the wait for request seq: after an error, or a change that drew nothing new,
-  // the current drawing is shown again without what the gesture moved.
-  const answered = (seq: number | undefined, failed: boolean) => {
+  // the current drawing is shown again without what the gesture moved. An operation's callback
+  // runs once its drawing is shown.
+  const answered = (seq: number | undefined, failed: boolean, results: Result[] = []) => {
     if (seq === undefined || seq !== waiting) return;
     waiting = undefined;
+    const f = then.get(seq);
+    then.clear();
+    after = f && !failed ? () => f(results) : undefined;
     if (failed || !redraw) {
       redraw = false;
       if (current) show(current.scene.drawing, current.family);
+      const g = after;
+      after = undefined;
+      g?.();
     }
     controls();
   };
@@ -276,10 +366,19 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
   const conn = connect(
     (m: ServerMessage) => {
       switch (m.type) {
+        case 'model':
+          model = m.model;
+          if (current) current = { ...current, scene: { ...current.scene, model } };
+          if (ready) ready.model = model;
+          showKinds(model.edge_kinds);
+          controls();
+          break;
         case 'snapshot':
           showViews(m.views, m.resolved.view);
           showCrumbs(m.resolved);
-          pending = received = m.resolved;
+          hideToast();
+          received = m.resolved;
+          pending = { view: m.resolved, model };
           if (waiting !== undefined) redraw = true;
           void drawLatest();
           break;
@@ -288,13 +387,14 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
           showDiagnostics();
           break;
         case 'history':
+          hideToast();
           canUndo = m.undo;
           canRedo = m.redo;
           controls();
           break;
         case 'ack':
           status.textContent = (m.warnings ?? []).map((d) => `warning: ${d.summary}${d.detail ? `: ${d.detail}` : ''}`).join(' ');
-          answered(m.seq, false);
+          answered(m.seq, false, m.results ?? []);
           break;
         case 'error':
           status.textContent = m.message;
@@ -312,7 +412,29 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
       controls();
     },
   );
+  // The palette and the inspector start hidden in a narrow window, such as a VS Code panel.
+  for (const [id, cls] of [
+    ['show-palette', 'no-palette'],
+    ['show-inspector', 'no-inspector'],
+  ]) {
+    const b = document.getElementById(id)!;
+    const set = (on: boolean) => {
+      document.body.classList.toggle(cls, !on);
+      b.setAttribute('aria-pressed', String(on));
+    };
+    set(window.innerWidth >= WIDE);
+    b.addEventListener('click', () => set(document.body.classList.contains(cls)));
+  }
   select.addEventListener('change', () => conn.selectView(select.value));
+  newView.addEventListener('click', () => act.newView(ui.selection().nodes.map(nodeSelector)));
+  addNode.addEventListener('click', () => act.addNode());
+  connectBtn.addEventListener('click', () => ui.connecting(!ui.connecting()));
+  addDecoration.addEventListener('change', () => {
+    const type = addDecoration.value as DecorationType;
+    addDecoration.value = '';
+    const sel = ui.selection();
+    if (type) void act.addDecoration(type, ui.center(), sel.nodes.length === 1 ? sel.nodes[0] : undefined);
+  });
   undo.addEventListener('click', () => request({ type: 'undo' }));
   redo.addEventListener('click', () => request({ type: 'redo' }));
   unpin.addEventListener('click', () => ui.unpin());

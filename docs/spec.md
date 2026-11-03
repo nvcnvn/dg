@@ -539,12 +539,12 @@ func newID(kind, label string, taken map[string]bool) string {
 
 Edge IDs: `slug(fromNode) + "-" + slug(toNode)` (node IDs only, without port or row), slugged again and prefixed alike, with the same collision suffix. Generated IDs are always simple.
 
-`create_node` and `connect` (FR-12) take an optional `id`: given, it is used as it is (simple or quoted, section 6.1) and the operation is refused if the ID is taken or invalid; omitted, it is generated as above. An agent that builds a model names its IDs; the editor generates them.
+`create_node` and `connect` (FR-12) take an optional `id`: given, it is used as it is (simple or quoted, section 6.1) and the operation is refused if the ID is taken or invalid; omitted, it is generated as above. An agent that builds a model names its IDs; the editor leaves them to the operation, except for pasted nodes: the `connect` operations of a paste's batch name its copies, so the editor generates their IDs by this rule and passes them as `id`.
 
 ### 6.3 Freezing
 
 - An ID is frozen once created.
-- One exception: a node created with an ID derived from its kind (no label and no `id` given) is re-slugged **once**, from the first label entered in the same editing session, with every reference renamed as by `rename_id`. A session is one `dg op` command or MCP `op` call (so the rule applies within a `batch`), or the lifetime of `dg serve`.
+- One exception: a node created with an ID derived from its kind (no label and no `id` given) is re-slugged **once**, from the first label entered in the same editing session, with every reference renamed as by `rename_id`. A session is one `dg op` command or MCP `op` call (so the rule applies within a `batch`), or the lifetime of `dg serve`. The editor creates a node from the palette this way and opens its label editor at once, so the first label typed names it.
 - Changing a label never changes an ID.
 
 ### 6.4 Renaming
@@ -646,8 +646,8 @@ Routing:
 ### 7.6 Dragging rules
 
 - **Without a modifier key:** a node stays inside its frame: never above or left of its container's content origin, and in a container with a pinned size, within its padding of the right and bottom sides (a size pinned on one axis clamps that axis). A container without a pinned size grows, drawn growing during the drag. Positions move on the grid. A selection moves as one, as far as its most limited node can.
-- **With the re-parent modifier** (Alt / Option): containers under the pointer are highlighted; dropping onto the innermost one sets `parent` (a model change); dropping on empty canvas clears `parent`. The parent change and the node's new position, or its place in a `stack`/`grid` `order`, are sent as one batch. The editor shows an undo toast.
-- Dropping a node onto itself or one of its descendants is refused, as is re-parenting a node whose definition is read-only.
+- **With the re-parent modifier** (Alt / Option): the node leaves its frame freely, and the innermost expanded container under the pointer is highlighted; dropping onto it sets `parent` (a model change); dropping on empty canvas clears `parent`, or, in a view whose `of` it does not draw, sets it to the `of`. The parent change and the node's new position, or its place in a `stack`/`grid` `order` (before the sibling past the pointer, as a reorder drops it; its position is unpinned, its size and pinned ports kept), are sent as one batch; in a container whose size is pinned the node is kept within its padding, as without a modifier. The editor shows a toast whose button undoes it. A drop that leaves every parent as it was is a move.
+- A node and its descendants move with the pointer, so they are never the container under it: a node cannot be dropped onto itself or a descendant. Re-parenting a node whose definition is read-only is refused, and the drop sends nothing.
 - Dragging a multi-node selection sends one batch of moves; a node inside another selected node moves with it and gets no move of its own. Dragging a child of a `stack` or `grid` container moves only that child, drawn see-through so the siblings it passes show, and drops it before the first sibling past the pointer along a stack, or in the place of the sibling nearest the pointer in a grid (section 7.3); while it is dragged, a line across the stack where it will go, or an outline of the place it takes in the grid, shows where it lands.
 
 ---
@@ -775,7 +775,7 @@ When a model file does not parse, references, selectors and layout entries are n
 
 ### B. Resolution (Go)
 
-**FR-4 Resolve a view.** Produce the resolved view: visible nodes with kind, label, merged style (section 8.4), frame, ports, rows, pin data from the layout (relative coordinates, order lists), collapse state, drill-down targets, read-only flags; visible and lifted edges with labels, style, hints; decorations with their defaults; overlays with member IDs and style; breadcrumbs and the view's `direction`.
+**FR-4 Resolve a view.** Produce the resolved view: visible nodes with kind, label, merged style (section 8.4), frame, ports, rows, pin data from the layout (relative coordinates, order lists), collapse state, drill-down targets, read-only flags; visible and lifted edges with labels, style, hints; decorations with their defaults; overlays with member IDs and style; breadcrumbs, the view's `direction` and its `of`.
 - AC: no absolute coordinates are computed in Go.
 - AC: lifting and merging follow section 8.3 exactly.
 
@@ -792,7 +792,7 @@ When a model file does not parse, references, selectors and layout entries are n
 ### D. Editor
 
 **FR-10 Serve (`dg serve`).** HTTP server, open the browser, WebSocket protocol:
-- server → client: `snapshot` (resolved view), `diagnostics`, `history` (`{undo, redo}`: whether the session has a change to undo and to redo), `ack` (`{results, files, warnings}`: the operation's results as `dg op --json` gives them, including generated IDs, and the files written), `error` (`{message, diagnostics?}`, the diagnostics of a refused operation);
+- server → client: `model` (`{model}`: what the editor edits: the kinds, edge kinds and tags `dg vocabulary` prints, and every node, with its kind, label, parent, tags, properties, instance ports, rows and whether a read-only file defines it, and every edge, with its ends, kind, labels and tags), sent before a client's first snapshot and before any later snapshot when it changed since the client's last, and alone when the model changed but the drawing did not; `snapshot` (`{views, resolved}`: the views' IDs and titles and the resolved view), `diagnostics`, `history` (`{undo, redo}`: whether the session has a change to undo and to redo), `ack` (`{results, files, warnings}`: the operation's results as `dg op --json` gives them, including generated IDs, and the files written), `error` (`{message, diagnostics?}`, the diagnostics of a refused operation);
 - client → server: `op` (`{op}`, an FR-12 operation object, a batch included), `select-view` (`{view}`), `undo`, `redo`. Each may carry a whole number `seq`, which the `ack` or `error` answering it repeats, also when the rest of the message is not valid. Selecting a view that is not defined is answered with `error`. An unknown message type or field is an `error`.
 - After an operation, undo or redo that wrote files, every client gets its new `snapshot` and then the `history`, before the `ack`; a client gets the `history` after each `select-view` too. The editor sends nothing while it waits for an answer and for the drawing it brings, or while the project has errors.
 - `dg serve` listens only on a loopback address and answers only requests whose `Host` is one, so another site cannot reach it by rebinding a host name; it has no authentication.
@@ -817,6 +817,19 @@ When a model file does not parse, references, selectors and layout entries are n
 - View switcher, breadcrumbs, new-view dialog (title, selectors, collapse, overlays).
 - Read-only elements show a lock icon; model edits on them are disabled, layout edits are allowed.
 - How: a click selects a node or edge, Shift-click adds or removes a node, a box dragged on empty canvas selects the nodes inside it (Shift adds them), Ctrl/⌘+A selects every node. A selected node has corner handles (a stack or grid child only the bottom right one) and a handle on each port its shape's anchors do not place; a selected edge has handles at its ends that have no port or row, at its via points and on its middle label. A double-click on a selected edge adds a via point there, in route order; one on a via point removes it. Unpin, align and distribute are in the toolbar and the context menu, and U unpins. Undo and redo are toolbar buttons, Ctrl/⌘+Z and Ctrl/⌘+Shift+Z (or Ctrl+Y). Pan with the scroll bars, the middle button or Space+drag; zoom with Ctrl/⌘+wheel, +, −, 0 and the toolbar. Escape cancels a drag. Selection outlines and handles are drawn in the paper's tools layer, never in the drawing's markup, so export does not hold them.
+- How the model is edited:
+  - Palette: the kinds of the loaded packs. A kind dragged onto the canvas or into an expanded container is created there with `create_node` (`view`, `parent` and `x`, `y` in its frame, or `before` in a `stack` or `grid`; within a grid unit of the side of a stack's child, between it and the next, it goes into the stack itself, so a lane can be added between lanes); one chosen by click or Enter is created in the middle of what the canvas shows. The new node is selected with its label editor open; the creation and the label typed are two gestures, so two undo steps.
+  - "Add node…" searches the model's nodes the view does not draw, by ID or label, and shows one (`show_node`).
+  - Connect mode (the toolbar's Connect, or C; Escape leaves it): a drag from a node, a port (within a few pixels of it) or a table's row to another draws an edge (`connect` with `view`) of the kind chosen beside the button.
+  - Labels: a double-click on a node, or F2 or Enter on the selection, edits its label in place (Enter commits, Shift+Enter breaks the line, Escape cancels); on an edge's middle label it edits that.
+  - Inspector, beside the canvas: a node's label, kind, tags, its kind's properties (a field per declared property, typed: text, number, or a choice of unset, true and false), its instance ports with add and remove, and the rows of a node whose kind has rows (compartments of rows with key, name and type, sent together); an edge's kind, labels and tags; a decoration's text, attach or detach and promote. Each field sends one operation when it changes, and the focus stays where it went.
+  - Copy and paste: Ctrl/⌘+C copies the selected nodes with the drawn nodes inside them, their pinned sizes and ports; Ctrl/⌘+V pastes them with the top left corner of their box at the pointer, into the container under it, each paste at the same point a grid unit further.
+  - Delete or Backspace deletes the selection from the model, or a decoration from the view.
+  - Context menu (right button, Shift+F10 or the menu key; arrow keys move through it): for nodes, edit label, copy, paste, hide from view (`hide_node`, which hides what they hold too), delete from model, delete with contents (recursive), rename ID, add port, the views that open the node's inside, and the layout actions; for an edge, edit label, rename, delete and reset route; for a decoration, promote, attach or detach, delete; on the canvas, paste here, add node and add text. An item that does not apply is left out, one refused for a reason, such as a read-only file, is shown disabled with the reason.
+  - Decorations: the toolbar's Decoration menu adds one of each type in the middle of the canvas, or attached above the selected node; a text asks for its text and an image for its file.
+  - "New view…" asks for a title, an ID, include (the selected nodes, else `all`), exclude and collapse selectors and overlays, creates the view and switches to it.
+  - Read-only: a node or edge in a read-only file has a lock in its corner; its inspector fields and the model items of its menu are disabled, and a label edit, delete or re-parent of it is refused with a message, while it moves and resizes like any node.
+  - The canvas's keys apply only while the focus is not on a control or in the toolbar, panels, menus, dialogs or toast; a press on the canvas takes it back. Dialogs submit with Enter and cancel with Escape. The palette and the inspector can be hidden from the toolbar, and start hidden in a window under 1,000 pixels wide, such as a VS Code panel; the toolbar wraps.
 - AC: dragging runs locally; only the drop sends an operation.
 - AC: a gesture that changes several things (multi-select move, align, paste, re-parent with move) sends one batch and is one undo step.
 
@@ -827,7 +840,7 @@ When a model file does not parse, references, selectors and layout entries are n
 | Operation | Effect |
 |---|---|
 | `batch {ops}` | apply the operations in order, atomically, as one undo step; validation runs once, on the result |
-| `create_node {kind, id?, label?, parent?, view?, x?, y?}` | append `node` block; if `view` given, add `node.<id>` to its `include` when its selectors would not show the node (refused if the view still does not, because of `exclude` or a collapse) and, with `x`,`y`, pin it there (relative to the new node's frame) |
+| `create_node {kind, id?, label?, parent?, view?, x?, y?, before?}` | append `node` block (without `kind` when it is `node`, the default); if `view` given, add `node.<id>` to its `include` when its selectors would not show the node (refused if the view still does not, because of `exclude` or a collapse) and, with `x`,`y`, pin it there (relative to the new node's frame); where a `stack` or `grid` container places it in the view, write the container's `order` with it before sibling `before`, else last |
 | `delete_node {id, recursive?}` | remove the block, its edges, its layout entries, the decorations attached to it or placed in it, its lifted-edge hints, and its entries in view selectors and `node.<id>` rules; children move to its parent (unpinned), or are deleted too with `recursive`; refused while a view has `of` on it |
 | `set_label {id, label}` | change `label` |
 | `set_parent {id, parent?}` | set `parent`, or remove it when `parent` is empty or omitted; layout entries keep their frame, which may become stale (section 7.1) |
@@ -847,6 +860,8 @@ When a model file does not parse, references, selectors and layout entries are n
 | `create_view {id, title?, include?, exclude?, collapse?, edges?, of?, direction?, overlays?, styles?}` | append a view block to `views.hcl` (selectors written as in it, such as `node.api` or `edge_kind.uses`; `overlays` a list of `{id, members, style?, label?}`; `styles` a list of view style rules `{type?: style or edge_style, label, props}`) |
 | `update_view {id, title?, include?, exclude?, collapse?, edges?, of?, direction?, overlays?, styles?, unset?}` | set the attributes given; `overlays` and `styles` replace the view's overlay blocks and style rules, keeping a block whose content is unchanged as it is; `unset` names attributes to remove (or `overlays`, `styles`); a new attribute goes before the view's nested blocks |
 | `delete_view {id}` | remove the view block and its layout file |
+| `show_node {view, id}` | make the view show an existing node and what it holds: remove `node.<id>`, `children.<id>` and `descendants.<id>` from its `exclude` (and an `exclude` left empty), then add `node.<id>` to its `include` when its selectors would not show the node; refused if the view still does not |
+| `hide_node {view, id}` | make the view stop showing a node it shows and the nodes inside it: remove from its `include` the `node.<…>` selectors naming them and `children.<id>` and `descendants.<id>`, then add to its `exclude` `node.<id>` and `descendants.<id>` for what its selectors still show |
 | `add_decoration {view, id?, decoration}` | append a decoration (`decoration` holds its fields as in layout files, `type` required); the ID is generated from the type when omitted; coordinates and sizes rounded to the grid, sizes positive and at least one grid unit |
 | `update_decoration {view, id, decoration?, unset?}` | set the fields given, remove those `unset` names |
 | `delete_decoration {view, id}` | remove a decoration |
@@ -928,9 +943,9 @@ Writers of one project are serialized: an operation, undo or redo holds a lock f
   /src/geometry/          # sizes, container policies, frames
   /src/place/             # elkjs first layout, spiral placer
   /src/route/             # ports, hints, route clipping and labels, live routes while dragging
-  /src/edit/              # layout gestures as operations: move, resize, align, reorder, hints, ports
-  /src/canvas/            # JointJS shapes and interactions, the libavoid adapter, text measurement, SVG and JSON output
-  /src/protocol/          # WebSocket client
+  /src/edit/              # gestures as operations: layout (move, resize, align, reorder, hints, ports) and model (create, paste, connect, re-parent, IDs)
+  /src/canvas/            # JointJS shapes and interactions, context menu and keys, in-place text editing, palette, inspector, dialogs, the libavoid adapter, text measurement, SVG and JSON output
+  /src/protocol/          # WebSocket client; ops.ts, the operations' types generated from internal/ops
 /vscode/                  # VS Code extension (FR-18)
 /testdata/                # golden files: hclwrite round-trips, layout output, resolved views
 /examples/                # example projects, one per diagram type (section 13)
@@ -1025,4 +1040,10 @@ The order follows two rules. First, export comes before editing: once `dg export
 | Rename in the language server | `rename_id` planned on the buffers, its files returned as one workspace edit | Renaming the occurrences the server's index finds: a second implementation of section 6.4 that would drift from the operation, and misses the layout files' values and the read-only refusal. |
 | Diagram panel in VS Code | a webview framing `dg serve`'s page on a loopback port | The embedded app served as webview resources, with a message bridge to the extension: a second transport beside `dg serve`'s WebSocket for the editor of M10 and M11 to keep equal. |
 | Extension JavaScript | compiled by `tsc`, packaged with its production `node_modules` | Bundled by esbuild: one more build dependency for a faster start of an extension of one file (`vsce` warns about the number of files). |
+| Showing and hiding a node in a view | `show_node` and `hide_node`, which edit `include` and `exclude` in Go | The editor computing the new selector lists and sending `update_view`: a second implementation of selector matching, in TypeScript, that drifts from Go's, and the whole list rewritten, losing the comments in it. |
+| Model in the editor | a `model` message with the vocabulary and every node and edge, sent to a client only when it changed since the client's last | The model in every snapshot: about 260 KB per change at 1,000 nodes, most changes moving one node and leaving the model as it was. A request per lookup (palette, search, inspector, copy): a round trip before each, and the editor would have to know when its copy is stale. |
+| IDs of pasted nodes | generated by the editor by the rule of section 6.2 and passed as `id` | Generated by `create_node`: the `connect` operations of the same batch could not name the copies. |
+| A palette node dropped in a `stack` or `grid` | `create_node` with `before`, writing the container's `order` | `create_node` then `reorder` in one batch: the `reorder` must name the new node, whose ID only the operation knows when it derives it from the kind, which section 6.3 needs. |
+| Drawing an edge | a connect mode (toolbar button or C) in which a drag from a node, port or row draws an edge | A connect handle on the selected node: an edge could not start at a port or row, whose handles drag ports to pin them. |
+| Operation types in the web app | `web/src/protocol/ops.ts`, generated from `internal/ops`' definitions and checked by a test | Written by hand: they drift from the operations. |
 | Spiral clearance | four grid units | Two grid units: with libavoid's buffer around each box no edge fits between two neighbors, and libavoid draws a straight line through them. |

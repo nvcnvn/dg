@@ -85,6 +85,8 @@ func FuzzDecodeMessage(f *testing.F) {
 		`{"type":"op","seq":1,"op":{"op":"move","view":"main","id":"a","x":40,"y":40}}`,
 		`{"type":"op","op":{"op":"batch","ops":[{"op":"resize","view":"v","id":"a","w":1,"h":2},{"op":"set_edge_hint","view":"v","id":"e","hint":{"via":[[1,2]]}}]}}`,
 		`{"type":"undo","seq":2}`, `{"type":"redo"}`,
+		`{"type":"op","seq":3,"op":{"op":"create_node","kind":"service","view":"main","parent":"lane","before":"s2"}}`,
+		`{"type":"op","op":{"op":"batch","ops":[{"op":"show_node","view":"main","id":"a"},{"op":"hide_node","view":"main","id":"b"},{"op":"set_parent","id":"a","parent":"g"},{"op":"reorder","view":"main","container":"g","order":["a"]}]}}`,
 	} {
 		f.Add([]byte(s))
 	}
@@ -102,7 +104,7 @@ func FuzzDecodeMessage(f *testing.F) {
 	})
 }
 
-const model = `node "a" {
+const testModel = `node "a" {
   label = "Alpha"
 }
 
@@ -120,7 +122,7 @@ edge "ab" {
 func start(t *testing.T) (dir, url string) {
 	t.Helper()
 	dir = t.TempDir()
-	write(t, dir, model)
+	write(t, dir, testModel)
 	s := New(dir)
 	srv := httptest.NewServer(s.Handler())
 	ctx, cancel := context.WithCancel(context.Background())
@@ -179,8 +181,11 @@ func TestReload(t *testing.T) {
 	if err := conn.Write(ctx, websocket.MessageText, []byte(`{"type":"select-view","view":""}`)); err != nil {
 		t.Fatal(err)
 	}
+	if m := next(); m.Type != "model" {
+		t.Fatalf("first message %+v, want the model", m)
+	}
 	if m := next(); m.Type != "snapshot" || m.Resolved.Nodes[0].Label != "Alpha" {
-		t.Fatalf("first message %+v, want the snapshot", m)
+		t.Fatalf("message %+v, want the snapshot", m)
 	}
 	if m := next(); m.Type != "diagnostics" || len(m.Diagnostics) != 0 {
 		t.Fatalf("second message %+v, want no diagnostics", m)
@@ -189,13 +194,16 @@ func TestReload(t *testing.T) {
 		t.Fatalf("third message %+v, want the history", m)
 	}
 
-	write(t, dir, strings.Replace(model, `"Alpha"`, `"Alpha 2"`, 1))
+	write(t, dir, strings.Replace(testModel, `"Alpha"`, `"Alpha 2"`, 1))
+	if m := next(); m.Type != "model" {
+		t.Fatalf("after a save: %+v, want the changed model", m)
+	}
 	if m := next(); m.Type != "snapshot" || m.Resolved.Nodes[0].Label != "Alpha 2" {
 		t.Fatalf("after a save: %+v, want a new snapshot", m)
 	}
 	next()
 
-	write(t, dir, model+"node {")
+	write(t, dir, testModel+"node {")
 	if m := next(); m.Type != "diagnostics" || len(m.Diagnostics) == 0 || m.Diagnostics[0].Severity != "error" {
 		t.Fatalf("after a broken save: %+v, want only diagnostics with an error", m)
 	}
@@ -236,7 +244,7 @@ func TestEditor(t *testing.T) {
 
 	for _, text := range []string{"First", "Second", "Third"} {
 		start := time.Now()
-		write(t, dir, strings.Replace(model, `"Alpha"`, jsString(text), 1))
+		write(t, dir, strings.Replace(testModel, `"Alpha"`, jsString(text), 1))
 		if err := chromedp.Do(ctx, label(text)); err != nil {
 			t.Fatal(err)
 		}
@@ -245,7 +253,7 @@ func TestEditor(t *testing.T) {
 		}
 	}
 
-	write(t, dir, model+"node {")
+	write(t, dir, testModel+"node {")
 	err := chromedp.Do(ctx, chromedp.Poll[chromedp.Void](`document.querySelector('#diagnostics li.error') !== null && document.body.classList.contains('stale')`))
 	if err != nil {
 		t.Fatal(err)
@@ -254,7 +262,7 @@ func TestEditor(t *testing.T) {
 		t.Errorf("the last drawing is gone after a broken save: %v", err)
 	}
 
-	write(t, dir, model)
+	write(t, dir, testModel)
 	err = chromedp.Do(ctx, label("Alpha"), chromedp.Poll[chromedp.Void](`!document.body.classList.contains('stale') && document.querySelector('#diagnostics').hidden`))
 	if err != nil {
 		t.Fatal(err)

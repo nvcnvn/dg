@@ -146,3 +146,24 @@ the decision in `docs/spec.md`).
   the created file only if it is unchanged, otherwise refuse with an explanation of what to do.
 - **Default:** (a). Not blocking.
 - **Milestone:** M10.
+
+## Hiding an edge from a view
+
+- **Question:** "Hide from view" hides nodes (`hide_node` edits `include` and `exclude`), but a view's
+  edges are chosen by one `edges` filter with no `exclude`, so the editor offers no way to hide one
+  edge.
+- **Options:** (a) not offered; (b) rewrite `edges` to list every other edge the view shows,
+  rejected: new edges would silently stop showing; (c) add an edge `exclude` (say `exclude_edges`)
+  to views and a `hide_edge` operation, the eventual answer.
+- **Default:** (a), until (c).
+- **Milestone:** M11; post-v1.
+
+## Copy and paste between windows
+
+- **Question:** copied nodes stay in the page that copied them, so a paste in another browser tab or
+  window of the same `dg serve`, or in a VS Code panel from a browser tab of the same project, or in
+  another project, has nothing to paste.
+- **Options:** (a) in the page only; (b) the system clipboard, through the `copy` and `paste`
+  events, with the nodes as JSON under a dg media type, pasted into any project that has their kinds.
+- **Default:** (a).
+- **Milestone:** M11; early post-v1.

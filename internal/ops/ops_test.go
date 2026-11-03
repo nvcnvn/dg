@@ -2,6 +2,7 @@ package ops
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -141,6 +142,20 @@ var goldenOps = []struct{ name, op string }{
 	{"delete_decoration", `{"op": "delete_decoration", "view": "solo", "id": "flow"}`},
 	{"promote_decoration", `{"op": "promote_decoration", "view": "solo", "id": "title", "kind": "note"}`},
 	{"promote_decoration-in-frame", `[{"op": "update_view", "id": "solo", "include": ["node.gateway", "node.pool"]}, {"op": "promote_decoration", "view": "solo", "id": "shelf", "kind": "group", "new": "shelf", "label": "Shelf"}]`},
+	{"create_node-before", `[{"op": "unpin", "view": "main", "id": "worker-1"}, {"op": "set_kind", "id": "pool", "kind": "lane-set"}, {"op": "create_node", "kind": "worker", "parent": "pool", "view": "main", "before": "worker-2"}]`},
+	{"create_node-last", `[{"op": "unpin", "view": "main", "id": "worker-1"}, {"op": "set_kind", "id": "pool", "kind": "lane-set"}, {"op": "create_node", "id": "a-worker", "kind": "worker", "parent": "pool", "view": "main"}]`},
+	{"show_node", `{"op": "show_node", "view": "calls", "id": "worker-2"}`},
+	{"show_node-excluded", `[{"op": "update_view", "id": "main", "exclude": ["node.gateway"]}, {"op": "show_node", "view": "main", "id": "gateway"}]`},
+	{"hide_node", `{"op": "hide_node", "view": "main", "id": "cache"}`},
+	{"hide_node-included", `{"op": "hide_node", "view": "calls", "id": "worker-1"}`},
+	{"hide_node-also-selected", `{"op": "hide_node", "view": "pool", "id": "worker-2"}`},
+	{"hide_node-first", `{"op": "hide_node", "view": "listed", "id": "gateway"}`},
+	{"hide_node-last-commented", `{"op": "hide_node", "view": "pool", "id": "gateway"}`},
+	{"hide_node-every", `[{"op": "hide_node", "view": "listed", "id": "gateway"}, {"op": "hide_node", "view": "listed", "id": "cache"}, {"op": "hide_node", "view": "listed", "id": "pool"}]`},
+	{"hide_node-container", `{"op": "hide_node", "view": "main", "id": "pool"}`},
+	{"show_node-after-comment", `[{"op": "hide_node", "view": "listed", "id": "pool"}, {"op": "show_node", "view": "listed", "id": "worker-2"}]`},
+	{"show_node-container", `[{"op": "hide_node", "view": "main", "id": "pool"}, {"op": "show_node", "view": "main", "id": "pool"}]`},
+	{"set_parent-before-ports", `[{"op": "add_port", "id": "cache", "name": "sql"}, {"op": "set_parent", "id": "cache", "parent": "rack"}]`},
 	{"batch", `[{"op": "create_node", "kind": "service", "view": "calls"}, {"op": "set_label", "id": "service", "label": "Search"}, {"op": "connect", "from": {"node": "search"}, "to": {"node": "gateway"}, "view": "calls"}]`},
 }
 
@@ -257,6 +272,11 @@ func TestRefused(t *testing.T) {
 		{"unset unknown", `{"op": "update_view", "id": "main", "unset": ["color"]}`, `unset names attributes of a view`},
 		{"set and unset", `{"op": "update_view", "id": "main", "title": "T", "unset": ["title"]}`, `title is both set and unset`},
 		{"update undefined view", `{"op": "update_view", "id": "nope", "title": "T"}`, `view "nope" does not exist`},
+		{"before a node not in the order", `[{"op": "set_kind", "id": "pool", "kind": "lane-set"}, {"op": "create_node", "kind": "worker", "parent": "pool", "view": "main", "before": "gateway"}]`, `node "gateway" is not a sibling`},
+		{"before in a free container", `{"op": "create_node", "kind": "worker", "parent": "pool", "view": "main", "before": "worker-1"}`, `before does not apply`},
+		{"show a node in a collapsed container", `[{"op": "update_view", "id": "main", "collapse": ["node.pool"]}, {"op": "show_node", "view": "main", "id": "worker-1"}]`, `inside a collapsed container`},
+		{"show an excluded kind", `[{"op": "update_view", "id": "main", "exclude": ["kind.worker"]}, {"op": "show_node", "view": "main", "id": "worker-1"}]`, `it is excluded`},
+		{"hide a node not shown", `{"op": "hide_node", "view": "calls", "id": "cache"}`, `view "calls" does not show node "cache"`},
 		{"bad direction", `{"op": "update_view", "id": "main", "direction": "sideways"}`, `direction is one of`},
 		{"bad style value", `{"op": "update_view", "id": "main", "styles": [{"label": "node.gateway", "props": {"fill": "red"}}]}`, `Invalid style value`},
 		{"unknown style property", `{"op": "update_view", "id": "main", "styles": [{"label": "node.gateway", "props": {"colour": "#FFF"}}]}`, `Unsupported argument`},
@@ -498,6 +518,24 @@ func TestIDs(t *testing.T) {
 	}
 	if got := edgeID("kube-system/dns", "API", taken("kube-system-dns-api")); got != "kube-system-dns-api-2" {
 		t.Errorf("edgeID = %q", got)
+	}
+}
+
+// TestSlug checks slug against testdata/ids/slug.json, which the web app's tests check its slug
+// against too, so both make the same IDs.
+func TestSlug(t *testing.T) {
+	data, err := os.ReadFile("../../testdata/ids/slug.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var table []struct{ In, Slug string }
+	if err := json.Unmarshal(data, &table); err != nil {
+		t.Fatal(err)
+	}
+	for _, tt := range table {
+		if got := slug(tt.In); got != tt.Slug {
+			t.Errorf("slug(%q) = %q, want %q", tt.In, got, tt.Slug)
+		}
 	}
 }
 

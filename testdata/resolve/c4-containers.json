@@ -1,6 +1,7 @@
 {
   "view": "containers",
   "grid": 10,
+  "of": "banking",
   "breadcrumbs": [
     [
       "main"

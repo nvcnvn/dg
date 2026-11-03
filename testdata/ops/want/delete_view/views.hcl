@@ -11,3 +11,12 @@ view "pool" {
 }
 
 view "solo" { include = [node.gateway] }
+
+view "listed" {
+  include = [
+    node.gateway, # first
+    node.cache,   # second
+    node.pool,
+    node["worker-1"],
+  ]
+}

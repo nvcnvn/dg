@@ -1,4 +1,5 @@
-import type { ResolvedView } from './view';
+import type { Op } from './ops';
+import type { Compartment, End, Labels, Port, ResolvedView } from './view';
 
 // Messages of the dg serve WebSocket protocol (internal/server).
 
@@ -27,15 +28,60 @@ export interface Result {
   h?: number;
 }
 
-// An ack or error answering a request carries the request's seq.
+// ModelInfo is what the editor knows of the whole project to edit the model: the kinds and edge
+// kinds of the loaded packs, the tags in use, and every node and edge, drawn or not.
+export interface ModelInfo {
+  kinds: KindInfo[];
+  edge_kinds: string[];
+  tags: string[];
+  nodes: ModelNode[];
+  edges: ModelEdge[];
+}
+
+export interface KindInfo {
+  name: string;
+  extends?: string;
+  container?: boolean;
+  layout?: string;
+  rows?: boolean;
+  ports?: string[];
+  properties?: { name: string; type: 'string' | 'number' | 'bool'; default?: string | number | boolean }[];
+}
+
+// ModelNode is a node of the model; its ports are its instance ports.
+export interface ModelNode {
+  id: string;
+  kind: string;
+  label: string;
+  parent?: string;
+  tags?: string[];
+  props?: Record<string, string | number | boolean>;
+  ports?: Port[];
+  compartments?: Compartment[];
+  read_only?: boolean;
+}
+
+export interface ModelEdge {
+  id: string;
+  kind: string;
+  from: End;
+  to: End;
+  labels: Labels;
+  tags?: string[];
+  read_only?: boolean;
+}
+
+// A model message comes before the snapshot that needs it, when the model changed. An ack or
+// error answering a request carries the request's seq.
 export type ServerMessage =
+  | { type: 'model'; model: ModelInfo }
   | { type: 'snapshot'; views: ViewInfo[]; resolved: ResolvedView }
   | { type: 'diagnostics'; diagnostics: Diagnostic[] }
   | { type: 'history'; undo: boolean; redo: boolean }
   | { type: 'ack'; seq?: number; results: Result[] | null; files: string[]; warnings?: Diagnostic[] }
   | { type: 'error'; seq?: number; message: string; diagnostics?: Diagnostic[] };
 
-export type Request = { type: 'op'; op: object } | { type: 'undo' } | { type: 'redo' };
+export type Request = { type: 'op'; op: Op } | { type: 'undo' } | { type: 'redo' };
 
 export interface Connection {
   selectView(id: string): void;

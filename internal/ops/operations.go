@@ -78,6 +78,10 @@ func (s *state) apply(op Op) error {
 		return s.updateView(op)
 	case "delete_view":
 		return s.deleteView(op)
+	case "show_node":
+		return s.showExisting(op)
+	case "hide_node":
+		return s.hideNode(op)
 	case "add_decoration":
 		return s.addDecoration(op)
 	case "update_decoration":
@@ -137,7 +141,9 @@ func (s *state) createNode(op Op) error {
 		return err
 	}
 	b := hclwrite.NewBlock("node", []string{id})
-	b.Body().SetAttributeValue("kind", cty.StringVal(op.Kind))
+	if op.Kind != spec.RootKind {
+		b.Body().SetAttributeValue("kind", cty.StringVal(op.Kind))
+	}
 	if op.Label != nil {
 		b.Body().SetAttributeValue("label", cty.StringVal(label))
 	}
@@ -153,6 +159,9 @@ func (s *state) createNode(op Op) error {
 		return fmt.Errorf("%s is not a model file of the project (models in dg.hcl); add one before creating nodes", name)
 	}
 	r := Result{Op: op.Op, ID: id}
+	if op.Before != "" && op.View == "" {
+		return fmt.Errorf("create_node takes before with view")
+	}
 	if op.View != "" {
 		if err := s.showNode(op.View, id); err != nil {
 			return err
@@ -162,8 +171,136 @@ func (s *state) createNode(op Op) error {
 				return err
 			}
 		}
+		if err := s.insert(op.View, id, op.Before); err != nil {
+			return err
+		}
 	}
 	s.result(r)
+	return nil
+}
+
+// insert puts node id in the order of the stack or grid container that places it in view v,
+// before sibling before, or last when before is empty. A node placed freely takes no before.
+func (s *state) insert(v, id, before string) error {
+	p, err := s.project()
+	if err != nil {
+		return err
+	}
+	vw := p.Views[v]
+	visible, _ := vw.Visible(p.Spec, p.Model)
+	c := p.PlacedBy(vw, visible, id)
+	if c == "" {
+		if before != "" {
+			return fmt.Errorf("view %q places node %q freely, not in a stack or grid container's order; before does not apply", v, id)
+		}
+		return nil
+	}
+	r, _ := p.Sources.Resolve(v)
+	var policy *view.Policy
+	if r.Policy != nil && r.Policy.Container == c {
+		policy = r.Policy
+	}
+	for _, n := range r.Nodes {
+		if n.ID == c {
+			policy = n.Policy
+		}
+	}
+	order := slices.DeleteFunc(slices.Clone(policy.Order), func(o string) bool { return o == id })
+	at := len(order)
+	if before != "" {
+		if at = slices.Index(order, before); at < 0 {
+			return fmt.Errorf("node %q is not a sibling of node %q placed by %q in view %q", before, id, c, v)
+		}
+	}
+	l, err := s.layout(v)
+	if err != nil {
+		return err
+	}
+	pl := l.Place[c]
+	if pl == nil {
+		pl = &view.Place{}
+		l.Place[c] = pl
+	}
+	pl.Order = slices.Insert(order, at, id)
+	s.putLayout(v, l)
+	return nil
+}
+
+// showExisting makes view v show existing node id: it removes the selectors naming it, its
+// children or its descendants from the view's exclude, then adds node.<id> to its include if
+// needed.
+func (s *state) showExisting(op Op) error {
+	p, err := s.project()
+	if err != nil {
+		return err
+	}
+	switch {
+	case p.Views[op.View] == nil:
+		return fmt.Errorf("view %q does not exist", op.View)
+	case p.Model.Nodes[op.ID] == nil:
+		return fmt.Errorf("node %q does not exist", op.ID)
+	}
+	if visible, _ := p.Views[op.View].Visible(p.Spec, p.Model); !visible[op.ID] {
+		name, f, b, err := s.viewBlock(op.View)
+		if err != nil {
+			return err
+		}
+		if dropSelectors(b.Body(), "exclude", func(sel view.Selector) bool {
+			return sel.Target == op.ID && slices.Contains([]string{"node", "children", "descendants"}, sel.Form)
+		}) {
+			if l, ok := splitList(b.Body().GetAttribute("exclude").Expr().BuildTokens(nil)); ok && len(l.items) == 0 {
+				removeAttr(b.Body(), "exclude")
+			}
+			s.putHCL(name, f)
+		}
+		if err := s.showNode(op.View, op.ID); err != nil {
+			return err
+		}
+	}
+	s.result(Result{Op: op.Op, ID: op.ID})
+	return nil
+}
+
+// hideNode makes view v stop showing node id and the nodes inside it: it removes from the view's
+// include the selectors naming them and those of id's children and descendants, then adds
+// node.<id>, and descendants.<id> if needed, to its exclude for what the view still shows.
+func (s *state) hideNode(op Op) error {
+	if _, _, err := s.shown(op.View, op.ID); err != nil {
+		return err
+	}
+	p := s.p
+	inside := func(id string) bool { return id == op.ID || p.Model.Contains(op.ID, id) }
+	name, f, b, err := s.viewBlock(op.View)
+	if err != nil {
+		return err
+	}
+	if dropSelectors(b.Body(), "include", func(sel view.Selector) bool {
+		return sel.Form == "node" && inside(sel.Target) || (sel.Form == "children" || sel.Form == "descendants") && sel.Target == op.ID
+	}) {
+		s.putHCL(name, f)
+	}
+	if p, err = s.project(); err != nil {
+		return err
+	}
+	visible, _ := p.Views[op.View].Visible(p.Spec, p.Model)
+	var add []hcl.Traversal
+	if visible[op.ID] {
+		add = append(add, ref("node", op.ID))
+	}
+	if slices.ContainsFunc(slices.Sorted(maps.Keys(visible)), func(id string) bool { return id != op.ID && p.Model.Contains(op.ID, id) }) {
+		add = append(add, ref("descendants", op.ID))
+	}
+	for _, sel := range add {
+		name, f, b, err := s.viewBlock(op.View)
+		if err != nil {
+			return err
+		}
+		if err := addSelector(b.Body(), "exclude", nil, sel); err != nil {
+			return fmt.Errorf("view %q: %w", op.View, err)
+		}
+		s.putHCL(name, f)
+	}
+	s.result(Result{Op: op.Op, ID: op.ID})
 	return nil
 }
 
@@ -378,13 +515,19 @@ func (s *state) dropViewRefs(nodes, edges map[string]bool) error {
 	return nil
 }
 
-// editBlock calls edit on the body of the block of node or edge id and writes its file.
+// editBlock calls edit on the body of the block of node or edge id and writes its file, with
+// the attributes edit added before the block's nested blocks.
 func (s *state) editBlock(typ, id string, edit func(*hclwrite.Body) error) error {
 	name, f, b, err := s.block(typ, id)
 	if err != nil {
 		return err
 	}
+	had := sortedAttrs(b.Body())
 	if err := edit(b.Body()); err != nil {
+		return err
+	}
+	added := slices.DeleteFunc(sortedAttrs(b.Body()), func(a string) bool { return slices.Contains(had, a) })
+	if f, err = attrsBeforeBlocks(f, typ, []string{id}, added); err != nil {
 		return err
 	}
 	s.putHCL(name, f)

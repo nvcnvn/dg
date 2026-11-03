@@ -30,6 +30,8 @@ type Resolved struct {
 	View      string `json:"view"`
 	Grid      int    `json:"grid"`
 	Direction string `json:"direction,omitempty"`
+	// Of is the container whose inside the view shows (spec 8.2).
+	Of string `json:"of,omitempty"`
 	// Breadcrumbs are the levels of views this view leads back to, outermost first.
 	Breadcrumbs [][]string `json:"breadcrumbs,omitempty"`
 	// Policy is set in a view whose of is a stack or grid container it does not draw: the
@@ -201,6 +203,9 @@ func (s *Sources) Resolve(id string) (*Resolved, hcl.Diagnostics) {
 		frames[nid] = Frame(m, visible, nid)
 	}
 	r := &Resolved{View: id, Grid: s.Grid, Direction: v.Direction, Breadcrumbs: s.breadcrumbs(v), Nodes: []Node{}, Edges: []Edge{}}
+	if v.Of != nil {
+		r.Of = v.Of.Target
+	}
 	if c := s.PolicyContainer(v, visible, ""); c != "" {
 		r.Policy = s.policy(v, l, c, "", frames)
 	}

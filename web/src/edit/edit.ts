@@ -1,13 +1,15 @@
 import type { Drawing } from '../canvas/export';
 import type { DrawnNode } from '../canvas/markup';
 import { ceilTo, cmp, roundTo, type Box, type Point } from '../geometry/geometry';
+import type { ModelInfo } from '../protocol/client';
+import type { Op } from '../protocol/ops';
 import type { Hint, ResolvedView, Side, ViewEdge } from '../protocol/view';
 import { nearestSide } from '../route/edges';
 
 // Operations (spec FR-12) that layout gestures send. Every gesture is one operation or one batch,
 // so it is one undo step (FR-11).
 
-export type Op = { op: string } & Record<string, unknown>;
+export type { Op };
 
 // batch returns ops as one operation: nothing, the only one, or a batch.
 export function batch(ops: Op[]): Op | undefined {
@@ -15,15 +17,19 @@ export function batch(ops: Op[]): Op | undefined {
   return { op: 'batch', ops };
 }
 
-// Scene is a drawing with the resolved view it was drawn from, indexed by ID.
+// Scene is a drawing with the resolved view it was drawn from, indexed by ID, and the model it
+// shows part of.
 export interface Scene {
   view: ResolvedView;
   drawing: Drawing;
   nodes: Map<string, DrawnNode>;
+  model: ModelInfo;
 }
 
-export function scene(view: ResolvedView, drawing: Drawing): Scene {
-  return { view, drawing, nodes: new Map(drawing.nodes.map((n) => [n.id, n])) };
+const NO_MODEL: ModelInfo = { kinds: [], edge_kinds: [], tags: [], nodes: [], edges: [] };
+
+export function scene(view: ResolvedView, drawing: Drawing, model: ModelInfo = NO_MODEL): Scene {
+  return { view, drawing, nodes: new Map(drawing.nodes.map((n) => [n.id, n])), model };
 }
 
 function resolved(s: Scene, id: string) {

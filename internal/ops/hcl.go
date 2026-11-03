@@ -533,7 +533,14 @@ func (l *list) add(content hclwrite.Tokens) {
 		if n := len(l.items); n > 0 {
 			indent = l.items[n-1].content[0].SpacesBefore
 		}
-		it.lead = hclwrite.Tokens{tok(hclsyntax.TokenNewline, "\n")}
+		// A line comment holds the line break that ends it.
+		before := l.open
+		if n := len(l.items); n > 0 {
+			before = slices.Concat(l.items[n-1].content, l.items[n-1].trail)
+		}
+		if !endsLine(before) {
+			it.lead = hclwrite.Tokens{tok(hclsyntax.TokenNewline, "\n")}
+		}
 		content[0].SpacesBefore = indent
 		if len(l.tail) == 0 {
 			l.tail = hclwrite.Tokens{tok(hclsyntax.TokenNewline, "\n")}
@@ -563,14 +570,54 @@ func (l *list) remove(drop func(listItem) bool) bool {
 	if len(kept) == len(l.items) {
 		return false
 	}
-	if len(kept) > 0 && drop(l.items[0]) && len(kept[0].lead) == 0 {
-		kept[0].content[0].SpacesBefore = l.items[0].content[0].SpacesBefore
+	if len(kept) == 0 {
+		l.open, l.tail, l.items = l.open[:1], nil, nil
+		l.close.SpacesBefore = 0
+		return true
 	}
-	if len(kept) > 0 && l.items[len(l.items)-1].comma == nil {
+	// An item after removed ones takes the place of the first of them: its line break and
+	// indent, which a comment ending the line before may have held.
+	var run *listItem
+	for i := range l.items {
+		it := &l.items[i]
+		if drop(*it) {
+			if run == nil {
+				run = it
+			}
+			continue
+		}
+		switch {
+		case run == nil:
+		case len(it.lead) == 0:
+			it.lead = run.lead
+			if run == &l.items[0] {
+				it.content[0].SpacesBefore = run.content[0].SpacesBefore
+			}
+		case len(run.lead) == 0 && it.lead[0].Type == hclsyntax.TokenNewline:
+			it.lead = it.lead[1:]
+		}
+		run = nil
+	}
+	multi := l.multiline() || slices.ContainsFunc(l.items, func(it listItem) bool { return endsLine(it.trail) })
+	kept = kept[:0]
+	for _, it := range l.items {
+		if !drop(it) {
+			kept = append(kept, it)
+		}
+	}
+	if l.items[len(l.items)-1].comma == nil {
 		kept[len(kept)-1].comma = nil
 	}
 	l.items = kept
+	if last := kept[len(kept)-1]; multi && !slices.ContainsFunc(l.tail, isSpace) && !endsLine(last.trail) {
+		l.tail = hclwrite.Tokens{tok(hclsyntax.TokenNewline, "\n")}
+	}
 	return true
+}
+
+// endsLine reports whether toks end with a line comment, which holds the line break ending it.
+func endsLine(toks hclwrite.Tokens) bool {
+	return len(toks) > 0 && toks[len(toks)-1].Type == hclsyntax.TokenComment && bytes.HasSuffix(toks[len(toks)-1].Bytes, []byte("\n"))
 }
 
 // selector parses the selector an item of a list attribute holds.

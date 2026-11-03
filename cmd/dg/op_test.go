@@ -252,6 +252,9 @@ func FuzzOpArgs(f *testing.F) {
 		"add_decoration\x00--view\x00main\x00--decoration\x00{\"type\":\"arrow\",\"points\":[[0,0],[1,1]]}",
 		"update_decoration\x00--view\x00main\x00--id\x00t\x00--unset\x00attach",
 		"promote_decoration\x00--view\x00main\x00--id\x00t\x00--kind\x00note\x00--new\x00n\x00--label\x00L",
+		"create_node\x00--kind\x00service\x00--view\x00main\x00--parent\x00lanes\x00--before\x00b",
+		"show_node\x00--view\x00main\x00--id\x00a",
+		"hide_node\x00--view\x00main\x00--id\x00a",
 	} {
 		f.Add(seed)
 	}

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { Drawing } from '../canvas/export';
 import type { DrawnNode } from '../canvas/markup';
-import { edge, edgeStyle, node, nodeStyle } from '../fixtures';
+import { editScene as fixture, node } from '../fixtures';
 import type { Box } from '../geometry/geometry';
 import type { Policy, ResolvedView, ViewNode } from '../protocol/view';
 import { liveEdges, liveRequest, liveRoute } from '../route/live';
@@ -28,65 +27,11 @@ import {
   unpinOps,
   withPins,
   withVia,
-  type Scene,
+  type Op,
 } from './edit';
 
-// A view on a grid of 10: a and b on the canvas, container g at (0, 200) with its content origin
-// 20 in and 40 down, holding c; stack s at (400, 0) holding s1, s2, s3 one under another.
-function fixture(over: { pinned?: boolean; gPin?: { w?: number; h?: number } } = {}): Scene {
-  const pinned = over.pinned ?? true;
-  const pin = pinned ? { x: 0, y: 0 } : undefined;
-  const stack: Policy = { layout: 'stack', direction: 'vertical', gap: 10, columns: 1, align: 'start', order: ['s1', 's2', 's3'] };
-  const nodes: ViewNode[] = [
-    node('a', { pin }),
-    node('b', { pin }),
-    node('g', { container: true, pin: pinned ? { x: 0, y: 200, ...over.gPin } : undefined }),
-    node('c', { frame: 'g', pin }),
-    node('s', { container: true, policy: stack, pin }),
-    node('s1', { frame: 's' }),
-    node('s2', { frame: 's' }),
-    node('s3', { frame: 's', pin: { x: 0, y: 0, w: 120 } }),
-  ];
-  const view: ResolvedView = { view: 'main', grid: 10, nodes, edges: [edge('ab', 'a', 'b', { labels: { mid: 'x' } }), edge('ac', 'a', 'c', { hint: { to_side: 'top' } })] };
-  const drawn = (id: string, box: Box, extra: Partial<DrawnNode> = {}): DrawnNode => ({
-    id,
-    box,
-    container: false,
-    pinned,
-    tooSmall: false,
-    style: nodeStyle(),
-    text: null,
-    textBox: box,
-    align: 'center',
-    ports: [],
-    rel: { x: box.x, y: box.y },
-    ...extra,
-  });
-  const drawing: Drawing = {
-    view: 'main',
-    family: 'Inter',
-    bounds: { x: 0, y: 0, w: 600, h: 400 },
-    ascent: 0.9,
-    descent: 0.2,
-    shapes: {},
-    overlays: [],
-    decorations: [],
-    nodes: [
-      drawn('a', { x: 0, y: 0, w: 100, h: 40 }),
-      drawn('b', { x: 200, y: 100, w: 100, h: 40 }),
-      drawn('g', { x: 0, y: 200, w: 200, h: 120 }, { container: true, origin: { x: 20, y: 240 } }),
-      drawn('c', { x: 30, y: 250, w: 100, h: 40 }, { frame: 'g', rel: { x: 10, y: 10 } }),
-      drawn('s', { x: 400, y: 0, w: 140, h: 200 }, { container: true, origin: { x: 410, y: 30 } }),
-      drawn('s1', { x: 410, y: 30, w: 100, h: 40 }, { frame: 's', orderedIn: 's', rel: { x: 0, y: 0 }, pinned }),
-      drawn('s2', { x: 410, y: 80, w: 100, h: 40 }, { frame: 's', orderedIn: 's', rel: { x: 0, y: 50 }, pinned }),
-      drawn('s3', { x: 410, y: 130, w: 120, h: 40 }, { frame: 's', orderedIn: 's', rel: { x: 0, y: 100 }, pinned }),
-    ],
-    edges: [
-      { id: 'ab', points: [{ x: 100, y: 20 }, { x: 150, y: 20 }, { x: 150, y: 120 }, { x: 200, y: 120 }], markers: [], labels: [], style: edgeStyle() },
-      { id: 'ac', points: [{ x: 50, y: 40 }, { x: 50, y: 250 }], markers: [], labels: [], style: edgeStyle() },
-    ],
-  };
-  return scene(view, drawing);
+function idOf(o: Op): string {
+  return ('id' in o && o.id) || '';
 }
 
 describe('selection', () => {
@@ -144,7 +89,7 @@ describe('move', () => {
     const moves = moveOps(fixture({ pinned: false }), ['a'], 10, 20);
     expect(moves).toEqual([{ op: 'move', view: 'main', id: 'a', x: 10, y: 20 }]);
     const ops = withPins(fixture({ pinned: false }), moves, new Set(['a']));
-    expect(ops.map((o) => o.id)).toEqual(['b', 'c', 'g', 's', 'a']);
+    expect(ops.map(idOf)).toEqual(['b', 'c', 'g', 's', 'a']);
     expect(ops[1]).toEqual({ op: 'move', view: 'main', id: 'c', x: 10, y: 10 });
     expect(withPins(fixture(), moves, new Set(['a']))).toEqual(moves);
     expect(batch(moves)).toEqual(moves[0]);
@@ -166,7 +111,7 @@ describe('arrange', () => {
   });
   it('pins the nodes it lines up in a view with nothing pinned', () => {
     const ops = alignOps(fixture({ pinned: false }), ['a', 'b'], 'left');
-    expect(ops.map((o) => o.id)).toEqual(['c', 'g', 's', 'a', 'b']);
+    expect(ops.map(idOf)).toEqual(['c', 'g', 's', 'a', 'b']);
   });
 });
 
@@ -209,7 +154,7 @@ describe('reorder', () => {
 
 describe('unpin', () => {
   it('unpins the nodes their entries pin', () => {
-    expect(unpinOps(fixture(), ['s1', 's3', 'a']).map((o) => o.id)).toEqual(['a', 's3']);
+    expect(unpinOps(fixture(), ['s1', 's3', 'a']).map(idOf)).toEqual(['a', 's3']);
     expect(unpinOps(fixture({ pinned: false }), ['a'])).toEqual([]);
   });
 });

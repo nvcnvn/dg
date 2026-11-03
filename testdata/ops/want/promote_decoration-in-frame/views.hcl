@@ -23,3 +23,12 @@ view "calls" {
 view "solo" {
   include = [node.gateway, node.pool, node.shelf]
 }
+
+view "listed" {
+  include = [
+    node.gateway, # first
+    node.cache,   # second
+    node.pool,
+    node["worker-1"],
+  ]
+}
