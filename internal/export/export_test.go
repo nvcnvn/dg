@@ -3,6 +3,7 @@ package export
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"flag"
 	"os"
 	"path/filepath"
@@ -119,5 +120,124 @@ func golden(t *testing.T, path string, got []byte) {
 	}
 	if !bytes.Equal(got, want) {
 		t.Errorf("%s differs from the output:\n%s", path, got)
+	}
+}
+
+// TestProjectFont exports a project whose font is a copy of the bundled one under another name:
+// the drawing has the same geometry and names the project font.
+func TestProjectFont(t *testing.T) {
+	if testing.Short() {
+		t.Skip("starts Chromium")
+	}
+	font, err := os.ReadFile(filepath.Join("..", "..", "web", "node_modules", "@fontsource", "inter", "files", "inter-latin-400-normal.woff2"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	files := map[string]string{
+		"model.hcl":         "node \"a\" {\n  label = \"Measured with the project font\"\n}\n",
+		"dg.hcl":            "project \"p\" {\n  font = \"fonts/Brand.woff2\"\n}\n",
+		"fonts/Brand.woff2": string(font),
+	}
+	for name, src := range files {
+		if err := os.MkdirAll(filepath.Dir(filepath.Join(dir, name)), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(src), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	render := func() *Result {
+		p, diags, err := project.Load(dir)
+		if err != nil || diags.HasErrors() {
+			t.Fatal(err, diags)
+		}
+		v, diags := p.Resolve(view.DefaultView)
+		if diags.HasErrors() {
+			t.Fatal(diags)
+		}
+		res, err := Render(context.Background(), v)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return res
+	}
+	withFont := render()
+	if err := os.Remove(filepath.Join(dir, "dg.hcl")); err != nil {
+		t.Fatal(err)
+	}
+	bundled := render()
+	if !bytes.Contains(withFont.SVG, []byte(`font-family="Brand, sans-serif"`)) {
+		t.Errorf("the SVG does not name the project font:\n%s", withFont.SVG)
+	}
+	if !bytes.Equal(withFont.JSON, bundled.JSON) {
+		t.Errorf("geometry with the project font differs from the bundled font's:\n%s\n%s", withFont.JSON, bundled.JSON)
+	}
+}
+
+// TestLayoutRules exports a layout with a container pinned too small for its child (spec 7.2
+// rule 5) and a node stored relative to the canvas whose frame is now a container, which is drawn
+// where it was stored (spec 7.1).
+func TestLayoutRules(t *testing.T) {
+	if testing.Short() {
+		t.Skip("starts Chromium")
+	}
+	dir := t.TempDir()
+	files := map[string]string{
+		"model.hcl": `node "g" {
+  kind = "group"
+}
+
+node "a" {
+  parent = node.g
+}
+
+node "moved" {
+  parent = node.g
+}
+`,
+		"views/main.layout.yaml": `version: 1
+place:
+  a: {in: g, x: 0, y: 0}
+  g: {x: 100, y: 100, w: 120, h: 60}
+  moved: {x: 300, y: 400}
+`,
+	}
+	for name, src := range files {
+		if err := os.MkdirAll(filepath.Dir(filepath.Join(dir, name)), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(src), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	p, diags, err := project.Load(dir)
+	if err != nil || diags.HasErrors() {
+		t.Fatal(err, diags)
+	}
+	v, diags := p.Resolve(view.DefaultView)
+	if diags.HasErrors() {
+		t.Fatal(diags)
+	}
+	res, err := Render(context.Background(), v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.TooSmall) != 1 || res.TooSmall[0] != "g" {
+		t.Errorf("too small containers %v, want [g]", res.TooSmall)
+	}
+	var geo struct {
+		Nodes []struct {
+			ID   string
+			X, Y int
+		}
+	}
+	if err := json.Unmarshal(res.JSON, &geo); err != nil {
+		t.Fatal(err)
+	}
+	for _, n := range geo.Nodes {
+		if n.ID == "moved" && (n.X != 300 || n.Y != 400) {
+			t.Errorf("node in a stale frame drawn at %d,%d, want 300,400 where it was stored", n.X, n.Y)
+		}
 	}
 }

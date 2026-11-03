@@ -32,8 +32,9 @@ func TestRun(t *testing.T) {
 		{name: "check missing project directory", args: []string{"check", "-C", "does-not-exist"}, code: 2, stderr: "does-not-exist"},
 		{name: "check unexpected argument", args: []string{"check", "extra"}, code: 1, stderr: `unexpected argument "extra"`},
 		{name: "fmt syntax error", args: []string{"fmt", "-C", "../../testdata/check/syntax"}, code: 1, stderr: "model.hcl:2:11: error: Invalid expression"},
+		{name: "serve refuses a non-loopback address", args: []string{"serve", "-C", "../../examples/hello", "-addr", "0.0.0.0:0", "-open=false"}, code: 1, stderr: "not a loopback address"},
 		{name: "export undefined view", args: []string{"export", "-C", "../../examples/hello", "--view", "nope"}, code: 1, stderr: `view "nope" is not defined (views: main)`},
-		{name: "export refuses what is not drawn yet", args: []string{"export", "-C", "../../testdata/check/valid", "--view", "fabric"}, code: 1, stderr: "drawn from M3"},
+		{name: "export refuses what is not drawn yet", args: []string{"export", "-C", "../../testdata/check/valid", "--view", "fabric"}, code: 1, stderr: "drawn from M7"},
 		{name: "project with errors", args: []string{"export", "-C", broken}, code: 1, stderr: `model.hcl:1:1: error: Undefined kind: Node "a" has undefined kind "nope".`},
 		{
 			name:     "export to a file",

@@ -10,8 +10,8 @@
   "dependencies": {
     "@fontsource/inter": "5.3.0",
     "@joint/core": "4.3.4",
-    "@joint/router-avoid": "4.3.3",
-    "elkjs": "0.12.1"
+    "elkjs": "0.12.1",
+    "libavoid-js": "0.4.5"
   },
   "devDependencies": {
     "typescript": "7.0.2",

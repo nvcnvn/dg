@@ -91,9 +91,10 @@ func Load(dir string) (*Project, diag.Diagnostics, error) {
 }
 
 type loader struct {
-	fsys  fs.FS
-	p     *Project
-	diags hcl.Diagnostics
+	fsys     fs.FS
+	p        *Project
+	diags    hcl.Diagnostics
+	unparsed int // files that did not parse
 }
 
 type decodeFunc func(hcl.Body, *hcl.EvalContext) hcl.Diagnostics
@@ -107,7 +108,9 @@ func (l *loader) parse(fsys fs.FS, rel, name string, decode decodeFunc) error {
 	}
 	f, d := hclsyntax.ParseConfig(src, name, hcl.InitialPos)
 	l.diags = append(l.diags, d...)
-	if !d.HasErrors() {
+	if d.HasErrors() {
+		l.unparsed++
+	} else {
 		l.diags = append(l.diags, decode(f.Body, evalContext(fsys, path.Dir(rel)))...)
 	}
 	return nil
@@ -185,11 +188,13 @@ func load(fsys fs.FS, dir string) (*Project, diag.Diagnostics, error) {
 			return nil, nil, err
 		}
 	}
+	before := l.unparsed
 	for _, rel := range models {
 		if err := l.parseProject(rel, RoleModel, p.Model.Decode); err != nil {
 			return nil, nil, err
 		}
 	}
+	modelUnparsed := l.unparsed > before
 	if len(models) == 0 {
 		l.diags = append(l.diags, &hcl.Diagnostic{Severity: hcl.DiagWarning, Summary: "No model files", Detail: "The project has no model files."})
 	}
@@ -207,9 +212,13 @@ func load(fsys fs.FS, dir string) (*Project, diag.Diagnostics, error) {
 
 	l.diags = append(l.diags, p.Spec.Validate()...)
 	l.diags = append(l.diags, p.Styles.Validate(p.Spec)...)
-	l.diags = append(l.diags, p.Model.Validate(p.Spec)...)
-	l.diags = append(l.diags, p.Views.Validate(p.Spec, p.Styles, p.Model)...)
-	l.diags = append(l.diags, p.ValidateLayouts()...)
+	// What references, selectors and layout entries name may be in a model file that did not
+	// parse, so they are checked only when every model file parsed.
+	if !modelUnparsed {
+		l.diags = append(l.diags, p.Model.Validate(p.Spec)...)
+		l.diags = append(l.diags, p.Views.Validate(p.Spec, p.Styles, p.Model)...)
+		l.diags = append(l.diags, p.ValidateLayouts()...)
+	}
 	diags := diag.FromHCL(l.diags)
 	for _, o := range append(slices.Clone(p.Spec.Overrides), p.Styles.Overrides...) {
 		verb := "replaces the one"
@@ -384,13 +393,47 @@ func (p *Project) IsReadOnly(rel string) bool {
 	})
 }
 
-// Resolve resolves view id; see view.Sources.Resolve.
+// Resolve resolves view id (see view.Sources.Resolve), adding the project font and marking the
+// elements defined in read-only files.
 func (p *Project) Resolve(id string) (*view.Resolved, diag.Diagnostics) {
 	r, hdiags := p.Sources.Resolve(id)
-	if p.Font != "" {
-		hdiags = append(hdiags, spec.Errorf(p.FontRange, "Not supported yet", "A project font is drawn from M3."))
+	if r != nil {
+		for i, n := range r.Nodes {
+			r.Nodes[i].ReadOnly = p.IsReadOnly(p.Model.Nodes[n.ID].Range.Filename)
+		}
+		for i, e := range r.Edges {
+			r.Edges[i].ReadOnly = p.IsReadOnly(p.Model.Edges[e.ID].Range.Filename)
+		}
+		if p.Font != "" {
+			data, err := readFile(p.Dir, p.Font)
+			if err != nil {
+				hdiags = append(hdiags, spec.Errorf(p.FontRange, "File not found", "The font file %q cannot be read: %v.", p.Font, err))
+			}
+			family := strings.TrimSuffix(path.Base(p.Font), path.Ext(p.Font))
+			r.Font = &view.Font{Family: family, Data: data}
+		}
 	}
 	diags := diag.FromHCL(hdiags)
 	diags.Sort()
 	return r, diags
+}
+
+// readFile reads file rel of the project in dir without following links out of it.
+func readFile(dir, rel string) ([]byte, error) {
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		return nil, err
+	}
+	defer root.Close()
+	return fs.ReadFile(root.FS(), rel)
+}
+
+// TooSmall is the warning for container id, pinned in view too small for its children; the
+// browser finds these (spec 7.2 rule 5).
+func (p *Project) TooSmall(view, id string) diag.Diagnostic {
+	detail := fmt.Sprintf("Node %q is pinned in view %q at a size too small for its children.", id, view)
+	if l := p.Layouts[view]; l != nil && l.Place[id] != nil {
+		return diag.At(diag.Warning, l.Place[id].Range, "Container too small", detail)
+	}
+	return diag.Diagnostic{Severity: diag.Warning, Summary: "Container too small", Detail: detail}
 }

@@ -1,53 +1,125 @@
-import { dia, shapes } from '@joint/core';
-import { initAvoidRouter } from '@joint/router-avoid';
-import type { Box, Point } from '../geometry/geometry';
+import { AvoidLib } from 'libavoid-js';
+import { cmp, type Point } from '../geometry/geometry';
+import { BUFFER, type RouteEnd, type Router } from '../route/edges';
 
-export interface RouteRequest {
-  id: string;
-  from: string;
-  to: string;
+interface Handle {
+  readonly brand?: unknown;
 }
 
-// routeAvoid routes edges between boxes with libavoid. Only boxes listed in
-// obstacles are avoided; an edge ending at any other box gets the fallback
-// right-angle route. Routes run from box centers; clip them to the borders.
-export async function routeAvoid(
-  boxes: Map<string, Box>,
-  ids: string[],
-  obstacles: Set<string>,
-  edges: RouteRequest[],
-  libavoidUrl: string,
-): Promise<Map<string, Point[]>> {
-  const graph = new dia.Graph({}, { cellNamespace: shapes });
-  graph.addCells(
-    ids.map((id) => {
-      const b = boxes.get(id)!;
-      return new shapes.standard.Rectangle({ id, position: { x: b.x, y: b.y }, size: { width: b.w, height: b.h } });
-    }),
-  );
-  graph.addCells(edges.map((e) => new shapes.standard.Link({ id: 'e:' + e.id, source: { id: e.from }, target: { id: e.to } })));
+interface Route {
+  size(): number;
+  get_ps(i: number): Point;
+}
 
-  const router = await initAvoidRouter(graph, {
-    shapeBufferDistance: 10,
-    idealNudgingDistance: 20,
-    libavoidFilePath: libavoidUrl,
-    trackElement: ({ element }) => obstacles.has(String(element.id)),
-  });
-  try {
-    await router.routeAll();
-  } finally {
-    router.destroy();
-  }
+// Avoid is the part of the libavoid-js module dg uses, typed here because the package's own
+// typings do not match the module (ConnEnd, destroy).
+interface Avoid {
+  OrthogonalRouting: number;
+  PolyLineRouting: number;
+  ConnType_Orthogonal: number;
+  ConnType_PolyLine: number;
+  ConnDirAll: number;
+  shapeBufferDistance: number;
+  idealNudgingDistance: number;
+  nudgeOrthogonalTouchingColinearSegments: number;
+  performUnifyingNudgingPreprocessingStep: number;
+  nudgeSharedPathsWithCommonEndPoint: number;
+  nudgeOrthogonalSegmentsConnectedToShapes: number;
+  Router: new (flags: number) => Handle & {
+    setRoutingParameter(p: number, v: number): void;
+    setRoutingOption(o: number, v: boolean): void;
+    processTransaction(): void;
+  };
+  Point: new (x: number, y: number) => Handle;
+  Rectangle: new (topLeft: Handle, bottomRight: Handle) => Handle;
+  ShapeRef: new (router: Handle, poly: Handle) => Handle;
+  ShapeConnectionPin: new (shape: Handle, id: number, x: number, y: number, proportional: boolean, inside: number, dirs: number) => Handle & {
+    setExclusive(v: boolean): void;
+  };
+  ConnEnd: { new (p: Handle): Handle; new (shape: Handle, pin: number): Handle };
+  ConnRef: new (router: Handle, from: Handle, to: Handle) => Handle & { setRoutingType(t: number): void; displayRoute(): Route };
+  destroy(o: unknown): void;
+}
 
-  const routes = new Map<string, Point[]>();
-  for (const e of edges) {
-    const link = graph.getCell('e:' + e.id) as dia.Link;
-    const end = (def: dia.Link.EndJSON, box: Box): Point => {
-      const args = (def.anchor?.args ?? {}) as { dx?: number; dy?: number };
-      return { x: box.x + box.w / 2 + (args.dx ?? 0), y: box.y + box.h / 2 + (args.dy ?? 0) };
+const CENTER_PIN = 1;
+
+// UNIFY_MAX_EDGES bounds the views libavoid's unifying nudging step runs for. The step keeps
+// parallel segments of different edges apart, but its cost grows steeply: about 20 ms at 50
+// edges, 3 seconds at 100 and minutes at 400.
+// ponytail: edge-count threshold; separate overlapping segments ourselves if large views need it.
+const UNIFY_MAX_EDGES = 60;
+
+let loaded: Promise<void> | undefined;
+
+// avoidRouter returns a router that runs libavoid, loaded once from wasmUrl. Each call routes
+// every request with a fresh libavoid router, obstacles and connectors added in sorted ID
+// order so the result depends only on the input. An end at an obstacle connects to a pin at its
+// center; any other end is a free point. libavoid binds no checkpoints, so a route through via
+// points is the concatenation of one connector per leg.
+//
+// Pins with directions on box borders make libavoid's search about fifty times slower, so the
+// caller gives an end with a direction as a free point outside the obstacle's buffer instead.
+export function avoidRouter(wasmUrl: string): Router {
+  return async (obstacles, edges) => {
+    await (loaded ??= AvoidLib.load(wasmUrl));
+    const A = AvoidLib.getInstance() as unknown as Avoid;
+    const polyline = edges.some((e) => e.type === 'polyline');
+    const router = new A.Router(A.OrthogonalRouting | (polyline ? A.PolyLineRouting : 0));
+    const temporaries: unknown[] = [];
+    const tmp = <T>(o: T): T => {
+      temporaries.push(o);
+      return o;
     };
-    const vertices = (link.vertices() ?? []).map((v) => ({ x: v.x, y: v.y }));
-    routes.set(e.id, [end(link.source(), boxes.get(e.from)!), ...vertices, end(link.target(), boxes.get(e.to)!)]);
-  }
-  return routes;
+    try {
+      router.setRoutingParameter(A.shapeBufferDistance, BUFFER);
+      router.setRoutingParameter(A.idealNudgingDistance, 20);
+      router.setRoutingOption(A.nudgeOrthogonalTouchingColinearSegments, false);
+      router.setRoutingOption(A.performUnifyingNudgingPreprocessingStep, edges.length <= UNIFY_MAX_EDGES);
+      router.setRoutingOption(A.nudgeSharedPathsWithCommonEndPoint, true);
+      router.setRoutingOption(A.nudgeOrthogonalSegmentsConnectedToShapes, true);
+      const point = (p: Point) => tmp(new A.Point(p.x, p.y));
+
+      const shapes = new Map<string, Handle>();
+      for (const id of [...obstacles.keys()].sort(cmp)) {
+        const b = obstacles.get(id)!;
+        const shape = new A.ShapeRef(router, tmp(new A.Rectangle(point(b), point({ x: b.x + b.w, y: b.y + b.h }))));
+        new A.ShapeConnectionPin(shape, CENTER_PIN, 0.5, 0.5, true, 0, A.ConnDirAll).setExclusive(false);
+        shapes.set(id, shape);
+      }
+      const end = (e: RouteEnd) => {
+        const shape = e.obstacle !== undefined ? shapes.get(e.obstacle) : undefined;
+        return tmp(shape ? new A.ConnEnd(shape, CENTER_PIN) : new A.ConnEnd(point(e.at)));
+      };
+
+      const legs = new Map<string, { displayRoute(): Route }[]>();
+      for (const e of edges) {
+        const stops = [end(e.from), ...e.via.map((p) => tmp(new A.ConnEnd(point(p)))), end(e.to)];
+        const conns = [];
+        for (let i = 0; i + 1 < stops.length; i++) {
+          const c = new A.ConnRef(router, stops[i], stops[i + 1]);
+          c.setRoutingType(e.type === 'polyline' ? A.ConnType_PolyLine : A.ConnType_Orthogonal);
+          conns.push(c);
+        }
+        legs.set(e.id, conns);
+      }
+      router.processTransaction();
+
+      const routes = new Map<string, Point[]>();
+      for (const e of edges) {
+        const pts: Point[] = [];
+        for (const c of legs.get(e.id)!) {
+          const route = c.displayRoute();
+          for (let i = pts.length ? 1 : 0; i < route.size(); i++) {
+            const p = route.get_ps(i);
+            pts.push({ x: p.x, y: p.y });
+          }
+        }
+        routes.set(e.id, pts);
+      }
+      return routes;
+    } finally {
+      for (const o of temporaries) A.destroy(o);
+      A.destroy(router);
+    }
+  };
 }

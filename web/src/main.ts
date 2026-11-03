@@ -1,34 +1,46 @@
 import '@fontsource/inter/400.css';
+import '@fontsource/inter/700.css';
+import './app.css';
 import ELK from 'elkjs/lib/elk-api.js';
 import elkWorkerUrl from 'elkjs/lib/elk-worker.min.js?url';
 import libavoidUrl from '../node_modules/libavoid-js/dist/libavoid.wasm?url';
-import { routeAvoid } from './canvas/avoid';
-import { toJSON, toSVG } from './canvas/export';
-import { canvasMeasure, loadFont } from './canvas/measure';
+import { avoidRouter } from './canvas/avoid';
+import { startEditor } from './canvas/editor';
+import { toJSON, toSVG, type Drawing } from './canvas/export';
+import { canvasMeasure, loadFonts } from './canvas/measure';
+import type { Elk } from './place/elk';
 import type { ResolvedView } from './protocol/view';
 import { draw } from './render';
 
 declare global {
   interface Window {
-    dg?: { render(view: ResolvedView): Promise<{ svg: string; json: string }> };
+    dg?: { render(view: ResolvedView): Promise<{ svg: string; json: string; too_small: string[] }> };
   }
 }
 
-const blocked: string[] = [];
-document.addEventListener('securitypolicyviolation', (e) => blocked.push(e.blockedURI));
+const router = avoidRouter(libavoidUrl);
 
-window.dg = {
-  async render(view) {
-    await loadFont(view.nodes.map((n) => n.label).concat(view.edges.map((e) => e.labels.mid ?? '')));
-    const elk = new ELK({ workerUrl: elkWorkerUrl });
-    try {
-      const drawing = await draw(view, canvasMeasure(), elk, (boxes, ids, obstacles, edges) =>
-        routeAvoid(boxes, ids, obstacles, edges, libavoidUrl),
-      );
-      if (blocked.length) throw new Error('blocked requests: ' + blocked.join(', '));
-      return { svg: toSVG(drawing), json: toJSON(drawing) };
-    } finally {
-      elk.terminateWorker();
-    }
-  },
-};
+async function render(view: ResolvedView, elk: Elk): Promise<{ drawing: Drawing; family: string }> {
+  const font = await loadFonts(view);
+  return { drawing: await draw(view, canvasMeasure(font.family), font.name, elk, router), family: font.family };
+}
+
+if (new URLSearchParams(location.search).has('export')) {
+  const blocked: string[] = [];
+  document.addEventListener('securitypolicyviolation', (e) => blocked.push(e.blockedURI));
+  window.dg = {
+    async render(view) {
+      const elk = new ELK({ workerUrl: elkWorkerUrl });
+      try {
+        const { drawing } = await render(view, elk);
+        if (blocked.length) throw new Error('blocked requests: ' + blocked.join(', '));
+        return { svg: toSVG(drawing), json: toJSON(drawing), too_small: drawing.nodes.filter((n) => n.tooSmall).map((n) => n.id) };
+      } finally {
+        elk.terminateWorker();
+      }
+    },
+  };
+} else {
+  const elk = new ELK({ workerUrl: elkWorkerUrl });
+  startEditor((view) => render(view, elk));
+}

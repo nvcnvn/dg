@@ -24,30 +24,21 @@ to remove it.
 - **Where:** `web/src/main.ts` imports `../node_modules/libavoid-js/dist/libavoid.wasm?url`.
 - **Why:** the `exports` field of `libavoid-js` does not export the `.wasm` file, so Vite cannot
   resolve it by package name.
-- **Remove when:** `libavoid-js` exports `./dist/libavoid.wasm`, or `@joint/router-avoid` exposes
-  the file's URL.
+- **Remove when:** `libavoid-js` exports `./dist/libavoid.wasm`.
 
-## Edges that M1 cannot route
+## How dg drives libavoid
 
-- **Where:** `view.Sources.Resolve` refuses self-loops and edges between a container and its own
-  descendant with a "Not supported yet" error, so `dg export` fails on them while `dg check`
-  accepts them. An edge between a node and an unrelated container is
-  accepted, but `web/src/canvas/avoid.ts` gives it router-avoid's right-angle fallback route, which
-  ignores obstacles: containers are not libavoid obstacles (spec 7.5), and libavoid connects only
-  shapes it tracks.
-- **Why:** M1 routes leaf-to-leaf edges only.
-- **Remove when:** self-loops route around one corner of the node (spec 7.5, M4), and edges ending
-  at containers, including a container's own descendants, are routed by libavoid, for example
-  through border pins on a container shape that is not an obstacle (M3).
-
-## router-avoid's WorkerProvider replaced by a stub
-
-- **Where:** the `resolve.alias` in `web/vite.config.ts` points `./providers/WorkerProvider.mjs`
-  at `web/src/canvas/worker-provider-stub.ts`.
-- **Why:** `@joint/router-avoid` imports its Worker provider unconditionally, so Vite bundled an
-  83 KB worker script that dg never runs (dg calls `initAvoidRouter` without `worker`).
-- **Remove when:** router-avoid loads the Worker provider lazily or exposes a main-thread-only
-  entry point.
+- **Where:** `web/src/canvas/avoid.ts` (the local `Avoid` interface, `UNIFY_MAX_EDGES`) and
+  `web/src/route/edges.ts` (`STUB`, `join`, `awayFromBorders`).
+- **Why:** the package's typings do not match its module (no `destroy`, wrong `ConnEnd`
+  overloads), and its WebIDL binds neither `ConnEnd(point, directions)` nor
+  `ConnRef::setRoutingCheckpoints` nor `ClusterRef`. Pins with directions on a box's border make
+  libavoid about fifty times slower, so every end with a direction is routed from a free point a
+  stub outside it; a `via` route is separate legs; segments along container borders are moved in
+  dg's own code; and libavoid's unifying nudging step, which keeps parallel segments apart but
+  takes minutes on dense views, runs only up to 60 edges.
+- **Remove when:** `libavoid-js` ships matching typings and binds the calls above, and directional
+  pins and the unifying step are fast at 400 edges.
 
 ## Export goldens are generated on macOS Chrome
 

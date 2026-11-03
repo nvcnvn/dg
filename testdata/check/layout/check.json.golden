@@ -1,5 +1,25 @@
 [
   {
+    "severity": "info",
+    "summary": "Overridden definition",
+    "detail": "The kind \"lane-set\" replaces the one defined at \u003cgeneric\u003e/spec.hcl:20:1.",
+    "file": "spec.hcl",
+    "line": 1,
+    "column": 1,
+    "end_line": 1,
+    "end_column": 16
+  },
+  {
+    "severity": "info",
+    "summary": "Overridden definition",
+    "detail": "The style \"lane-set\" overrides the properties it sets of the one defined at \u003cgeneric\u003e/style.hcl:106:1.",
+    "file": "style.hcl",
+    "line": 1,
+    "column": 1,
+    "end_line": 1,
+    "end_column": 17
+  },
+  {
     "severity": "error",
     "summary": "Invalid layout",
     "detail": "Version 2 is not supported; the version is 1.",

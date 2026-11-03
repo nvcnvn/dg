@@ -21,43 +21,45 @@ var BuiltinShapes = []string{"rect", "rounded", "stadium", "ellipse", "diamond",
 
 var markers = []string{"none", "arrow", "triangle", "triangle-open", "diamond", "diamond-open", "circle", "circle-open", "crow-one", "crow-zero-one", "crow-many", "crow-one-many", "crow-zero-many"}
 
-// NodeProps are the properties of style blocks: node properties and container properties.
+// NodeProps are the properties of style blocks: node properties and container properties. The
+// stack and grid policies are drawn from M8, so the properties that only they read are drawn
+// now in the sense that a free container ignores them.
 var NodeProps = map[string]Prop{
-	"shape":         {isString, func(v cty.Value) int { return drawnShape(v.AsString()) }},
+	"shape":         {isString, now},
 	"fill":          {color, now},
 	"stroke":        {color, now},
-	"stroke_width":  {number(0, inf), from(3)},
-	"stroke_dash":   {dash, from(3)},
-	"corner_radius": {number(0, inf), from(3)},
-	"opacity":       {number(0, 1), from(3)},
-	"text_color":    {color, from(3)},
-	"font_size":     {number(1, inf), from(3)},
-	"font_weight":   {weight, from(3)},
-	"icon":          {isString, from(3)},
-	"image":         {isString, from(3)},
-	"padding":       {number(0, inf), from(3)},
-	"min_w":         {number(0, inf), from(3)},
-	"min_h":         {number(0, inf), from(3)},
-	"max_w":         {number(0, inf), from(3)},
-	"z":             {integer(-inf, inf), from(3)},
+	"stroke_width":  {number(0, inf), now},
+	"stroke_dash":   {dash, now},
+	"corner_radius": {number(0, inf), now},
+	"opacity":       {number(0, 1), now},
+	"text_color":    {color, now},
+	"font_size":     {number(1, inf), now},
+	"font_weight":   {weight, now},
+	"icon":          {isString, now},
+	"image":         {isString, now},
+	"padding":       {number(0, inf), now},
+	"min_w":         {number(0, inf), now},
+	"min_h":         {number(0, inf), now},
+	"max_w":         {number(0, inf), now},
+	"z":             {integer(-inf, inf), now},
 	"layout":        {enum("free", "stack", "grid"), except(8, "free")},
-	"direction":     {enum("horizontal", "vertical"), from(8)},
-	"gap":           {number(0, inf), from(8)},
-	"stretch":       {isBool, from(8)},
-	"columns":       {integer(1, inf), from(8)},
-	"align":         {enum("start", "center", "end"), from(8)},
+	"direction":     {enum("horizontal", "vertical"), now},
+	"gap":           {number(0, inf), now},
+	"stretch":       {isBool, now},
+	"columns":       {integer(1, inf), now},
+	"align":         {enum("start", "center", "end"), now},
 	"label_side":    {enum("top", "left"), except(8, "top")},
 }
 
 // EdgeProps are the properties of edge_style blocks.
 var EdgeProps = map[string]Prop{
 	"stroke":       {color, now},
-	"stroke_width": {number(0, inf), from(3)},
-	"stroke_dash":  {dash, from(3)},
-	"arrow_start":  {enum(markers...), except(4, "none")},
+	"stroke_width": {number(0, inf), now},
+	"stroke_dash":  {dash, now},
+	"arrow_start":  {enum(markers...), except(4, "none", "arrow")},
 	"arrow_end":    {enum(markers...), except(4, "none", "arrow")},
-	"routing":      {enum("orthogonal", "polyline", "straight"), except(3, "orthogonal")},
-	"font_size":    {number(1, inf), from(3)},
+	"routing":      {enum("orthogonal", "polyline", "straight"), now},
+	"font_size":    {number(1, inf), now},
 	"animate":      {enum("none", "flow"), except(5, "none")},
 }
 
@@ -75,16 +77,6 @@ var OverlayProps = map[string]Prop{
 // props, or 0 when it is drawn now.
 func DrawnFrom(props map[string]Prop, name string, v cty.Value) int {
 	return props[name].drawnFrom(v)
-}
-
-func drawnShape(name string) int {
-	switch {
-	case name == "rect" || name == "rounded":
-		return 0
-	case name == "table":
-		return 4
-	}
-	return 3
 }
 
 const inf = 1e18

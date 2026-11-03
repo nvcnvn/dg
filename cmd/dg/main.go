@@ -26,6 +26,7 @@ commands:
   check    validate the project
   fmt      format the project's files
   export   draw a view as SVG or JSON geometry
+  serve    show the views in the browser, redrawn when a file changes
 `
 
 // errDiagnostics marks a failure already reported as diagnostics.
@@ -53,6 +54,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		err = runFmt(args[1:], stdout, stderr)
 	case "export":
 		err = runExport(args[1:], stdout, stderr)
+	case "serve":
+		err = runServe(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "dg: unknown command %q\n%s", args[0], usage)
 		return 1
@@ -196,6 +199,9 @@ func runExport(args []string, stdout, stderr io.Writer) error {
 	res, err := export.Render(context.Background(), v)
 	if err != nil {
 		return internalError{err}
+	}
+	for _, id := range res.TooSmall {
+		fmt.Fprintln(stderr, p.TooSmall(viewID, id))
 	}
 	data := res.SVG
 	if format == "json" {

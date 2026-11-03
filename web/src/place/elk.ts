@@ -1,5 +1,5 @@
 import type { ElkExtendedEdge, ElkNode } from 'elkjs/lib/elk-api';
-import { CONTENT_ORIGIN, CONTAINER_PADDING, cmp, roundTo, type Point, type Size } from '../geometry/geometry';
+import { cmp, roundTo, type NodeMeasure, type Point, type Size } from '../geometry/geometry';
 import type { ResolvedView } from '../protocol/view';
 
 export interface Elk {
@@ -24,25 +24,28 @@ const rootOptions: Record<string, string> = {
   'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
   'elk.edgeRouting': 'ORTHOGONAL',
   'elk.randomSeed': '1',
+  'elk.edgeLabels.placement': 'CENTER',
 };
 
-// elkGraph builds the elk input for a view with nothing pinned: nodes and
-// edges in sorted ID order, containers holding their children, each edge in
-// the innermost container holding both of its ends.
-export function elkGraph(view: ResolvedView, sizes: Map<string, Size>): ElkNode {
+// elkGraph builds the elk input for a view with nothing pinned: nodes and edges in sorted ID
+// order, containers holding their children, each edge in the innermost container holding both
+// of its ends, with its middle label's size so layers leave room for it. An edge between a container and its own descendant gives elk nothing to arrange,
+// so it is left out.
+export function elkGraph(view: ResolvedView, measures: Map<string, NodeMeasure>, labels: Map<string, Size> = new Map()): ElkNode {
   const elkNodes = new Map<string, ElkNode>();
   const root: ElkNode = { id: ROOT, layoutOptions: rootOptions, children: [], edges: [] };
   for (const n of view.nodes) {
-    const size = sizes.get(n.id);
-    const en: ElkNode = { id: nodeKey(n.id), width: size?.w, height: size?.h };
+    const m = measures.get(n.id)!;
+    const en: ElkNode = { id: nodeKey(n.id), width: m.size.w, height: m.size.h };
     if (n.container) {
+      const pad = n.style.padding;
       en.children = [];
       en.edges = [];
       en.layoutOptions = {
         ...spacing,
-        'elk.padding': `[top=${CONTENT_ORIGIN.y},left=${CONTENT_ORIGIN.x},bottom=${CONTAINER_PADDING},right=${CONTAINER_PADDING}]`,
+        'elk.padding': `[top=${m.origin.y},left=${m.origin.x},bottom=${pad},right=${pad}]`,
         'elk.nodeSize.constraints': '[MINIMUM_SIZE]',
-        'elk.nodeSize.minimum': `(${size?.w ?? 0},${size?.h ?? 0})`,
+        'elk.nodeSize.minimum': `(${m.size.w},${m.size.h})`,
       };
     }
     elkNodes.set(n.id, en);
@@ -60,31 +63,34 @@ export function elkGraph(view: ResolvedView, sizes: Map<string, Size>): ElkNode 
   };
   for (const e of view.edges) {
     const to = new Set(chain(e.to.node));
-    const lca = chain(e.from.node).find((f) => to.has(f) && elkNodes.get(f)?.edges);
+    const from = chain(e.from.node);
+    if (to.has(e.from.node) || from.includes(e.to.node)) continue;
+    const lca = from.find((f) => to.has(f) && elkNodes.get(f)?.edges);
     const holder = (lca && elkNodes.get(lca)) || root;
     const edge: ElkExtendedEdge = { id: edgeKey(e.id), sources: [nodeKey(e.from.node)], targets: [nodeKey(e.to.node)] };
+    const label = labels.get(e.id);
+    if (label) edge.labels = [{ id: 'l:' + e.id, width: label.w, height: label.h }];
     holder.edges!.push(edge);
   }
   return root;
 }
 
-// elkPositions returns each node's position from an elk result, relative to
-// its frame's content origin and rounded to the grid.
-export function elkPositions(result: ElkNode, grid: number): Map<string, Point> {
+// elkPositions returns each node's position from an elk result, relative to its frame's
+// content origin and rounded to the grid.
+export function elkPositions(result: ElkNode, measures: Map<string, NodeMeasure>, grid: number): Map<string, Point> {
   const out = new Map<string, Point>();
-  const visit = (parent: ElkNode, inContainer: boolean) => {
+  const visit = (parent: ElkNode, origin: Point) => {
     const children = [...(parent.children ?? [])].sort((a, b) => cmp(a.id, b.id));
     for (const c of children) {
-      const dx = inContainer ? CONTENT_ORIGIN.x : 0;
-      const dy = inContainer ? CONTENT_ORIGIN.y : 0;
-      out.set(c.id.slice(2), { x: roundTo((c.x ?? 0) - dx, grid), y: roundTo((c.y ?? 0) - dy, grid) });
-      visit(c, true);
+      const id = c.id.slice(2);
+      out.set(id, { x: roundTo((c.x ?? 0) - origin.x, grid), y: roundTo((c.y ?? 0) - origin.y, grid) });
+      visit(c, measures.get(id)!.origin);
     }
   };
-  visit(result, false);
+  visit(result, { x: 0, y: 0 });
   return out;
 }
 
-export async function placeWithElk(elk: Elk, view: ResolvedView, sizes: Map<string, Size>): Promise<Map<string, Point>> {
-  return elkPositions(await elk.layout(elkGraph(view, sizes)), view.grid);
+export async function placeWithElk(elk: Elk, view: ResolvedView, measures: Map<string, NodeMeasure>, labels?: Map<string, Size>): Promise<Map<string, Point>> {
+  return elkPositions(await elk.layout(elkGraph(view, measures, labels)), measures, view.grid);
 }

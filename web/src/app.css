@@ -1,0 +1,52 @@
+body {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  color: #202124;
+  background: #f8f9fa;
+}
+#bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 12px;
+  background: #ffffff;
+  border-bottom: 1px solid #dadce0;
+}
+#hint {
+  color: #5f6368;
+}
+#status {
+  color: #b3261e;
+}
+body.disconnected #status::before {
+  content: 'Disconnected from dg serve. ';
+}
+#diagnostics {
+  margin: 0;
+  padding: 8px 12px 8px 28px;
+  max-height: 30vh;
+  overflow: auto;
+  background: #fff8e1;
+  border-bottom: 1px solid #dadce0;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+}
+#diagnostics .error {
+  color: #b3261e;
+}
+#diagnostics .info {
+  color: #5f6368;
+}
+#canvas {
+  overflow: auto;
+  padding: 16px;
+}
+#paper {
+  display: inline-block;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+body.stale #paper {
+  outline: 2px dashed #b3261e;
+}

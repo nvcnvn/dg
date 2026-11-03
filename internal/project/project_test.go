@@ -31,15 +31,31 @@ func TestStyleCascade(t *testing.T) {
 	if err != nil || diags.HasErrors() {
 		t.Fatal(err, diags)
 	}
-	if got, want := style.DrawnNode(p.Styles.ForNode(p.Spec, "zone", nil)), (style.Node{Shape: "rounded", Fill: "#F8F9FA", Stroke: "#9AA0A6"}); got != want {
-		t.Errorf("zone style %+v, want %+v", got, want)
+	if got := style.DrawnNode(p.Styles.ForNode(p.Spec, "zone", nil)); got.Shape != "rounded" || got.Fill != "#F8F9FA" || got.Padding != 20 || got.FontSize != 14 {
+		t.Errorf("zone style %+v, want group's style with shape rounded", got)
 	}
-	if got, want := style.DrawnEdge(p.Styles.ForEdge(p.Spec, "async", nil)), (style.Edge{Stroke: "#3C4043", ArrowEnd: "arrow"}); got != want {
-		t.Errorf("async style %+v, want %+v", got, want)
+	if got := style.DrawnEdge(p.Styles.ForEdge(p.Spec, "async", nil)); got.ArrowEnd != "arrow" || len(got.StrokeDash) != 2 || got.StrokeWidth != 1.5 {
+		t.Errorf("async style %+v, want default's style dashed", got)
 	}
-	for _, k := range []string{"node", "service", "group"} {
-		if st := style.DrawnNode(p.Styles.ForNode(p.Spec, k, nil)); st.Shape == "" || st.Fill == "" || st.Stroke == "" {
-			t.Errorf("generic pack leaves a property of %q unset: %+v", k, st)
+}
+
+// TestGenericDefaults checks that the generic pack's root styles set every property that has a
+// default (spec 8.4); icon and image have none.
+func TestGenericDefaults(t *testing.T) {
+	p, diags, err := load(fstest.MapFS{"model.hcl": {}}, ".")
+	if err != nil || diags.HasErrors() {
+		t.Fatal(err, diags)
+	}
+	nodes := p.Styles.ForNode(p.Spec, "node", nil)
+	for name := range style.NodeProps {
+		if _, ok := nodes[name]; !ok && name != "icon" && name != "image" {
+			t.Errorf("style \"node\" does not set %s", name)
+		}
+	}
+	edges := p.Styles.ForEdge(p.Spec, "default", nil)
+	for name := range style.EdgeProps {
+		if _, ok := edges[name]; !ok {
+			t.Errorf("edge_style \"default\" does not set %s", name)
 		}
 	}
 }

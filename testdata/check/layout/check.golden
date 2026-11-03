@@ -1,3 +1,5 @@
+spec.hcl:1:1: info: Overridden definition: The kind "lane-set" replaces the one defined at <generic>/spec.hcl:20:1.
+style.hcl:1:1: info: Overridden definition: The style "lane-set" overrides the properties it sets of the one defined at <generic>/style.hcl:106:1.
 views/broken.layout.yaml:1:10: error: Invalid layout: Version 2 is not supported; the version is 1.
 views/broken.layout.yaml:3:3: error: Invalid layout: Invalid ID: "bad:key" contains a raw ':' or '#'; write %3A or %23.
 views/broken.layout.yaml:4:3: error: Invalid layout: Invalid ID: "50%" contains "%"; only %25, %3A and %23 are escapes.

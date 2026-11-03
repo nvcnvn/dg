@@ -1,0 +1,488 @@
+{
+  "view": "wiring",
+  "grid": 10,
+  "nodes": [
+    {
+      "id": "bench",
+      "kind": "service",
+      "label": "Bench",
+      "frame": "lab",
+      "ports": [
+        {
+          "name": "probe",
+          "side": "right"
+        }
+      ],
+      "pin": {
+        "x": 0,
+        "y": 0,
+        "ports": {
+          "probe": {
+            "side": "bottom",
+            "offset": 0.3
+          }
+        }
+      },
+      "style": {
+        "shape": "rounded",
+        "fill": "#FCE8E6",
+        "stroke": "#1A73E8",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#A50E0E",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 1
+      }
+    },
+    {
+      "id": "bullseye",
+      "kind": "final",
+      "label": "bullseye",
+      "pin": {
+        "x": 560,
+        "y": 260
+      },
+      "style": {
+        "shape": "bullseye",
+        "fill": "#202124",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 26,
+        "min_h": 26,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "chip",
+      "kind": "chip",
+      "label": "uniform chip",
+      "ports": [
+        {
+          "name": "in",
+          "side": "auto"
+        },
+        {
+          "name": "out",
+          "side": "auto"
+        }
+      ],
+      "pin": {
+        "x": 300,
+        "y": 0
+      },
+      "style": {
+        "shape": "chip",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "cylinder",
+      "kind": "database",
+      "label": "cylinder",
+      "pin": {
+        "x": 480,
+        "y": 420
+      },
+      "style": {
+        "shape": "cylinder",
+        "fill": "#FEF7E0",
+        "stroke": "#E37400",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "diamond",
+      "kind": "decision",
+      "label": "diamond",
+      "pin": {
+        "x": 260,
+        "y": 240
+      },
+      "style": {
+        "shape": "diamond",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "lab",
+      "kind": "group",
+      "label": "Lab",
+      "container": true,
+      "pin": {
+        "x": 600,
+        "y": 0
+      },
+      "style": {
+        "shape": "rect",
+        "fill": "#F8F9FA",
+        "stroke": "#9AA0A6",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 20,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "point",
+      "kind": "initial",
+      "label": "point",
+      "pin": {
+        "x": 0,
+        "y": 260
+      },
+      "style": {
+        "shape": "point",
+        "fill": "#202124",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 20,
+        "min_h": 20,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "rack",
+      "kind": "rack",
+      "label": "nine-slice rack",
+      "ports": [
+        {
+          "name": "up",
+          "side": "auto"
+        },
+        {
+          "name": "down",
+          "side": "auto"
+        }
+      ],
+      "pin": {
+        "x": 0,
+        "y": 0
+      },
+      "style": {
+        "shape": "rack",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "rounded",
+      "kind": "service",
+      "label": "rounded",
+      "pin": {
+        "x": 60,
+        "y": 240
+      },
+      "style": {
+        "shape": "rounded",
+        "fill": "#E8F0FE",
+        "stroke": "#1A73E8",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "chip-bench",
+      "kind": "default",
+      "from": {
+        "node": "chip",
+        "port": "out"
+      },
+      "to": {
+        "node": "bench",
+        "port": "probe"
+      },
+      "labels": {
+        "mid": "ports, arrows at both ends"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 2.5,
+        "stroke_dash": [],
+        "arrow_start": "arrow",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "diamond-bullseye",
+      "kind": "default",
+      "from": {
+        "node": "diamond"
+      },
+      "to": {
+        "node": "bullseye"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "straight",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "diamond-cylinder",
+      "kind": "async",
+      "from": {
+        "node": "diamond"
+      },
+      "to": {
+        "node": "cylinder"
+      },
+      "labels": {
+        "mid": "async"
+      },
+      "hint": {
+        "from_side": "bottom",
+        "to_side": "top",
+        "via": [
+          [
+            530,
+            380
+          ]
+        ],
+        "label_pos": 0.4
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [
+          6,
+          4
+        ],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "lab-bench",
+      "kind": "default",
+      "from": {
+        "node": "lab"
+      },
+      "to": {
+        "node": "bench"
+      },
+      "labels": {
+        "mid": "to a child"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "point-rounded",
+      "kind": "default",
+      "from": {
+        "node": "point"
+      },
+      "to": {
+        "node": "rounded"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "rack-chip",
+      "kind": "default",
+      "from": {
+        "node": "rack",
+        "port": "down"
+      },
+      "to": {
+        "node": "chip",
+        "port": "in"
+      },
+      "labels": {
+        "mid": "anchors"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "rounded-diamond",
+      "kind": "default",
+      "from": {
+        "node": "rounded"
+      },
+      "to": {
+        "node": "diamond"
+      },
+      "labels": {},
+      "hint": {
+        "from_side": "top",
+        "to_side": "top"
+      },
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "polyline",
+        "font_size": 12
+      }
+    }
+  ],
+  "shapes": {
+    "chip": {
+      "svg": "\u003csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 120 60\"\u003e\u003crect x=\"10\" y=\"5\" width=\"100\" height=\"50\" rx=\"4\" fill=\"#E6F4EA\" stroke=\"#188038\" stroke-width=\"2\"/\u003e\u003cg stroke=\"#188038\" stroke-width=\"2\"\u003e\u003cpath d=\"M0 15h10M0 30h10M0 45h10M110 15h10M110 30h10M110 45h10\"/\u003e\u003c/g\u003e\u003c/svg\u003e\n",
+      "text_box": [
+        0.15,
+        0.15,
+        0.7,
+        0.7
+      ],
+      "anchors": {
+        "in": [
+          0,
+          0.5
+        ],
+        "out": [
+          1,
+          0.5
+        ]
+      },
+      "stretch": "uniform"
+    },
+    "rack": {
+      "svg": "\u003csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 80 80\"\u003e\u003crect x=\"1\" y=\"1\" width=\"78\" height=\"78\" rx=\"6\" fill=\"#F1F3F4\" stroke=\"#5F6368\" stroke-width=\"2\"/\u003e\u003crect x=\"1\" y=\"1\" width=\"78\" height=\"14\" rx=\"6\" fill=\"#5F6368\"/\u003e\u003ccircle cx=\"8\" cy=\"72\" r=\"3\" fill=\"#5F6368\"/\u003e\u003ccircle cx=\"72\" cy=\"72\" r=\"3\" fill=\"#5F6368\"/\u003e\u003c/svg\u003e\n",
+      "text_box": [
+        0.05,
+        0.2,
+        0.9,
+        0.75
+      ],
+      "anchors": {
+        "down": [
+          0.5,
+          1
+        ],
+        "up": [
+          0.5,
+          0
+        ]
+      },
+      "stretch": "nine-slice"
+    }
+  }
+}

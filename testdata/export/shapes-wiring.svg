@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -20 780 530" width="780" height="530" font-family="Inter, sans-serif">
+<defs>
+<image id="dg-shape-rack" width="80" height="80" preserveAspectRatio="none" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2080%2080%22%3E%3Crect%20x%3D%221%22%20y%3D%221%22%20width%3D%2278%22%20height%3D%2278%22%20rx%3D%226%22%20fill%3D%22%23F1F3F4%22%20stroke%3D%22%235F6368%22%20stroke-width%3D%222%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%221%22%20width%3D%2278%22%20height%3D%2214%22%20rx%3D%226%22%20fill%3D%22%235F6368%22%2F%3E%3Ccircle%20cx%3D%228%22%20cy%3D%2272%22%20r%3D%223%22%20fill%3D%22%235F6368%22%2F%3E%3Ccircle%20cx%3D%2272%22%20cy%3D%2272%22%20r%3D%223%22%20fill%3D%22%235F6368%22%2F%3E%3C%2Fsvg%3E%0A"/>
+</defs>
+<g data-node="bullseye">
+<circle cx="575" cy="275" r="15" fill="none" stroke="#3C4043" stroke-width="1"/>
+<circle cx="575" cy="275" r="9" fill="#202124"/>
+</g>
+<g data-node="chip">
+<image x="300" y="0" width="150" height="75" preserveAspectRatio="xMidYMid meet" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%2060%22%3E%3Crect%20x%3D%2210%22%20y%3D%225%22%20width%3D%22100%22%20height%3D%2250%22%20rx%3D%224%22%20fill%3D%22%23E6F4EA%22%20stroke%3D%22%23188038%22%20stroke-width%3D%222%22%2F%3E%3Cg%20stroke%3D%22%23188038%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22M0%2015h10M0%2030h10M0%2045h10M110%2015h10M110%2030h10M110%2045h10%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E%0A"/>
+<text x="375" y="43" text-anchor="middle" fill="#202124" font-size="14">uniform chip</text>
+</g>
+<g data-node="cylinder">
+<path d="M480 427 L480 483 A50 7 0 0 0 580 483 L580 427 A50 7 0 0 0 480 427 Z" fill="#FEF7E0" stroke="#E37400" stroke-width="1"/>
+<path d="M480 427 A50 7 0 0 0 580 427" fill="none" stroke="#E37400" stroke-width="1"/>
+<text x="530" y="464" text-anchor="middle" fill="#202124" font-size="14">cylinder</text>
+</g>
+<g data-node="diamond">
+<path d="M340 240 L420 280 L340 320 L260 280 Z" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="340" y="285" text-anchor="middle" fill="#202124" font-size="14">diamond</text>
+</g>
+<g data-node="lab">
+<rect x="600" y="0" width="140" height="110" fill="#F8F9FA" stroke="#9AA0A6" stroke-width="1"/>
+<text x="620" y="25" fill="#202124" font-size="14">Lab</text>
+</g>
+<g data-node="point">
+<circle cx="10" cy="270" r="10" fill="#202124" stroke="#3C4043" stroke-width="1"/>
+</g>
+<g data-node="rack">
+<svg x="0" y="0" width="20" height="20" viewBox="0 0 20 20" preserveAspectRatio="none"><use href="#dg-shape-rack"/></svg>
+<svg x="20" y="0" width="100" height="20" viewBox="20 0 40 20" preserveAspectRatio="none"><use href="#dg-shape-rack"/></svg>
+<svg x="120" y="0" width="20" height="20" viewBox="60 0 20 20" preserveAspectRatio="none"><use href="#dg-shape-rack"/></svg>
+<svg x="0" y="20" width="20" height="20" viewBox="0 20 20 40" preserveAspectRatio="none"><use href="#dg-shape-rack"/></svg>
+<svg x="20" y="20" width="100" height="20" viewBox="20 20 40 40" preserveAspectRatio="none"><use href="#dg-shape-rack"/></svg>
+<svg x="120" y="20" width="20" height="20" viewBox="60 20 20 40" preserveAspectRatio="none"><use href="#dg-shape-rack"/></svg>
+<svg x="0" y="40" width="20" height="20" viewBox="0 60 20 20" preserveAspectRatio="none"><use href="#dg-shape-rack"/></svg>
+<svg x="20" y="40" width="100" height="20" viewBox="20 60 40 20" preserveAspectRatio="none"><use href="#dg-shape-rack"/></svg>
+<svg x="120" y="40" width="20" height="20" viewBox="60 60 20 20" preserveAspectRatio="none"><use href="#dg-shape-rack"/></svg>
+<text x="70" y="40" text-anchor="middle" fill="#202124" font-size="14">nine-slice rack</text>
+</g>
+<g data-node="rounded">
+<rect x="60" y="240" width="100" height="40" rx="8" fill="#E8F0FE" stroke="#1A73E8" stroke-width="1"/>
+<text x="110" y="265" text-anchor="middle" fill="#202124" font-size="14">rounded</text>
+</g>
+<g data-node="bench">
+<rect x="620" y="50" width="100" height="40" rx="8" fill="#FCE8E6" stroke="#1A73E8" stroke-width="1"/>
+<text x="670" y="75" text-anchor="middle" fill="#A50E0E" font-size="14">Bench</text>
+</g>
+<g data-edge="chip-bench">
+<path d="M450 38 L462 38 L462 100 L650 100 L650 90" fill="none" stroke="#3C4043" stroke-width="2.5"/>
+<path d="M655 100 L650 90 L645 100" fill="none" stroke="#3C4043" stroke-width="2.5"/>
+<path d="M460 33 L450 38 L460 43" fill="none" stroke="#3C4043" stroke-width="2.5"/>
+<rect x="444" y="92" width="160" height="17" fill="#FFFFFF"/>
+<text x="524" y="105" text-anchor="middle" fill="#202124" font-size="12">ports, arrows at both ends</text>
+</g>
+<g data-edge="diamond-bullseye">
+<path d="M417 278 L560 275" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M550 280 L560 275 L550 270" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="diamond-cylinder">
+<path d="M340 320 L340 332 L530 332 L530 420" fill="none" stroke="#3C4043" stroke-width="1.5" stroke-dasharray="6 4"/>
+<path d="M525 410 L530 420 L535 410" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="419" y="324" width="50" height="17" fill="#FFFFFF"/>
+<text x="444" y="337" text-anchor="middle" fill="#202124" font-size="12">async</text>
+</g>
+<g data-edge="lab-bench">
+<path d="M670 110 L670 90" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M675 100 L670 90 L665 100" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="674" y="92" width="60" height="17" fill="#FFFFFF"/>
+<text x="704" y="105" text-anchor="middle" fill="#202124" font-size="12">to a child</text>
+</g>
+<g data-edge="point-rounded">
+<path d="M19 265 L60 265" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M50 270 L60 265 L50 260" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="rack-chip">
+<path d="M70 60 L70 72 L288 72 L288 38 L300 38" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M290 43 L300 38 L290 33" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="166" y="64" width="60" height="17" fill="#FFFFFF"/>
+<text x="196" y="77" text-anchor="middle" fill="#202124" font-size="12">anchors</text>
+</g>
+<g data-edge="rounded-diamond">
+<path d="M110 240 L110 228 L340 228 L340 240" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M335 230 L340 240 L345 230" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+</svg>

@@ -1,0 +1,226 @@
+{
+  "view": "rdma",
+  "grid": 10,
+  "nodes": [
+    {
+      "id": "tor-1",
+      "kind": "switch",
+      "label": "ToR 1",
+      "ports": [
+        {
+          "name": "p1",
+          "side": "auto"
+        },
+        {
+          "name": "p2",
+          "side": "auto"
+        },
+        {
+          "name": "p3",
+          "side": "auto"
+        },
+        {
+          "name": "p4",
+          "side": "auto"
+        },
+        {
+          "name": "p5",
+          "side": "auto"
+        },
+        {
+          "name": "p6",
+          "side": "auto"
+        },
+        {
+          "name": "p7",
+          "side": "auto"
+        },
+        {
+          "name": "p8",
+          "side": "auto"
+        }
+      ],
+      "style": {
+        "shape": "rect",
+        "fill": "#F1F3F4",
+        "stroke": "#5F6368",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "weights",
+      "kind": "storage",
+      "label": "Model weights",
+      "ports": [
+        {
+          "name": "nvme",
+          "side": "left"
+        }
+      ],
+      "style": {
+        "shape": "cylinder",
+        "fill": "#FEF7E0",
+        "stroke": "#E37400",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "worker-1",
+      "kind": "gpu-node",
+      "label": "Worker 1",
+      "ports": [
+        {
+          "name": "nic0",
+          "side": "auto"
+        },
+        {
+          "name": "nic1",
+          "side": "auto"
+        }
+      ],
+      "style": {
+        "shape": "rounded",
+        "fill": "#E6F4EA",
+        "stroke": "#D93025",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "worker-2",
+      "kind": "gpu-node",
+      "label": "Worker 2",
+      "ports": [
+        {
+          "name": "nic0",
+          "side": "auto"
+        },
+        {
+          "name": "nic1",
+          "side": "auto"
+        }
+      ],
+      "style": {
+        "shape": "rounded",
+        "fill": "#E6F4EA",
+        "stroke": "#188038",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "tor-weights",
+      "kind": "rdma",
+      "from": {
+        "node": "tor-1",
+        "port": "p8"
+      },
+      "to": {
+        "node": "weights",
+        "port": "nvme"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#D93025",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "none",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "w1-tor",
+      "kind": "rdma",
+      "from": {
+        "node": "worker-1",
+        "port": "nic0"
+      },
+      "to": {
+        "node": "tor-1",
+        "port": "p1"
+      },
+      "labels": {
+        "mid": "400G"
+      },
+      "style": {
+        "stroke": "#D93025",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "none",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "w2-tor",
+      "kind": "rdma",
+      "from": {
+        "node": "worker-2",
+        "port": "nic0"
+      },
+      "to": {
+        "node": "tor-1",
+        "port": "p2"
+      },
+      "labels": {
+        "mid": "400G"
+      },
+      "style": {
+        "stroke": "#D93025",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "none",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    }
+  ]
+}

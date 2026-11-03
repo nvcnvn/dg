@@ -17,15 +17,34 @@ import (
 
 // Node is the computed style of a node, as far as the renderer draws it.
 type Node struct {
-	Shape  string `json:"shape"`
-	Fill   string `json:"fill"`
-	Stroke string `json:"stroke"`
+	Shape        string    `json:"shape"`
+	Fill         string    `json:"fill"`
+	Stroke       string    `json:"stroke"`
+	StrokeWidth  float64   `json:"stroke_width"`
+	StrokeDash   []float64 `json:"stroke_dash"`
+	CornerRadius float64   `json:"corner_radius"`
+	Opacity      float64   `json:"opacity"`
+	TextColor    string    `json:"text_color"`
+	FontSize     float64   `json:"font_size"`
+	FontWeight   float64   `json:"font_weight"`
+	Icon         string    `json:"icon,omitempty"`
+	Image        string    `json:"image,omitempty"`
+	Padding      float64   `json:"padding"`
+	MinW         float64   `json:"min_w"`
+	MinH         float64   `json:"min_h"`
+	MaxW         float64   `json:"max_w"`
+	Z            float64   `json:"z"`
 }
 
 // Edge is the computed style of an edge, as far as the renderer draws it.
 type Edge struct {
-	Stroke   string `json:"stroke"`
-	ArrowEnd string `json:"arrow_end"`
+	Stroke      string    `json:"stroke"`
+	StrokeWidth float64   `json:"stroke_width"`
+	StrokeDash  []float64 `json:"stroke_dash"`
+	ArrowStart  string    `json:"arrow_start"`
+	ArrowEnd    string    `json:"arrow_end"`
+	Routing     string    `json:"routing"`
+	FontSize    float64   `json:"font_size"`
 }
 
 // Setting is one property value of a rule and where it is set.
@@ -41,12 +60,15 @@ type Rule struct {
 	Props map[string]Setting
 }
 
-// Shape is a custom shape block.
+// Shape is a custom shape block. TextBox and Anchors are fractions of the drawn box.
 type Shape struct {
-	Name         string
-	Anchors      []string
-	AnchorsRange hcl.Range
-	Range        hcl.Range
+	Name         string                `json:"-"`
+	SVG          string                `json:"svg"`
+	TextBox      [4]float64            `json:"text_box"`
+	Anchors      map[string][2]float64 `json:"anchors,omitempty"`
+	Stretch      string                `json:"stretch"`
+	AnchorsRange hcl.Range             `json:"-"`
+	Range        hcl.Range             `json:"-"`
 }
 
 // Styles is the ordered list of rules from packs and the project; later rules win.
@@ -168,25 +190,34 @@ func decodeShape(b shapeBlock, ctx *hcl.EvalContext) (*Shape, hcl.Diagnostics) {
 	if slices.Contains(BuiltinShapes, b.Name) {
 		diags = append(diags, spec.Errorf(b.Range, "Invalid ID", "The shape %q is a built-in shape.", b.Name))
 	}
-	sh := &Shape{Name: b.Name, Range: b.Range}
-	check := func(attr *hcl.Attribute, valid func(cty.Value) string) {
+	sh := &Shape{Name: b.Name, TextBox: [4]float64{0, 0, 1, 1}, Stretch: "nine-slice", Range: b.Range}
+	value := func(attr *hcl.Attribute, valid func(cty.Value) string) (cty.Value, bool) {
 		if attr == nil {
-			return
+			return cty.NilVal, false
 		}
 		v, d := attr.Expr.Value(ctx)
 		diags = append(diags, d...)
-		if !d.HasErrors() {
-			if problem := valid(v); problem != "" {
-				diags = append(diags, spec.Errorf(attr.Expr.Range(), "Invalid style value", "The value of %s %s.", attr.Name, problem))
-			}
+		if d.HasErrors() {
+			return cty.NilVal, false
 		}
+		if problem := valid(v); problem != "" {
+			diags = append(diags, spec.Errorf(attr.Expr.Range(), "Invalid style value", "The value of %s %s.", attr.Name, problem))
+			return cty.NilVal, false
+		}
+		return v, true
 	}
-	check(b.SVG, isString)
-	check(b.TextBox, numbers(4, 0, 1))
-	check(b.Stretch, enum("nine-slice", "uniform", "none"))
+	if v, ok := value(b.SVG, isString); ok {
+		sh.SVG = v.AsString()
+	}
+	if v, ok := value(b.TextBox, numbers(4, 0, 1)); ok {
+		copy(sh.TextBox[:], floats(v))
+	}
+	if v, ok := value(b.Stretch, enum("nine-slice", "uniform", "none")); ok {
+		sh.Stretch = v.AsString()
+	}
 	if b.Anchors != nil {
 		sh.AnchorsRange = b.Anchors.Expr.Range()
-		check(b.Anchors, func(v cty.Value) string {
+		v, ok := value(b.Anchors, func(v cty.Value) string {
 			if !v.Type().IsObjectType() && !v.Type().IsMapType() {
 				return "must be an object of [x, y] fractions"
 			}
@@ -195,10 +226,16 @@ func decodeShape(b shapeBlock, ctx *hcl.EvalContext) (*Shape, hcl.Diagnostics) {
 				if p := numbers(2, 0, 1)(anchors[k]); p != "" {
 					return fmt.Sprintf("for anchor %q %s", k, p)
 				}
-				sh.Anchors = append(sh.Anchors, k)
 			}
 			return ""
 		})
+		if ok {
+			sh.Anchors = map[string][2]float64{}
+			for k, a := range v.AsValueMap() {
+				xy := floats(a)
+				sh.Anchors[k] = [2]float64{xy[0], xy[1]}
+			}
+		}
 	}
 	return sh, diags
 }
@@ -225,7 +262,7 @@ func (s *Styles) Validate(sp *spec.Spec) hcl.Diagnostics {
 		}
 		sh := s.Shapes[set.Value.AsString()]
 		ports := sp.Ports(kind)
-		for _, a := range sh.Anchors {
+		for _, a := range slices.Sorted(maps.Keys(sh.Anchors)) {
 			if !slices.Contains(ports, a) {
 				diags = append(diags, spec.Errorf(sh.AnchorsRange, "Anchor without port", "Shape %q has anchor %q, but kind %q, drawn with it, has no such port.", sh.Name, a, kind))
 			}
@@ -318,12 +355,38 @@ func Cascade(rules []Rule, labels []string) map[string]Setting {
 
 // DrawnNode returns the drawn part of a node's settings.
 func DrawnNode(props map[string]Setting) Node {
-	return Node{Shape: str(props, "shape"), Fill: str(props, "fill"), Stroke: str(props, "stroke")}
+	return Node{
+		Shape:        str(props, "shape"),
+		Fill:         str(props, "fill"),
+		Stroke:       str(props, "stroke"),
+		StrokeWidth:  num(props, "stroke_width"),
+		StrokeDash:   list(props, "stroke_dash"),
+		CornerRadius: num(props, "corner_radius"),
+		Opacity:      num(props, "opacity"),
+		TextColor:    str(props, "text_color"),
+		FontSize:     num(props, "font_size"),
+		FontWeight:   num(props, "font_weight"),
+		Icon:         str(props, "icon"),
+		Image:        str(props, "image"),
+		Padding:      num(props, "padding"),
+		MinW:         num(props, "min_w"),
+		MinH:         num(props, "min_h"),
+		MaxW:         num(props, "max_w"),
+		Z:            num(props, "z"),
+	}
 }
 
 // DrawnEdge returns the drawn part of an edge's settings.
 func DrawnEdge(props map[string]Setting) Edge {
-	return Edge{Stroke: str(props, "stroke"), ArrowEnd: str(props, "arrow_end")}
+	return Edge{
+		Stroke:      str(props, "stroke"),
+		StrokeWidth: num(props, "stroke_width"),
+		StrokeDash:  list(props, "stroke_dash"),
+		ArrowStart:  str(props, "arrow_start"),
+		ArrowEnd:    str(props, "arrow_end"),
+		Routing:     str(props, "routing"),
+		FontSize:    num(props, "font_size"),
+	}
 }
 
 func str(props map[string]Setting, name string) string {
@@ -331,6 +394,31 @@ func str(props map[string]Setting, name string) string {
 		return set.Value.AsString()
 	}
 	return ""
+}
+
+func num(props map[string]Setting, name string) float64 {
+	if set, ok := props[name]; ok {
+		f, _ := float(set.Value)
+		return f
+	}
+	return 0
+}
+
+func list(props map[string]Setting, name string) []float64 {
+	if set, ok := props[name]; ok {
+		return floats(set.Value)
+	}
+	return []float64{}
+}
+
+// floats returns the numbers of a list that a value check has accepted.
+func floats(v cty.Value) []float64 {
+	out := []float64{}
+	for _, e := range v.AsValueSlice() {
+		f, _ := float(e)
+		out = append(out, f)
+	}
+	return out
 }
 
 var colorRE = regexp.MustCompile(`^(#[0-9A-Fa-f]{3}|#[0-9A-Fa-f]{6}|none)$`)

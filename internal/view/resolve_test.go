@@ -77,3 +77,47 @@ func TestResolveUndefinedView(t *testing.T) {
 		t.Error("resolving an undefined view succeeded")
 	}
 }
+
+func TestResolvePins(t *testing.T) {
+	dir := t.TempDir()
+	files := map[string]string{
+		"model.hcl":                "node \"g\" {\n  kind = \"group\"\n}\n\nnode \"a\" {\n  parent = node.g\n}\n\nnode \"b\" {}\n",
+		"views.hcl":                "view \"all\" {}\n\nview \"leaves\" {\n  include = [node.a, node.b]\n}\n",
+		"views/all.layout.yaml":    "version: 1\nplace:\n  a: {x: 1, y: 2}\n  b: {in: g, x: 3, y: 4}\n",
+		"views/leaves.layout.yaml": "version: 1\nplace:\n  a: {in: g, x: 1, y: 2}\n  b: {x: 3, y: 4, w: 50}\n",
+	}
+	for name, src := range files {
+		if err := os.MkdirAll(filepath.Dir(filepath.Join(dir, name)), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(src), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	p, _, err := project.Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pins := func(id string) map[string]string {
+		v, diags := p.Resolve(id)
+		if diags.HasErrors() {
+			t.Fatal(diags)
+		}
+		out := map[string]string{}
+		for _, n := range v.Nodes {
+			data, _ := json.Marshal(n.Pin)
+			out[n.ID] = string(data)
+		}
+		return out
+	}
+	for _, tc := range []struct{ view, node, want string }{
+		{"all", "a", `{"in":"","x":1,"y":2}`},
+		{"all", "b", `{"in":"g","x":3,"y":4}`},
+		{"leaves", "a", `null`},
+		{"leaves", "b", `{"x":3,"y":4,"w":50}`},
+	} {
+		if got := pins(tc.view)[tc.node]; got != tc.want {
+			t.Errorf("view %s node %s pin %s, want %s", tc.view, tc.node, got, tc.want)
+		}
+	}
+}

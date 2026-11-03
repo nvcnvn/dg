@@ -14,6 +14,4 @@ kind "switch" {
   }
 }
 
-kind "storage" {}
-
 edge_kind "rdma" {}

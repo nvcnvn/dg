@@ -2,7 +2,7 @@
   {
     "severity": "info",
     "summary": "Overridden definition",
-    "detail": "The style \"node\" overrides the properties it sets of the one defined at \u003cgeneric\u003e/style.hcl:1:1.",
+    "detail": "The style \"node\" overrides the properties it sets of the one defined at \u003cgeneric\u003e/style.hcl:3:1.",
     "file": "style.hcl",
     "line": 1,
     "column": 1,
@@ -32,7 +32,7 @@
   {
     "severity": "info",
     "summary": "Overridden definition",
-    "detail": "The style \"service\" overrides the properties it sets of the one defined at \u003cgeneric\u003e/style.hcl:7:1.",
+    "detail": "The style \"service\" overrides the properties it sets of the one defined at \u003cgeneric\u003e/style.hcl:28:1.",
     "file": "style.hcl",
     "line": 6,
     "column": 1,
@@ -182,7 +182,7 @@
   {
     "severity": "info",
     "summary": "Overridden definition",
-    "detail": "The edge_style \"default\" overrides the properties it sets of the one defined at \u003cgeneric\u003e/style.hcl:18:1.",
+    "detail": "The edge_style \"default\" overrides the properties it sets of the one defined at \u003cgeneric\u003e/style.hcl:148:1.",
     "file": "style.hcl",
     "line": 32,
     "column": 1,

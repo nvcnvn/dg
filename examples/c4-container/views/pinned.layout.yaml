@@ -1,0 +1,8 @@
+version: 1
+place:
+  api: {in: banking, x: 400, y: 300}
+  banking: {x: 0, y: 280}
+  customer: {x: 400, y: 0}
+  database: {in: banking, x: 400, y: 600}
+  spa: {in: banking, x: 400, y: 0}
+  web-app: {in: banking, x: 0, y: 0}

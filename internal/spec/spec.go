@@ -384,3 +384,15 @@ func (s *Spec) Lineage(name string) []*Kind {
 	}
 	return chain
 }
+
+// DefaultPortSide returns the side for instance ports of kind that set none: the nearest
+// default_port_side in its lineage, or "auto".
+func (s *Spec) DefaultPortSide(kind string) string {
+	chain := s.Lineage(kind)
+	for i := len(chain) - 1; i >= 0; i-- {
+		if side := chain[i].DefaultPortSide; side != "" {
+			return side
+		}
+	}
+	return "auto"
+}

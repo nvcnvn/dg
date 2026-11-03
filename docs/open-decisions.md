@@ -25,21 +25,25 @@ the decision in `docs/spec.md`).
 
 ## Characters Inter does not cover
 
-- **Question:** labels with characters outside Inter's subsets (for example CJK) are measured and
-  drawn with a system fallback font, against spec 3.4.
-- **Options:** (a) accept the fallback; (b) bundle a second font such as Noto Sans CJK (large);
-  (c) report a diagnostic for uncovered characters.
+- **Question:** labels with characters outside Inter's subsets (CJK, emoji, other scripts) are
+  measured and drawn with a system fallback font, a known exception to spec 3.4, so their
+  geometry depends on the machine.
+- **Options:** (a) accept the fallback; (b) bundle fallback fonts such as Noto Sans CJK and Noto
+  Emoji (large); (c) report a diagnostic for uncovered characters.
 - **Default:** (a).
-- **Milestone:** M1.
+- **Milestone:** M1; revisited in M3.
 
 ## Third-party notices and LGPL relinking
 
-- **Question:** the binary embeds Inter (OFL-1.1, notice required), libavoid.wasm (LGPL-2.1+, users
-  must be able to replace it), JointJS and router-avoid (MPL-2.0) and elkjs (EPL-2.0). How does the
-  binary carry notices, and how does a user swap `libavoid.wasm`?
+- **Question:** the binary embeds Inter (OFL-1.1, notice required), libavoid (LGPL-2.1+: users must
+  be able to replace it), JointJS (MPL-2.0) and elkjs (EPL-2.0). How does the binary carry
+  notices, and how does a user swap libavoid?
 - **Options:** (a) a `dg licenses` command plus a flag or environment variable naming a
-  replacement `libavoid.wasm`; (b) notices in release archives only; (c) both.
-- **Default:** none yet; nothing is shipped. Decide before the first release.
+  directory with a replacement `libavoid.wasm` and its glue `libavoid-*.js`; (b) notices in
+  release archives only; (c) both.
+- **Default:** none yet; nothing is shipped. The build keeps libavoid replaceable: `libavoid.wasm`
+  and the libavoid-js glue are separate files in `web/dist/assets` (`web/vite.config.ts`).
+  Decide before the first release.
 - **Milestone:** M1.
 
 ## Color syntax in styles
@@ -49,37 +53,6 @@ the decision in `docs/spec.md`).
 - **Default:** (a).
 - **Milestone:** M1.
 
-## One drawing path for export and editor
-
-- **Question:** export writes SVG from computed geometry (FR-14), while the editor (M10) draws with
-  JointJS. How do the two stay identical?
-- **Options:** (a) node and edge SVG markup comes from shared pure functions
-  (`web/src/canvas/markup.ts`) that both the export writer and the JointJS canvas use, so there is
-  one drawing path; (b) the editor draws with JointJS shapes and export serializes the JointJS DOM;
-  (c) two renderers kept equal by tests.
-- **Default:** (a) recommended; the M1 code keeps markup apart from the export writer so that it is
-  possible.
-- **Milestone:** M1; decide by M10.
-
-## Edge label and edge collisions
-
-- **Question:** mid labels sit at the route's midpoint and can overlap other edges, and parallel
-  arrowheads can crowd each other.
-- **Options:** (a) leave it; (b) shift a label along its route away from other routes and boxes;
-  (c) pass labels to libavoid or elk as obstacles.
-- **Default:** (a); libavoid's nudging distance is 20 pixels so parallel arrowheads (10 wide) do not
-  touch.
-- **Milestone:** M1; revisit in M3 with label wrapping.
-
-## PNG pictures through `file()`
-
-- **Question:** spec 4.3 had `icon` and `image` take an SVG or a PNG through `file("…")`, but
-  `file()` returns text, and a PNG is not UTF-8.
-- **Options:** (a) SVG only; (b) `file()` returns a `data:` URI for non-text files; (c) a second
-  function such as `image("…")` that returns a `data:` URI for SVG and PNG alike.
-- **Default:** (a); `file()` fails on a file that is not UTF-8 text.
-- **Milestone:** M2; decide by M3, which draws icons.
-
 ## Layout coordinates off the grid
 
 - **Question:** a hand-edited layout file can hold `x`, `y`, `w` or `h` that are not multiples of
@@ -87,3 +60,36 @@ the decision in `docs/spec.md`).
 - **Options:** (a) no diagnostic; (b) a warning; (c) `dg fmt` snaps them to the grid.
 - **Default:** (a).
 - **Milestone:** M2; revisit with layout editing (M10).
+
+## Font name of a project font in exported SVG
+
+- **Question:** an exported SVG names a project font by its file's base name
+  (`fonts/Brand.woff2` is `Brand, sans-serif`), which may differ from the family name inside the
+  font, so a viewer that has the font installed may not find it.
+- **Options:** (a) the file's base name; (b) the family name read from the font's `name` table
+  (needs a TrueType/WOFF/WOFF2 reader); (c) a `font_family` field in `dg.hcl`.
+- **Default:** (a).
+- **Milestone:** M3.
+
+## Gallery views of unconnected nodes
+
+- **Question:** elk lays out nodes without edges in one row, so a view of many unconnected nodes
+  (such as `examples/shapes`) is very wide.
+- **Options:** (a) leave it; (b) pack disconnected components with elk's `elk.separateConnectedComponents`
+  and an aspect ratio; (c) a grid for nodes without edges.
+- **Default:** (a).
+- **Milestone:** M3.
+
+## Dragging at 60 frames per second
+
+- **Question:** M3 routes a whole view with a new libavoid router per draw, about 3 seconds for
+  a dense 200-node, 400-edge view. Dragging at 60 frames per second (FR-8, M10) cannot reroute
+  that way.
+- **Options:** (a) a persistent router: keep libavoid's shapes and connectors between frames,
+  `moveShape` the dragged nodes and `processTransaction`, rerouting only their edges, off the main
+  thread if needed; draw a cheap preview (straight or last routes) while a frame would miss its
+  budget, and route fully on drop; (b) route only on drop; (c) a simpler router while dragging.
+- **Default:** (a) recommended. The `Router` type (`web/src/route/edges.ts`) takes the whole
+  obstacle and request set, which a persistent router can diff against its state.
+- **Milestone:** M3; decide in M10.
+

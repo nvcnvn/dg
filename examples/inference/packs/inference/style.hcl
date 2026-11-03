@@ -9,11 +9,6 @@ style "switch" {
   stroke = "#5F6368"
 }
 
-style "storage" {
-  fill   = "#FEF7E0"
-  stroke = "#E37400"
-}
-
 style "tag.critical" {
   stroke = "#D93025"
 }

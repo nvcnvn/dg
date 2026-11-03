@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 2710 610" width="2710" height="610" font-family="Inter, sans-serif">
+<defs>
+<image id="dg-shape-rack" width="80" height="80" preserveAspectRatio="none" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2080%2080%22%3E%3Crect%20x%3D%221%22%20y%3D%221%22%20width%3D%2278%22%20height%3D%2278%22%20rx%3D%226%22%20fill%3D%22%23F1F3F4%22%20stroke%3D%22%235F6368%22%20stroke-width%3D%222%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%221%22%20width%3D%2278%22%20height%3D%2214%22%20rx%3D%226%22%20fill%3D%22%235F6368%22%2F%3E%3Ccircle%20cx%3D%228%22%20cy%3D%2272%22%20r%3D%223%22%20fill%3D%22%235F6368%22%2F%3E%3Ccircle%20cx%3D%2272%22%20cy%3D%2272%22%20r%3D%223%22%20fill%3D%22%235F6368%22%2F%3E%3C%2Fsvg%3E%0A"/>
+</defs>
+<g data-node="bold">
+<rect x="2240" y="50" width="150" height="50" fill="#FFFFFF" stroke="#3C4043" stroke-width="3"/>
+<text x="2315" y="81" text-anchor="middle" fill="#202124" font-size="16" font-weight="700">font_weight 700</text>
+</g>
+<g data-node="bullseye">
+<circle cx="1325" cy="525" r="15" fill="none" stroke="#3C4043" stroke-width="1"/>
+<circle cx="1325" cy="525" r="9" fill="#202124"/>
+</g>
+<g data-node="chip">
+<image x="2430" y="200" width="150" height="75" preserveAspectRatio="xMidYMid meet" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%2060%22%3E%3Crect%20x%3D%2210%22%20y%3D%225%22%20width%3D%22100%22%20height%3D%2250%22%20rx%3D%224%22%20fill%3D%22%23E6F4EA%22%20stroke%3D%22%23188038%22%20stroke-width%3D%222%22%2F%3E%3Cg%20stroke%3D%22%23188038%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22M0%2015h10M0%2030h10M0%2045h10M110%2015h10M110%2030h10M110%2045h10%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E%0A"/>
+<text x="2505" y="243" text-anchor="middle" fill="#202124" font-size="14">uniform chip</text>
+</g>
+<g data-node="cloud">
+<path d="M2125 58 C2105 58 2100 75 2116 79 C2100 82 2102 103 2120 96 C2125 110 2170 110 2175 96 C2200 96 2200 82 2188 75 C2200 61 2180 47 2163 54 C2150 44 2130 44 2125 58 Z" fill="#E8F0FE" stroke="#1A73E8" stroke-width="1"/>
+<text x="2150" y="80" text-anchor="middle" fill="#202124" font-size="14">cloud</text>
+</g>
+<g data-node="cylinder">
+<path d="M1380 517 L1380 573 A50 7 0 0 0 1480 573 L1480 517 A50 7 0 0 0 1380 517 Z" fill="#FEF7E0" stroke="#E37400" stroke-width="1"/>
+<path d="M1380 517 A50 7 0 0 0 1480 517" fill="none" stroke="#E37400" stroke-width="1"/>
+<text x="1430" y="554" text-anchor="middle" fill="#202124" font-size="14">cylinder</text>
+</g>
+<g data-node="diamond">
+<path d="M1350 360 L1430 400 L1350 440 L1270 400 Z" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="1350" y="405" text-anchor="middle" fill="#202124" font-size="14">diamond</text>
+</g>
+<g data-node="document">
+<path d="M1540 40 L1780 40 L1780 102 Q1720 86 1660 102 T1540 102 Z" fill="#FEF7E0" stroke="#B06000" stroke-width="1"/>
+<text x="1660" y="66" text-anchor="middle" fill="#202124" font-size="14">document: a note whose label is</text>
+<text x="1660" y="86" text-anchor="middle" fill="#202124" font-size="14">long enough to wrap at max_w</text>
+</g>
+<g data-node="ellipse">
+<ellipse cx="60" cy="80" rx="50" ry="30" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="60" y="85" text-anchor="middle" fill="#202124" font-size="14">ellipse</text>
+</g>
+<g data-node="external">
+<rect x="620" y="60" width="100" height="40" rx="8" fill="#F1F3F4" stroke="#5F6368" stroke-width="1" stroke-dasharray="6 4"/>
+<text x="670" y="85" text-anchor="middle" fill="#202124" font-size="14">external</text>
+</g>
+<g data-node="faded" opacity="0.5">
+<rect x="1820" y="60" width="100" height="40" fill="#FFFFFF" stroke="#3C4043" stroke-width="1" stroke-dasharray="4 2"/>
+<text x="1870" y="85" text-anchor="middle" fill="#202124" font-size="14">opacity 0.5</text>
+</g>
+<g data-node="hexagon">
+<path d="M1210 60 L1290 60 L1300 80 L1290 100 L1210 100 L1200 80 Z" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="1250" y="85" text-anchor="middle" fill="#202124" font-size="14">hexagon</text>
+</g>
+<g data-node="image">
+<image x="340" y="20" width="90" height="86" preserveAspectRatio="xMidYMid meet" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2048%22%3E%3Crect%20width%3D%2264%22%20height%3D%2248%22%20rx%3D%224%22%20fill%3D%22%23E8F0FE%22%2F%3E%3Ccircle%20cx%3D%2218%22%20cy%3D%2216%22%20r%3D%226%22%20fill%3D%22%23FBBC04%22%2F%3E%3Cpath%20d%3D%22M0%2044%2022%2022l14%2014%208-8%2020%2016v4H0z%22%20fill%3D%22%2334A853%22%2F%3E%3C%2Fsvg%3E%0A"/>
+<text x="385" y="125" text-anchor="middle" fill="#202124" font-size="14">image</text>
+</g>
+<g data-node="lab">
+<rect x="2430" y="340" width="140" height="110" fill="#F8F9FA" stroke="#9AA0A6" stroke-width="1"/>
+<text x="2450" y="365" fill="#202124" font-size="14">Lab</text>
+</g>
+<g data-node="locked">
+<rect x="760" y="40" width="100" height="80" rx="8" fill="#E8F0FE" stroke="#1A73E8" stroke-width="1"/>
+<image x="796" y="54" width="28" height="28" preserveAspectRatio="xMidYMid meet" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Crect%20x%3D%225%22%20y%3D%2211%22%20width%3D%2214%22%20height%3D%2210%22%20rx%3D%222%22%20fill%3D%22%235F6368%22%2F%3E%3Cpath%20d%3D%22M8%2011V7a4%204%200%200%201%208%200v4%22%20fill%3D%22none%22%20stroke%3D%22%235F6368%22%20stroke-width%3D%222%22%2F%3E%3C%2Fsvg%3E%0A"/>
+<text x="810" y="101" text-anchor="middle" fill="#202124" font-size="14">icon</text>
+</g>
+<g data-node="parallelogram">
+<path d="M160 60 L290 60 L280 100 L150 100 Z" fill="#F3E8FD" stroke="#9334E6" stroke-width="1"/>
+<text x="220" y="85" text-anchor="middle" fill="#202124" font-size="14">parallelogram</text>
+</g>
+<g data-node="person">
+<rect x="480" y="64" width="100" height="46" rx="9" fill="#E8F0FE" stroke="#1A73E8" stroke-width="1"/>
+<circle cx="530" cy="59" r="9" fill="#E8F0FE" stroke="#1A73E8" stroke-width="1"/>
+<text x="530" y="92" text-anchor="middle" fill="#202124" font-size="14">person</text>
+</g>
+<g data-node="point">
+<circle cx="1350" cy="130" r="10" fill="#202124" stroke="#3C4043" stroke-width="1"/>
+</g>
+<g data-node="rack">
+<svg x="2430" y="80" width="20" height="20" viewBox="0 0 20 20" preserveAspectRatio="none"><use href="#dg-shape-rack"/></svg>
+<svg x="2450" y="80" width="100" height="20" viewBox="20 0 40 20" preserveAspectRatio="none"><use href="#dg-shape-rack"/></svg>
+<svg x="2550" y="80" width="20" height="20" viewBox="60 0 20 20" preserveAspectRatio="none"><use href="#dg-shape-rack"/></svg>
+<svg x="2430" y="100" width="20" height="20" viewBox="0 20 20 40" preserveAspectRatio="none"><use href="#dg-shape-rack"/></svg>
+<svg x="2450" y="100" width="100" height="20" viewBox="20 20 40 40" preserveAspectRatio="none"><use href="#dg-shape-rack"/></svg>
+<svg x="2550" y="100" width="20" height="20" viewBox="60 20 20 40" preserveAspectRatio="none"><use href="#dg-shape-rack"/></svg>
+<svg x="2430" y="120" width="20" height="20" viewBox="0 60 20 20" preserveAspectRatio="none"><use href="#dg-shape-rack"/></svg>
+<svg x="2450" y="120" width="100" height="20" viewBox="20 60 40 20" preserveAspectRatio="none"><use href="#dg-shape-rack"/></svg>
+<svg x="2550" y="120" width="20" height="20" viewBox="60 60 20 20" preserveAspectRatio="none"><use href="#dg-shape-rack"/></svg>
+<text x="2500" y="120" text-anchor="middle" fill="#202124" font-size="14">nine-slice rack</text>
+</g>
+<g data-node="rect">
+<rect x="1060" y="60" width="100" height="40" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="1110" y="85" text-anchor="middle" fill="#202124" font-size="14">rect</text>
+</g>
+<g data-node="rounded">
+<rect x="1300" y="220" width="100" height="40" rx="8" fill="#E8F0FE" stroke="#1A73E8" stroke-width="1"/>
+<text x="1350" y="245" text-anchor="middle" fill="#202124" font-size="14">rounded</text>
+</g>
+<g data-node="stadium">
+<rect x="1400" y="60" width="100" height="40" rx="20" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="1450" y="85" text-anchor="middle" fill="#202124" font-size="14">stadium</text>
+</g>
+<g data-node="table">
+<rect x="1960" y="60" width="100" height="40" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<text x="2010" y="85" text-anchor="middle" fill="#202124" font-size="14">table</text>
+</g>
+<g data-node="text">
+<text x="960" y="85" text-anchor="middle" fill="#202124" font-size="14">text: no outline</text>
+</g>
+<g data-node="bench">
+<rect x="2450" y="390" width="100" height="40" rx="8" fill="#FCE8E6" stroke="#1A73E8" stroke-width="1"/>
+<text x="2500" y="415" text-anchor="middle" fill="#A50E0E" font-size="14">Bench</text>
+</g>
+<g data-edge="chip-bench">
+<path d="M2580 238 L2592 238 L2592 410 L2550 410" fill="none" stroke="#3C4043" stroke-width="2.5"/>
+<path d="M2560 405 L2550 410 L2560 415" fill="none" stroke="#3C4043" stroke-width="2.5"/>
+<path d="M2590 233 L2580 238 L2590 243" fill="none" stroke="#3C4043" stroke-width="2.5"/>
+<rect x="2512" y="331" width="160" height="17" fill="#FFFFFF"/>
+<text x="2592" y="344" text-anchor="middle" fill="#202124" font-size="12">ports, arrows at both ends</text>
+</g>
+<g data-edge="diamond-bullseye">
+<path d="M1343 436 L1328 510" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M1325 499 L1328 510 L1335 501" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="diamond-cylinder">
+<path d="M1350 440 L1350 452 L1368 452 L1368 545 L1380 545" fill="none" stroke="#3C4043" stroke-width="1.5" stroke-dasharray="6 4"/>
+<path d="M1370 550 L1380 545 L1370 540" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="1343" y="481" width="50" height="17" fill="#FFFFFF"/>
+<text x="1368" y="494" text-anchor="middle" fill="#202124" font-size="12">async</text>
+</g>
+<g data-edge="lab-bench">
+<path d="M2500 450 L2500 430" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M2505 440 L2500 430 L2495 440" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="2504" y="432" width="60" height="17" fill="#FFFFFF"/>
+<text x="2534" y="445" text-anchor="middle" fill="#202124" font-size="12">to a child</text>
+</g>
+<g data-edge="point-rounded">
+<path d="M1350 140 L1350 220" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M1345 210 L1350 220 L1355 210" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+<g data-edge="rack-chip">
+<path d="M2500 140 L2500 152 L2418 152 L2418 238 L2430 238" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M2420 243 L2430 238 L2420 233" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<rect x="2388" y="146" width="60" height="17" fill="#FFFFFF"/>
+<text x="2418" y="159" text-anchor="middle" fill="#202124" font-size="12">anchors</text>
+</g>
+<g data-edge="rounded-diamond">
+<path d="M1350 260 L1350 360" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M1345 350 L1350 360 L1355 350" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+</svg>

@@ -22,8 +22,8 @@ tests that start Chromium. Golden files are rewritten with
 `go test ./cmd/dg ./internal/export ./internal/view -update`: diagnostics of the projects under
 `testdata/check`, `dg fmt` output in `testdata/fmt/want`, resolved views and exports of every
 view of every example. `go test ./internal/project -bench Load1000` times `dg check` at 1,000
-nodes; the fuzz targets are `FuzzLoad` (`internal/project`) and `FuzzDecodeLayout`
-(`internal/view`).
+nodes; the fuzz targets are `FuzzLoad` (`internal/project`), `FuzzDecodeLayout`
+(`internal/view`) and `FuzzDecodeMessage` (`internal/server`, the WebSocket protocol).
 
 ## Use
 
@@ -32,6 +32,17 @@ bin/dg check -C examples/inference            # --strict: warnings fail; --json:
 bin/dg fmt -C examples/inference              # rewrites writable files; --check: list, write nothing
 bin/dg export -C examples/hello --format svg --out hello.svg
 bin/dg export -C examples/inference --view services --format json
+bin/dg serve -C examples/c4-container         # opens the browser; redraws when a file is saved
 ```
+
+`dg serve` shows the views read-only (editing comes later): it redraws within tens of
+milliseconds of a save, and while the project has errors it lists them and keeps the last good
+drawing. `-addr` sets the address (default a free loopback port), `-open=false` skips opening the
+browser.
+
+The examples are `hello`, `inference` (packs, read-only generated files, ports), `c4-container`
+(a C4 container diagram with a local `c4` pack, laid out by elk in `main` and from a partial
+layout file in `pinned`) and `shapes` (every built-in shape, custom shapes, icons, style
+properties, ports and edge hints).
 
 `dg check` exits 0 without errors, 1 with errors, 2 when dg itself fails.

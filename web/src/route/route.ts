@@ -1,32 +1,108 @@
-import type { Box, Point } from '../geometry/geometry';
+import { center, type Box, type Point, type Size } from '../geometry/geometry';
+import type { CustomShape, Side, ViewNode } from '../protocol/view';
 
 export const ARROW_SIZE = 10;
 
-function inside(p: Point, b: Box): boolean {
-  return p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h;
+export interface PortPos extends Point {
+  side: Side;
 }
 
-// exit returns where the segment from p, inside b, to q leaves b.
-function exit(p: Point, q: Point, b: Box): Point {
-  const t = (from: number, to: number, lo: number, hi: number) =>
-    to > from ? (hi - from) / (to - from) : to < from ? (lo - from) / (to - from) : Infinity;
-  const s = Math.min(1, t(p.x, q.x, b.x, b.x + b.w), t(p.y, q.y, b.y, b.y + b.h));
-  return { x: p.x + s * (q.x - p.x), y: p.y + s * (q.y - p.y) };
+// sideFacing returns the side of b that faces point p.
+export function sideFacing(b: Box, p: Point): Side {
+  const c = center(b);
+  const dx = (p.x - c.x) / Math.max(b.w, 1);
+  const dy = (p.y - c.y) / Math.max(b.h, 1);
+  if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? 'right' : 'left';
+  return dy >= 0 ? 'bottom' : 'top';
 }
 
-// clip trims a route that runs from inside the source box to inside the
-// target box so it starts and ends on their borders, rounds it to whole
-// pixels and drops repeated and collinear points.
-export function clip(route: Point[], from: Box, to: Box): Point[] {
-  if (route.length < 2) return route.map(round);
+// onSide returns the point at fraction f along side of b, from its top or left end.
+export function onSide(b: Box, side: Side, f: number): PortPos {
+  switch (side) {
+    case 'top':
+      return { x: b.x + f * b.w, y: b.y, side };
+    case 'bottom':
+      return { x: b.x + f * b.w, y: b.y + b.h, side };
+    case 'left':
+      return { x: b.x, y: b.y + f * b.h, side };
+    case 'right':
+      return { x: b.x + b.w, y: b.y + f * b.h, side };
+  }
+}
+
+function nearestSide(fx: number, fy: number): Side {
+  const d: [Side, number][] = [['top', fy], ['right', 1 - fx], ['bottom', 1 - fy], ['left', fx]];
+  return d.reduce((a, b) => (b[1] < a[1] ? b : a))[0];
+}
+
+// portPositions places a node's ports (spec 7.5): a custom shape's anchor, else a pinned side
+// and offset, else its side, ports on one side spread evenly in declaration order; an auto
+// port faces the point toward gives for it. An auto port without edges has no position.
+export function portPositions(n: ViewNode, b: Box, custom: CustomShape | undefined, toward: Map<string, Point>): Map<string, PortPos> {
+  const out = new Map<string, PortPos>();
+  const spread: Record<Side, string[]> = { top: [], right: [], bottom: [], left: [] };
+  for (const p of n.ports ?? []) {
+    const anchor = custom?.anchors?.[p.name];
+    if (anchor) {
+      out.set(p.name, { x: b.x + anchor[0] * b.w, y: b.y + anchor[1] * b.h, side: nearestSide(anchor[0], anchor[1]) });
+      continue;
+    }
+    const pin = n.pin?.ports?.[p.name];
+    if (pin?.offset !== undefined) {
+      out.set(p.name, onSide(b, pin.side, pin.offset));
+      continue;
+    }
+    const other = toward.get(p.name);
+    const side = pin?.side ?? (p.side !== 'auto' ? p.side : other ? sideFacing(b, other) : undefined);
+    if (side) spread[side].push(p.name);
+  }
+  for (const side of ['top', 'right', 'bottom', 'left'] as Side[]) {
+    const names = spread[side];
+    names.forEach((name, i) => out.set(name, onSide(b, side, (i + 1) / (names.length + 1))));
+  }
+  return out;
+}
+
+export function insidePolygon(p: Point, poly: Point[]): boolean {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[i];
+    const b = poly[j];
+    if (a.y > p.y !== b.y > p.y && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) inside = !inside;
+  }
+  return inside;
+}
+
+// exit returns where the segment from p, inside the convex polygon, to q leaves it.
+function exit(p: Point, q: Point, poly: Point[]): Point {
+  let best = 0;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[j];
+    const b = poly[i];
+    const d = (q.x - p.x) * (b.y - a.y) - (q.y - p.y) * (b.x - a.x);
+    if (d === 0) continue;
+    const t = ((a.x - p.x) * (b.y - a.y) - (a.y - p.y) * (b.x - a.x)) / d;
+    const u = ((a.x - p.x) * (q.y - p.y) - (a.y - p.y) * (q.x - p.x)) / d;
+    if (t >= 0 && t <= 1 && u >= 0 && u <= 1) best = Math.max(best, t);
+  }
+  return { x: p.x + best * (q.x - p.x), y: p.y + best * (q.y - p.y) };
+}
+
+function clipStart(pts: Point[], poly: Point[]): Point[] {
+  if (pts.length < 2 || !insidePolygon(pts[0], poly)) return pts;
   let i = 0;
-  while (i + 2 < route.length && inside(route[i + 1], from)) i++;
-  let j = route.length - 1;
-  while (j - 2 >= i && inside(route[j - 1], to)) j--;
-  const pts = route.slice(i, j + 1);
-  if (inside(pts[0], from) && !inside(pts[1], from)) pts[0] = exit(pts[0], pts[1], from);
-  const n = pts.length - 1;
-  if (inside(pts[n], to) && !inside(pts[n - 1], to)) pts[n] = exit(pts[n], pts[n - 1], to);
+  while (i + 2 < pts.length && insidePolygon(pts[i + 1], poly)) i++;
+  if (insidePolygon(pts[i + 1], poly)) return pts.slice(i);
+  return [exit(pts[i], pts[i + 1], poly), ...pts.slice(i + 1)];
+}
+
+// clip trims a route that starts or ends inside a shape outline (an end attached to a node's
+// center) so it starts and ends on the outline, rounds it to whole pixels and drops repeated
+// and collinear points.
+export function clip(route: Point[], from: Point[] | null, to: Point[] | null): Point[] {
+  let pts = route;
+  if (from) pts = clipStart(pts, from);
+  if (to) pts = clipStart([...pts].reverse(), to).reverse();
   return simplify(pts.map(round));
 }
 
@@ -34,7 +110,7 @@ function round(p: Point): Point {
   return { x: Math.round(p.x), y: Math.round(p.y) };
 }
 
-function simplify(pts: Point[]): Point[] {
+export function simplify(pts: Point[]): Point[] {
   const out: Point[] = [];
   for (const p of pts) {
     const last = out[out.length - 1];
@@ -49,18 +125,21 @@ function simplify(pts: Point[]): Point[] {
   return out;
 }
 
-// pointAlong returns the point at fraction t of the route's length.
-export function pointAlong(route: Point[], t: number): Point {
+// pointAlong returns the point at fraction t of the route's length, and whether the segment it
+// lies on runs horizontally.
+export function pointAlong(route: Point[], t: number): Point & { horizontal: boolean } {
   const lengths = route.slice(1).map((p, i) => Math.hypot(p.x - route[i].x, p.y - route[i].y));
   let remaining = t * lengths.reduce((a, b) => a + b, 0);
   for (let i = 0; i < lengths.length; i++) {
     if (remaining <= lengths[i] && lengths[i] > 0) {
       const f = remaining / lengths[i];
-      return { x: route[i].x + f * (route[i + 1].x - route[i].x), y: route[i].y + f * (route[i + 1].y - route[i].y) };
+      const a = route[i];
+      const b = route[i + 1];
+      return { x: a.x + f * (b.x - a.x), y: a.y + f * (b.y - a.y), horizontal: Math.abs(b.x - a.x) >= Math.abs(b.y - a.y) };
     }
     remaining -= lengths[i];
   }
-  return route[route.length - 1];
+  return { ...route[route.length - 1], horizontal: true };
 }
 
 // openArrow returns the two barb ends of an open arrowhead at the route's end.
@@ -78,4 +157,61 @@ export function openArrow(route: Point[]): [Point, Point] | undefined {
     { x: back.x - uy * half, y: back.y + ux * half },
     { x: back.x + uy * half, y: back.y - ux * half },
   ];
+}
+
+// segmentHitsBox reports whether the segment from a to b passes through box r.
+export function segmentHitsBox(a: Point, b: Point, r: Box): boolean {
+  let t0 = 0;
+  let t1 = 1;
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  for (const [p, q] of [[-dx, a.x - r.x], [dx, r.x + r.w - a.x], [-dy, a.y - r.y], [dy, r.y + r.h - a.y]]) {
+    if (p === 0) {
+      if (q <= 0) return false;
+      continue;
+    }
+    const t = q / p;
+    if (p < 0) t0 = Math.max(t0, t);
+    else t1 = Math.min(t1, t);
+    if (t0 >= t1) return false;
+  }
+  return true;
+}
+
+const LABEL_TRIES = [0.5, 0.4, 0.6, 0.3, 0.7, 0.2, 0.8];
+const LABEL_GAP = 4;
+
+// placeLabel returns the box of a middle label of the given size: centered on the route at pos
+// when the layout pins it; otherwise the first clear one of a few points around the middle,
+// first on the route and then beside it (beside it first when the route is too short to hold
+// the label), where clear means overlapping no box in avoid and
+// crossing no other route; if none is clear, the one that overlaps least.
+export function placeLabel(route: Point[], size: Size, pos: number | undefined, avoid: Box[], others: Point[][]): Box {
+  const at = (t: number, side: number): Box => {
+    const c = pointAlong(route, t);
+    const dx = c.horizontal ? 0 : side * (size.w / 2 + LABEL_GAP);
+    const dy = c.horizontal ? side * (size.h / 2 + LABEL_GAP) : 0;
+    return { x: Math.round(c.x + dx - size.w / 2), y: Math.round(c.y + dy - size.h / 2), ...size };
+  };
+  if (pos !== undefined) return at(pos, 0);
+  const overlap = (b: Box) =>
+    avoid.reduce((sum, a) => sum + Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y)), 0) +
+    others.reduce((sum, r) => sum + r.slice(1).filter((p, i) => segmentHitsBox(r[i], p, b)).length, 0);
+  const length = route.slice(1).reduce((sum, p, i) => sum + Math.hypot(p.x - route[i].x, p.y - route[i].y), 0);
+  const mid = pointAlong(route, 0.5);
+  const short = length < (mid.horizontal ? size.w : size.h) + 2 * LABEL_GAP;
+  let best = at(LABEL_TRIES[0], short ? 1 : 0);
+  let least = Infinity;
+  for (const side of short ? [1, -1, 0] : [0, -1, 1]) {
+    for (const t of LABEL_TRIES) {
+      const b = at(t, side);
+      const o = overlap(b);
+      if (o === 0) return b;
+      if (o < least) {
+        best = b;
+        least = o;
+      }
+    }
+  }
+  return best;
 }

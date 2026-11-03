@@ -21,10 +21,12 @@ import (
 // Timeout bounds one export, from starting Chromium to reading the result.
 const Timeout = 60 * time.Second
 
-// Result is a drawn view.
+// Result is a drawn view. TooSmall lists the containers whose pinned size does not hold their
+// children (spec 7.2 rule 5).
 type Result struct {
-	SVG  []byte
-	JSON []byte
+	SVG      []byte
+	JSON     []byte
+	TooSmall []string
 }
 
 // Render draws v and returns it as SVG and as JSON geometry.
@@ -36,8 +38,9 @@ func Render(ctx context.Context, v *view.Resolved) (*Result, error) {
 	ctx, cancel := context.WithTimeout(ctx, Timeout)
 	defer cancel()
 	type result struct {
-		SVG  string `json:"svg"`
-		JSON string `json:"json"`
+		SVG      string   `json:"svg"`
+		JSON     string   `json:"json"`
+		TooSmall []string `json:"too_small"`
 	}
 	var out result
 	ctx, stop, err := openApp(ctx)
@@ -51,11 +54,11 @@ func Render(ctx context.Context, v *view.Resolved) (*Result, error) {
 	if err != nil {
 		return nil, fmt.Errorf("export: %w", err)
 	}
-	return &Result{SVG: []byte(out.SVG), JSON: []byte(out.JSON)}, nil
+	return &Result{SVG: []byte(out.SVG), JSON: []byte(out.JSON), TooSmall: out.TooSmall}, nil
 }
 
-// openApp serves the embedded app on a loopback port and opens it in
-// headless Chromium. Chromium resolves no host name, and the app's content
+// openApp serves the embedded app on a loopback port and opens it in export
+// mode in headless Chromium. Chromium resolves no host name, and the app's content
 // security policy allows only the embedded files, so the app never reaches
 // the network. stop closes both.
 func openApp(ctx context.Context) (_ context.Context, stop func(), err error) {
@@ -81,7 +84,7 @@ func openApp(ctx context.Context) (_ context.Context, stop func(), err error) {
 		_ = srv.Close()
 	}
 	err = chromedp.Do(ctx,
-		chromedp.Navigate("http://"+ln.Addr().String()+"/"),
+		chromedp.Navigate("http://"+ln.Addr().String()+"/?export"),
 		chromedp.Poll[chromedp.Void]("window.dg !== undefined", chromedp.WithPollingTimeout(0)),
 	)
 	if err != nil {

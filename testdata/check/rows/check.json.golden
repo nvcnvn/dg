@@ -58,6 +58,16 @@
     "column": 7,
     "end_line": 26,
     "end_column": 11
+  },
+  {
+    "severity": "info",
+    "summary": "Overridden definition",
+    "detail": "The kind \"table\" replaces the one defined at \u003cgeneric\u003e/spec.hcl:36:1.",
+    "file": "spec.hcl",
+    "line": 1,
+    "column": 1,
+    "end_line": 1,
+    "end_column": 13
   }
 ]
 exit 1

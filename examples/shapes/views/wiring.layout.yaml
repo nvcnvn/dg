@@ -1,0 +1,19 @@
+version: 1
+place:
+  bench:
+    in: lab
+    x: 0
+    y: 0
+    ports:
+      probe: {side: bottom, offset: 0.30}
+  bullseye: {x: 560, y: 260}
+  chip: {x: 300, y: 0}
+  cylinder: {x: 480, y: 420}
+  diamond: {x: 260, y: 240}
+  lab: {x: 600, y: 0}
+  point: {x: 0, y: 260}
+  rack: {x: 0, y: 0}
+  rounded: {x: 60, y: 240}
+edge_hints:
+  diamond-cylinder: {from_side: bottom, to_side: top, via: [[530, 380]], label_pos: 0.40}
+  rounded-diamond: {from_side: top, to_side: top}

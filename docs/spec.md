@@ -61,7 +61,7 @@ Go never measures text and never computes absolute coordinates. This keeps the b
 ### 2.4 Pinned and unpinned
 
 - A node **listed** in its view's layout file is **pinned**: drawn where stored.
-- A node **not listed** is **unpinned**: placed by the engine at render time, drawn faded in the editor.
+- A node **not listed** is **unpinned**: placed by the engine at render time, drawn faded in the editor when the view has pinned nodes. In a view with nothing pinned nothing is faded; the editor says instead that the layout is not saved.
 - Dragging an unpinned node pins it. In a view with nothing pinned, the first drag pins every visible node where it is drawn, so accepting the first layout and adjusting it is one gesture (section 7.4).
 - The layout file therefore records only positions a human or agent placed or accepted, never engine output nobody saw.
 
@@ -106,7 +106,7 @@ Layout files are YAML, because they are machine-owned and rarely edited by hand.
 | Purpose | Library |
 |---|---|
 | Canvas and interaction | `@joint/core` (JointJS 4.3 or newer, MPL-2.0) |
-| Obstacle-avoiding orthogonal routing | `@joint/router-avoid` (MPL-2.0), running libavoid compiled to WebAssembly by `libavoid-js` (LGPL-2.1-or-later; `libavoid.wasm` stays a separate file) |
+| Obstacle-avoiding routing | libavoid compiled to WebAssembly by `libavoid-js` (LGPL-2.1-or-later; `libavoid.wasm` stays a separate file), called directly |
 | First layout of a view with nothing pinned | `elkjs` (Eclipse Layout Kernel, EPL-2.0), in a Web Worker |
 | Bundled font | Inter (OFL-1.1) from `@fontsource/inter` |
 | Build | Vite, with `tsc` for type checking |
@@ -121,7 +121,9 @@ Layout files are YAML, because they are machine-owned and rarely edited by hand.
 
 ### 3.4 Fonts
 
-One bundled font, Inter at weight 400 with all its Unicode subsets, loaded by the browser renderer. System fonts are never used. Only the browser measures text. An exported SVG names the font (`Inter, sans-serif`) but does not embed it.
+One bundled font, Inter at weights 400 and 700 with all their Unicode subsets, loaded by the browser renderer. A `font_weight` up to 500 is drawn with weight 400, 600 and above with 700. System fonts are never used, with one known exception: a character that the font does not cover (CJK, most emoji) is measured and drawn with the browser's fallback font. Only the browser measures text. An exported SVG names the font (`Inter, sans-serif`) but does not embed it.
+
+A project `font` (section 4.1) replaces Inter for every weight; the app loads it from the file's bytes, which the resolved view carries. An exported SVG names it by the file's base name without extension (`fonts/Brand.woff2` is `Brand, sans-serif`).
 
 ---
 
@@ -165,7 +167,7 @@ project "inference-stack" {
 - `packs` lists local pack directories, each holding an optional `spec.hcl` and `style.hcl`; the project root itself is not a pack. The built-in `generic` pack is always loaded first, whether or not `packs` lists it.
 - `models` lists glob patterns (`path.Match` syntax, no `**`). Default: every `*.hcl` in the root. `dg.hcl`, the `views` file, and the `spec.hcl` and `style.hcl` of the project and its packs are never model files. A pattern that matches no file is a warning; a directory it matches is an error.
 - `read_only` lists glob patterns of files dg never writes: `dg fmt` skips them, and operations that would write them fail naming the file.
-- `font` is checked to exist; drawing with it comes in M3.
+- `font` is checked to exist and is the font of every drawn text (section 3.4).
 
 Load order for kinds and styles: built-in `generic` pack, then packs in listed order, then project-local `spec.hcl` / `style.hcl`. A later `kind`, `edge_kind`, `shape` or `overlay_style` with the same name replaces the earlier one; a later `style` or `edge_style` with the same label overrides only the properties it sets (later wins, as in the cascade, section 8.4). Defining a name twice in one file is an error. `dg check` reports each override across files as information, a severity that `--strict` never turns into an error.
 
@@ -264,11 +266,13 @@ shape "gpu-node" {
 }
 ```
 
-**Node style properties:** `shape`, `fill`, `stroke`, `stroke_width`, `stroke_dash`, `corner_radius`, `opacity`, `text_color`, `font_size`, `font_weight`, `icon`, `image`, `padding`, `min_w`, `min_h`, `max_w`, `z`. `icon` and `image` (the picture for the `image` shape) take `file("…")`, an SVG resolved relative to the file that calls it.
+**Node style properties:** `shape`, `fill`, `stroke`, `stroke_width`, `stroke_dash`, `corner_radius`, `opacity`, `text_color`, `font_size`, `font_weight`, `icon`, `image`, `padding`, `min_w`, `min_h`, `max_w`, `z`. `icon` and `image` (the picture for the `image` shape) take `file("…")`, an SVG resolved relative to the file that calls it; other picture formats are not supported. The app draws pictures from `data:` URIs of that text.
 **Container properties:** `layout`, `direction` (`horizontal` | `vertical`), `gap`, `stretch`, `columns`, `align` (`start` | `center` | `end`), `label_side` (`top` | `left`; `left` draws the label rotated along the left edge, as on a swimlane).
 **Overlay style properties:** `fill`, `stroke`, `stroke_width`, `stroke_dash`, `opacity`, `padding`.
 **Values:** colors are `#RGB`, `#RRGGBB` or `none`; sizes, widths, gaps and padding are numbers of at least 0, `font_size` at least 1; `opacity` is 0–1; `font_weight` is 100–900 in steps of 100; `z` and `columns` are whole numbers; `stroke_dash` is a list of numbers.
-**Custom shapes:** a shape's name may not be a built-in shape. Each of its `anchors` must name a port of every kind whose style (by kind, section 8.4 step 1–2) uses the shape; ports without an anchor are placed by section 7.5.
+**Custom shapes:** a shape's name may not be a built-in shape. Each of its `anchors` must name a port of every kind whose style (by kind, section 8.4 step 1–2) uses the shape; ports without an anchor are placed by section 7.5. `text_box` defaults to `[0, 0, 1, 1]` and `stretch` to `nine-slice`. The picture's natural size is its `viewBox`, else its `width` and `height`, else 100 by 100. `nine-slice` cuts the picture a quarter of its width and height in from each edge: corners keep their natural size (scaled down only when the box is smaller than half the picture), edges stretch along their side, the center both ways. `uniform` scales the picture to fit and keeps the box at its aspect ratio; `none` draws it at its natural size, centered, in a box at least that large. A custom shape's `fill` and `stroke` are not drawn; the picture has its own.
+
+**Drawing:** labels break at `\n` and wrap at `max_w` minus twice `padding` (`max_w = 0`: no wrapping), by words, a word wider than the line broken between characters; lines are `ceil(1.4 × font_size)` apart. An `icon` is drawn above the label, `2 × font_size` square. The `image` shape draws its picture above the label, at least `6 × font_size` square, and no outline; `text` draws no outline. `point` and `bullseye` draw no label and are sized by `min_w` and `min_h`. `corner_radius` applies to `rounded`. `table` without rows is drawn as `rect` (rows come with section 5.4). Nodes are drawn in order of `z`, then depth in the containment tree, then ID; edges are drawn over nodes.
 **Edge style properties:** `stroke`, `stroke_width`, `stroke_dash`, `arrow_start`, `arrow_end`, `routing`, `font_size`, `animate`.
 **Animation** (`animate`): `none` (default) or `flow`. `flow` draws the edge dashed (its `stroke_dash`, or `[6, 4]`) and moves the dashes from `from` toward `to` by one dash period every half second, so every animated edge repeats with the same half-second period. Animation is style, so it is selected by kind or tag (`edge_style "tag.hot" { animate = "flow" }`), never set in the model.
 **Arrow markers** (`arrow_start`, `arrow_end`): `none`, `arrow` (open), `triangle`, `triangle-open`, `diamond`, `diamond-open`, `circle`, `circle-open`, and crow's-foot `crow-one`, `crow-zero-one`, `crow-many`, `crow-one-many`, `crow-zero-many`.
@@ -544,11 +548,11 @@ All geometry is computed in the browser (section 2.3).
 ### 7.1 Frames and relative coordinates
 
 - A node's **frame** in a view is its nearest ancestor that is visible and not collapsed in that view; if none, the canvas.
-- Stored coordinates are relative to the frame's **content origin**: for a container, the top-left of its inside, past its label and padding; for the canvas, (0, 0). `in:` names the frame; omitted means the canvas. A negative coordinate inside a container is drawn as 0.
+- Stored coordinates are relative to the frame's **content origin**: for a container, the top-left of its inside, past its label and padding (the label sits half a padding below the top, and a full padding separates it from the content); for the canvas, (0, 0). `in:` names the frame; omitted means the canvas. A negative coordinate inside a container is drawn as 0.
 - Moving a container therefore changes one layout line; its descendants move with it. Changing a container's label or padding moves its content with it instead of under the label.
 - **Stale frame:** if the stored `in:` differs from the node's current frame (the model's `parent` changed, or the view's `include` or `collapse` changed):
-  - if the stored frame is still drawn in this view, the browser converts the coordinates to the current frame for display; the entry keeps its stored values until the node is next moved or unpinned (Go has no geometry to convert them);
-  - otherwise the node is treated as unpinned.
+  - if the stored frame is still drawn in this view, the browser converts the coordinates to the current frame for display: it places the view with the node unpinned, takes the absolute position the stored coordinates give in the stored frame, and places the view again with the node pinned there in its current frame. The entry keeps its stored values until the node is next moved or unpinned (Go has no geometry to convert them);
+  - otherwise, or when the stored frame is the node itself or inside it, the node is treated as unpinned.
   In both cases `dg check` reports a warning.
 - Coordinates in operations (FR-12) are always relative to the node's current frame.
 
@@ -578,12 +582,12 @@ Set in style (`layout = ...`), applying to a container's **direct** children onl
 
 ### 7.4 Placement of unpinned nodes
 
-- If a view has **no** pinned nodes at all: run `elkjs` (layered algorithm) once, with nodes and edges given in sorted ID order, and `stack`/`grid` containers laid out by their policy first and passed as fixed-size boxes. The result is not saved.
-- Otherwise, for each unpinned node in **sorted ID order**: start from the centroid of its already-placed neighbors (fallback: its frame's center, then the canvas origin), then search outward in a spiral on the grid until it keeps two grid units of clearance from everything in its frame.
+- If a view has **no** pinned nodes at all: run `elkjs` (layered algorithm) once, with nodes and edges given in sorted ID order, and `stack`/`grid` containers laid out by their policy first and passed as fixed-size boxes. Each edge carries the size of its middle label, so the layers leave room for it. The result is not saved.
+- Otherwise the spiral placer fills frames innermost first, so a container's size is known before it is placed. Within a frame, for each unpinned node in **sorted ID order**: start from the centroid of its already-placed neighbors in that frame (a neighbor in another frame counts as its ancestor in this frame, if any; fallback: the center of a container's pinned content area, else of what is already placed in the frame, else the frame's content origin), then search outward in a spiral on the grid until it keeps four grid units of clearance from everything placed in its frame, the room an edge and its label need between two boxes. Inside a container coordinates stay at least 0.
 - In a view with nothing pinned, the editor sends the first drag as one batch (FR-12) that pins every visible node where it is drawn, plus the drag itself. Otherwise pinning one node would hand every other node from the elk layout to the spiral placer and the picture would jump.
 - `dg op` has no geometry: a `move` from the command line pins only the node it names. Agents read drawn positions with `dg export --format json`.
 - Placement is deterministic. Pinned nodes never move.
-- Unpinned nodes are drawn faded in the editor and normally in export.
+- In a view with pinned nodes, unpinned nodes are drawn faded in the editor; in a view with nothing pinned no node is faded and the editor shows a hint that the layout is not saved. Export draws every node normally.
 
 ### 7.5 Ports and routing
 
@@ -594,9 +598,14 @@ Port position, in priority order:
 4. `auto`: the side facing the other endpoint's center.
 
 Routing:
-- `@joint/router-avoid`, orthogonal by default (`routing` in edge style).
-- Leaf nodes and collapsed containers are obstacles, except an edge's own endpoints. Expanded containers are not: edges cross container borders, so an edge between two swimlanes can pass through the lanes between them.
-- Hints: `from_side` / `to_side`, `via` waypoints, `label_pos` (0–1 along the path) for the middle label; start and end labels are placed next to their ends.
+- libavoid, orthogonal by default (`routing` in edge style: `polyline` lets libavoid route with diagonal segments; `straight` is one line between the ends, through anything).
+- Leaf nodes, collapsed containers and the labels of expanded containers are obstacles, except an edge's own endpoints. Expanded containers are not: edges cross container borders, so an edge between two swimlanes can pass through the lanes between them.
+- An `auto` port faces the other end of the first edge, by ID, that uses it; a port with side `auto` that no drawn edge uses has no position.
+- An edge end at a leaf node without a port or side hint is routed in two passes: the first from the node's center finds the side the edge enters by; the edges entering one side are then spread evenly along it, ordered by where their other ends lie, and routed again from those points. An edge whose two spread ends face each other less than two grid units apart is straightened. Ends are moved onto the outline of non-rectangular shapes.
+- An end with a direction (a port, a side hint, a spread end, an end at a container) leaves its side at a right angle: it is routed from a point just outside the router's clearance in that direction, joined to the end by a straight segment. This also holds for `polyline` edges.
+- An inner segment of an orthogonal route that runs along a container's border, closer than one grid unit, is moved one grid unit away from it, unless that would cross a leaf node, so an edge is never drawn on top of a border.
+- An edge end at an expanded container without a port starts on the container's side that faces the other end, or, when the other end is inside the container, on its nearest side, at the point nearest the other end.
+- Hints: `from_side` / `to_side` attach the end at the middle of that side; `via` waypoints, in canvas coordinates, are passed in order; `label_pos` (0–1 along the path) places the middle label. Without `label_pos` the middle label goes to the first of the points at 0.5, 0.4, 0.6, 0.3, 0.7, 0.2 and 0.8 of the path, first on the path and then beside it (beside it first when the path is too short to hold the label), where it overlaps no leaf node, container label or earlier label and crosses no other edge; if there is none, where it overlaps least. Start and end labels are placed next to their ends.
 - Self-loops route around one corner of the node.
 - Moving a node reroutes only the affected edges, live during dragging.
 - Routes are never written to any file.
@@ -652,7 +661,7 @@ There are no defaults outside the cascade: the built-in `generic` pack's `style 
 | `database` | `cylinder` |
 | `queue` | `parallelogram` |
 | `storage` | `cylinder` |
-| `person` | `person`, uniform stretch |
+| `person` | `person` (a head above a rounded body; the label is in the body) |
 | `external` | `rounded`, dashed |
 | `note` | `document` |
 | `group` | container, `free` |
@@ -718,6 +727,8 @@ Warnings:
 
 Information: a kind, edge kind, shape or style overridden by a later pack or the project (section 4.1).
 
+When a model file does not parse, references, selectors and layout entries are not checked: what they name may be in that file, and each would be reported again.
+
 - AC: exit code 0 if no errors, 1 if errors, 2 on internal failure (such as an unreadable project directory); `--strict` makes warnings errors.
 - AC: `--json` prints a JSON array of diagnostics, each with `severity` (`error`, `warning` or `info`), `summary`, `detail`, and, when it has a position, `file`, `line`, `column`, `end_line` and `end_column`. `dg serve` (FR-10) and the language server send the same shape.
 - AC: `file` is the project-relative slash path, the same whatever `-C` and the working directory are; files of the built-in pack are `<generic>/spec.hcl` and `<generic>/style.hcl`, which no project path can be. A diagnostic about one element of a list (a pattern, port, tag or selector) points at that element.
@@ -745,7 +756,8 @@ Information: a kind, edge kind, shape or style overridden by a later pack or the
 
 **FR-10 Serve (`dg serve`).** HTTP server, open the browser, WebSocket protocol:
 - server → client: `snapshot` (resolved view), `diagnostics`, `ack` (operation result, including generated IDs), `error`;
-- client → server: `op`, `select-view`, `undo`, `redo`.
+- client → server: `op`, `select-view`, `undo`, `redo`. Selecting a view that is not defined is answered with `error`.
+- `dg serve` listens only on a loopback address and answers only requests whose `Host` is one, so another site cannot reach it by rebinding a host name; it has no authentication.
 - Undo history belongs to the `dg serve` session and is shared by its clients; `dg op` has none (git is its undo). An undo whose inverse no longer applies, because a file changed outside the editor, fails with an error and is dropped.
 - AC: a change on disk produces a new `snapshot` within 300 milliseconds.
 - AC: if the project fails to parse, the editor shows diagnostics and keeps the last good snapshot visible, read-only.
@@ -867,7 +879,7 @@ Information: a kind, edge kind, shape or style overridden by a later pack or the
   /src/geometry/          # sizes, container policies, frames
   /src/place/             # elkjs first layout, spiral placer
   /src/route/             # ports, hints, route clipping and labels
-  /src/canvas/            # JointJS shapes and interactions, the router-avoid adapter, text measurement, SVG and JSON output
+  /src/canvas/            # JointJS shapes and interactions, the libavoid adapter, text measurement, SVG and JSON output
   /src/protocol/          # WebSocket client
 /vscode/                  # VS Code extension (FR-18)
 /testdata/                # golden files: hclwrite round-trips, layout output, resolved views
@@ -884,12 +896,12 @@ The order follows two rules. First, export comes before editing: once `dg export
 
 **Language ahead of drawing.** From M2, `dg check` accepts the whole language of sections 4–6. `dg export` refuses, with an error at the source position that names the milestone, anything the renderer does not draw yet (a style value, rows, edges ending at ports or rows, collapse, pinned positions, …), so nothing is silently drawn wrong.
 
-1. **M1 — Walking skeleton.** The thinnest path from file to picture: `node` and `edge` blocks with `kind`, `label` and `parent`; `kind`, `edge_kind`, `style` and `edge_style` with `shape` (`rect`, `rounded`), `fill` and `stroke`; resolve; the embedded web app with the bundled font, elkjs first layout and router-avoid routing; `dg export --format svg|json`.
+1. **M1 — Walking skeleton.** The thinnest path from file to picture: `node` and `edge` blocks with `kind`, `label` and `parent`; `kind`, `edge_kind`, `style` and `edge_style` with `shape` (`rect`, `rounded`), `fill` and `stroke`; resolve; the embedded web app with the bundled font, elkjs first layout and libavoid routing; `dg export --format svg|json`.
    *Done when:* `examples/hello` exports a golden SVG, and export succeeds with the network blocked (font, WebAssembly and the elk worker are all embedded).
    *Why first:* the risk is in the joins (libavoid WebAssembly and the elk Web Worker inside the embedded app inside headless Chromium), not in any single part.
 2. **M2 — Language core.** FR-1, FR-2, FR-3: kind inheritance, properties, ports, `port_range`, `file`, rows, quoted IDs, packs, project-local spec and style, read-only files; `views.hcl` and layout files parsed and validated, and views resolved by `include`, `exclude` and `edges`.
    *Done when:* every FR-2 error and warning has a golden diagnostic with file, line and column; HCL loading and layout YAML are fuzzed; the `dg check` benchmark at 1,000 nodes is under 1 second; `dg fmt` output is golden.
-3. **M3 — C4 diagrams.** FR-4 (without collapse and overlays), FR-5, FR-7, FR-8, FR-9 for `free` containers; the full `generic` pack, every built-in shape and custom shapes; the node and edge style properties other than the container policies, markers and animation; the project `font`; label wrapping; pinned positions from layout files; `dg serve` read-only (FR-10 `snapshot` and `diagnostics`) with FR-13 reload, so editing HCL in a text editor updates the browser.
+3. **M3 — C4 diagrams.** FR-4 (without collapse and overlays), FR-5, FR-7, FR-8, FR-9 for `free` containers; the full `generic` pack, every built-in shape and custom shapes; the node and edge style properties other than the container policies, markers other than `arrow`, and animation; the project `font`; label wrapping; pinned positions from layout files; `dg serve` read-only (FR-10 `snapshot` and `diagnostics`) with FR-13 reload, so editing HCL in a text editor updates the browser.
    *Done when:* `examples/c4-container` (people, a system boundary holding its containers, external systems, a local `c4` pack) matches its golden SVG with nothing pinned and with a partial layout file (pinned plus spiral-placed nodes); saving a model file updates the browser within 300 milliseconds; a broken file keeps the last snapshot.
 4. **M4 — Entity-relationship and class diagrams.** Rows and compartments drawn; rows as ports (section 5.4); every arrow marker including crow's feet; start and end labels; self-loops; several edges between one pair.
    *Done when:* `examples/er` and `examples/class` match their goldens, with each row edge attached to the end of the row facing the other endpoint.
@@ -928,7 +940,7 @@ The order follows two rules. First, export comes before editing: once `dg export
 |---|---|---|
 | Languages | Go + TypeScript | All TypeScript: no comment-preserving HCL writer in JavaScript. All Go: would mean rebuilding editor interactions JointJS already provides. |
 | Model language | HCL | D2: path-based IDs, style and position mixed into the model. YAML: weaker ID enforcement, no typed references. CUE: weaker round-trip editing (possible later for spec). KDL: immature Go round-trip tooling. |
-| Canvas | JointJS + router-avoid | tldraw: production license key required. React Flow: no obstacle-avoiding routing. maxGraph: fallback option, weaker routing. Sprotty: heavier than needed. |
+| Canvas | JointJS + libavoid | tldraw: production license key required. React Flow: no obstacle-avoiding routing. maxGraph: fallback option, weaker routing. Sprotty: heavier than needed. |
 | Spec separate from model | yes, with optional project-local `spec.hcl` | Kinds inside model files: no reuse, palette and validation need a shared vocabulary. |
 | Views reference the model | by ID; layout files by convention | Model listing its views: breaks reuse; file moves become model edits. |
 | View definition vs layout | `views.hcl` (selection) + `*.layout.yaml` (positions) | Selection inside YAML: loses reference validation. |
@@ -942,3 +954,6 @@ The order follows two rules. First, export comes before editing: once `dg export
 | Text measurement | browser only; export via headless Chromium | Measuring in both Go and the browser: results drift. |
 | Routes | never stored; hints only | Stored waypoints (draw.io): stale whenever a node moves. |
 | Diagrams where position is data | out of v1 | Forcing them into free placement fits poorly. |
+| Calling libavoid | `libavoid-js` directly | `@joint/router-avoid`: no `via` checkpoints, no ends at containers (which are not obstacles), orthogonal only, and it routes a JointJS graph that export would build only for it. |
+| Editor drawing | the editor canvas puts the export's node and edge markup (`web/src/canvas/markup.ts`) in JointJS elements, so there is one drawing path | JointJS shapes for the editor and a DOM copy for export: the export would hold editor state. Two renderers kept equal by tests: they drift. |
+| Spiral clearance | four grid units | Two grid units: with libavoid's buffer around each box no edge fits between two neighbors, and libavoid draws a straight line through them. |

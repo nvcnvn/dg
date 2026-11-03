@@ -1,7 +1,7 @@
-style.hcl:1:1: info: Overridden definition: The style "node" overrides the properties it sets of the one defined at <generic>/style.hcl:1:1.
+style.hcl:1:1: info: Overridden definition: The style "node" overrides the properties it sets of the one defined at <generic>/style.hcl:3:1.
 style.hcl:2:11: error: Invalid style value: The shape "blob" is neither a built-in shape nor defined by a shape block.
 style.hcl:3:11: error: Invalid style value: The value of fill must be "#RGB", "#RRGGBB" or "none".
-style.hcl:6:1: info: Overridden definition: The style "service" overrides the properties it sets of the one defined at <generic>/style.hcl:7:1.
+style.hcl:6:1: info: Overridden definition: The style "service" overrides the properties it sets of the one defined at <generic>/style.hcl:28:1.
 style.hcl:7:18: error: Invalid style value: The value of stroke_width must be a number of at least 0.
 style.hcl:8:18: error: Invalid style value: The value of stroke_dash must be a list of numbers of at least 0.
 style.hcl:9:18: error: Invalid style value: The value of opacity must be a number from 0 to 1.
@@ -16,7 +16,7 @@ style.hcl:20:1: error: Invalid ID: The tag ID "bad tag" is not a simple ID (lett
 style.hcl:22:1: error: Invalid style label: The label "node.api" names one node; such rules are only allowed in a view.
 style.hcl:24:1: warning: Undefined kind: Style label "ghost" names no defined kind.
 style.hcl:26:1: error: Invalid style label: The label "a.b" is not a kind, tag.<tag> or node.<id>.
-style.hcl:32:1: info: Overridden definition: The edge_style "default" overrides the properties it sets of the one defined at <generic>/style.hcl:18:1.
+style.hcl:32:1: info: Overridden definition: The edge_style "default" overrides the properties it sets of the one defined at <generic>/style.hcl:148:1.
 style.hcl:33:3: error: Unsupported argument: An argument named "fill" is not expected here.
 style.hcl:34:15: error: Invalid style value: The value of arrow_end must be one of "none", "arrow", "triangle", "triangle-open", "diamond", "diamond-open", "circle", "circle-open", "crow-one", "crow-zero-one", "crow-many", "crow-one-many", "crow-zero-many".
 style.hcl:35:15: error: Invalid style value: The value of routing must be one of "orthogonal", "polyline", "straight".
