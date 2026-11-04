@@ -1,14 +1,15 @@
 import type { Drawing } from './canvas/export';
-import type { DrawnDecoration, DrawnEdge, DrawnNode, DrawnOverlay } from './canvas/markup';
+import type { DrawnDecoration, DrawnEdge, DrawnNode, DrawnOverlay, DrawnTable } from './canvas/markup';
 import { placeDecorations } from './geometry/decoration';
-import { absoluteBoxes, ceilTo, cmp, contentLayout, depth, drillBadge, measureNode, type Box, type Layout, type NodeMeasure, type Point } from './geometry/geometry';
-import { alignHeaders, withBlock } from './geometry/policy';
+import { absoluteBoxes, ceilTo, cmp, contentLayout, depth, drillBadge, measureNode, overflows, type Box, type Layout, type NodeMeasure, type Point } from './geometry/geometry';
+import { alignHeaders, stretchedAxes, withBlock } from './geometry/policy';
 import { hull } from './geometry/overlay';
 import { rowLines } from './geometry/table';
-import { textBlock, type TextMeasure } from './geometry/text';
+import { svgSize } from './geometry/shapes';
+import { lineHeight, textBlock, type TextMeasure } from './geometry/text';
 import { elkLayout, type EdgeLabelSizes, type Elk } from './place/elk';
 import { placeSpiral } from './place/spiral';
-import type { ResolvedView, ViewNode } from './protocol/view';
+import type { CustomShape, ResolvedView, ViewNode } from './protocol/view';
 import { LABEL_PAD, placeLabels, planPorts, routeEdges, type Router } from './route/edges';
 import { marker } from './route/markers';
 import type { PortPos } from './route/route';
@@ -22,7 +23,8 @@ export async function draw(view: ResolvedView, text: TextMeasure, family: string
   const shapes = view.shapes ?? {};
   const byId = new Map(view.nodes.map((n) => [n.id, n]));
   const placed = withBlock(view);
-  const measures = new Map(placed.nodes.map((n) => [n.id, measureNode(n, text, grid, shapes[n.style.shape])]));
+  const stretched = stretchedAxes(placed);
+  const measures = new Map(placed.nodes.map((n) => [n.id, measureNode(n, text, grid, shapes[n.style.shape], stretched.get(n.id))]));
   alignHeaders(placed, measures);
   const layout = await place(placed, measures, text, elk);
   const boxes = absoluteBoxes(placed, measures, layout);
@@ -74,7 +76,7 @@ export async function draw(view: ResolvedView, text: TextMeasure, family: string
   return {
     view: view.view,
     family,
-    bounds: bounds([...nodes.map((n) => n.box), ...extra], edges, grid),
+    bounds: bounds([...nodes.flatMap((n) => extent(n, text, shapes)), ...extra], edges, grid),
     nodes,
     edges,
     overlays,
@@ -152,6 +154,7 @@ function drawnNode(n: ViewNode, m: NodeMeasure, box: Box, layout: Layout, custom
     pinned: pinned(view, byId, n),
     ...(orderedIn(view, byId, n) !== undefined ? { orderedIn: orderedIn(view, byId, n) } : {}),
     tooSmall: layout.tooSmall.has(n.id),
+    overflows: overflows(n, m, box, custom ? view.shapes![custom] : undefined),
     style: n.style,
     custom,
     text: m.text,
@@ -167,6 +170,42 @@ function header(n: ViewNode, m: NodeMeasure, b: Box): Box {
   const c = contentLayout(n, m, b);
   if (c.rotate) return { x: c.rotate.x - m.content.h / 2, y: c.rotate.y - m.content.w / 2, w: m.content.h, h: m.content.w };
   return { x: c.icon?.x ?? c.textBox.x, y: c.icon?.y ?? c.textBox.y, w: m.content.w, h: m.content.h };
+}
+
+// extent returns the boxes a node draws in: its own and those of whatever a size too small for
+// them draws past it (spec 7.2).
+function extent(n: DrawnNode, text: TextMeasure, shapes: Record<string, CustomShape>): Box[] {
+  const b = n.box;
+  const inset = n.text && n.align === 'center' ? (n.textBox.w - n.text.w) / 2 : 0;
+  const content = [...(n.text ? [{ x: n.textBox.x + inset, y: n.textBox.y, w: n.text.w, h: n.text.h }] : []), ...(n.icon ? [n.icon] : [])];
+  const custom = n.custom ? shapes[n.custom] : undefined;
+  const nat = custom?.stretch === 'none' ? svgSize(custom.svg) : undefined;
+  return [
+    b,
+    ...(n.rotate ? content.map((c) => quarterTurned(c, n.rotate!)) : content),
+    ...(n.badge ? [n.badge] : []),
+    ...(n.divider !== undefined ? [{ x: n.divider, y: b.y, w: 0, h: b.h }] : []),
+    ...(nat ? [{ x: b.x + (b.w - nat.w) / 2, y: b.y + (b.h - nat.h) / 2, ...nat }] : []),
+    ...(n.table ? tableExtent(b, n.table, text) : []),
+  ];
+}
+
+// quarterTurned returns the box b covers once turned a quarter counterclockwise around c.
+function quarterTurned(b: Box, c: Point): Box {
+  return { x: c.x + b.y - c.y, y: c.y + c.x - b.x - b.w, w: b.h, h: b.w };
+}
+
+// tableExtent returns the boxes of a table's separator lines and of each row's name and type. A
+// key starts inside the box and ends before its row's name.
+function tableExtent(b: Box, t: DrawnTable, text: TextMeasure): Box[] {
+  const h = lineHeight(t.font.size);
+  const lines = t.lines.map((y) => ({ x: b.x, y, w: b.w, h: 0 }));
+  const columns = t.rows.flatMap((r) => {
+    const column = (x: number, w: number) => ({ x, y: r.y - h / 2, w, h });
+    const type = r.type ? [column(t.typeX - text.width(r.type, t.font), text.width(r.type, t.font))] : [];
+    return [column(t.nameX, text.width(r.name, t.font)), ...type];
+  });
+  return [...lines, ...columns];
 }
 
 function bounds(boxes: Box[], edges: DrawnEdge[], grid: number): Box {

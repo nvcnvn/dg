@@ -38,6 +38,8 @@ func (s *state) apply(op Op) error {
 		return s.deleteNode(op)
 	case "set_label":
 		return s.setLabel(op)
+	case "set_view_label":
+		return s.setViewLabel(op)
 	case "set_parent":
 		return s.setParent(op)
 	case "set_kind":
@@ -498,7 +500,7 @@ func (s *state) dropViewRefs(nodes, edges map[string]bool) error {
 			}
 			id, isNode := strings.CutPrefix(labels[0], "node.")
 			id2, isEdge := strings.CutPrefix(labels[0], "edge.")
-			if r.Type() == "style" && isNode && nodes[id] || r.Type() == "edge_style" && isEdge && edges[id2] {
+			if r.Type() == "style" && isNode && nodes[id] || r.Type() == "edge_style" && isEdge && edges[id2] || r.Type() == "node" && nodes[labels[0]] {
 				rules = append(rules, r)
 			}
 		}

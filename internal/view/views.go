@@ -26,19 +26,27 @@ type Selector struct {
 
 // View is a view block.
 type View struct {
-	ID         string
-	Title      string
-	Include    []Selector
-	Exclude    []Selector
-	Collapse   []Selector
-	Edges      []Selector
-	EdgesSet   bool
-	Of         *Selector
-	Direction  string
-	Overlays   []Overlay
+	ID        string
+	Title     string
+	Include   []Selector
+	Exclude   []Selector
+	Collapse  []Selector
+	Edges     []Selector
+	EdgesSet  bool
+	Of        *Selector
+	Direction string
+	Overlays  []Overlay
+	// NodeLabels are the labels this view draws nodes with instead of the model's, by node ID.
+	NodeLabels map[string]NodeLabel
 	Styles     []style.Rule
 	EdgeStyles []style.Rule
 	Range      hcl.Range
+}
+
+// NodeLabel is a node block of a view.
+type NodeLabel struct {
+	Label string
+	Range hcl.Range
 }
 
 // Overlay is an overlay block of a view.
@@ -69,6 +77,11 @@ type viewBlock struct {
 		Label   *string        `hcl:"label,optional"`
 		Range   hcl.Range      `hcl:",def_range"`
 	} `hcl:"overlay,block"`
+	Nodes []struct {
+		ID    string    `hcl:"id,label"`
+		Label string    `hcl:"label"`
+		Range hcl.Range `hcl:",def_range"`
+	} `hcl:"node,block"`
 	Styles     []style.Block `hcl:"style,block"`
 	EdgeStyles []style.Block `hcl:"edge_style,block"`
 	Range      hcl.Range     `hcl:",def_range"`
@@ -143,6 +156,16 @@ func (vs Views) Decode(body hcl.Body, ctx *hcl.EvalContext) hcl.Diagnostics {
 				ov.Label = *o.Label
 			}
 			v.Overlays = append(v.Overlays, ov)
+		}
+		for _, n := range b.Nodes {
+			if prev, ok := v.NodeLabels[n.ID]; ok {
+				diags = append(diags, spec.Errorf(n.Range, "Duplicate ID", "View %q has two node blocks %q; the first is at line %d.", b.ID, n.ID, prev.Range.Start.Line))
+				continue
+			}
+			if v.NodeLabels == nil {
+				v.NodeLabels = map[string]NodeLabel{}
+			}
+			v.NodeLabels[n.ID] = NodeLabel{Label: n.Label, Range: n.Range}
 		}
 		var d hcl.Diagnostics
 		v.Styles, d = style.DecodeRules("style", b.Styles, style.NodeProps, ctx)
@@ -245,6 +268,11 @@ func (vs Views) Validate(sp *spec.Spec, st *style.Styles, m *model.Model) hcl.Di
 			check(o.Members)
 			if o.Style != "" && !slices.ContainsFunc(st.Overlay, func(r style.Rule) bool { return r.Label == o.Style }) {
 				diags = append(diags, spec.Errorf(o.Range, "Undefined overlay style", "Overlay %q uses undefined overlay style %q.", o.ID, o.Style))
+			}
+		}
+		for _, nid := range slices.Sorted(maps.Keys(v.NodeLabels)) {
+			if m.Nodes[nid] == nil {
+				diags = append(diags, spec.Errorf(v.NodeLabels[nid].Range, "Undefined node", "View %q labels undefined node %q.", id, nid))
 			}
 		}
 		nodeExists := func(id string) bool { return m.Nodes[id] != nil }

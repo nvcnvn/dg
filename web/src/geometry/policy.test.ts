@@ -5,7 +5,7 @@ import { elkLayout } from '../place/elk';
 import { placeSpiral } from '../place/spiral';
 import type { Policy, ResolvedView } from '../protocol/view';
 import { contentLayout, measureNode } from './geometry';
-import { alignHeaders, arrange, withBlock } from './policy';
+import { alignHeaders, arrange, stretchedAxes, withBlock } from './policy';
 
 const stack = (over: Partial<Policy> = {}): Policy => ({ layout: 'stack', direction: 'vertical', gap: 10, columns: 3, align: 'start', order: [], ...over });
 
@@ -128,6 +128,23 @@ describe('elkLayout', () => {
     const l = await elkLayout(new ELK(), nested, ms);
     expect(l.sizes.get('inner')!.w).toBe(300);
     expect(l.rel.get('i1')!.x).toBe(100);
+  });
+});
+
+describe('stretchedAxes', () => {
+  const axes = (p: Policy) => stretchedAxes({ view: 'v', grid: 10, edges: [], nodes: [node('s', { container: true, policy: p }), node('a', { frame: 's' })] });
+  it.each<[string, Partial<Policy>, [string, string][]]>([
+    ['the width across a vertical stack', { stretch: true }, [['a', 'w']]],
+    ['the height across a horizontal stack', { stretch: true, direction: 'horizontal' }, [['a', 'h']]],
+    ['nothing in a stack that does not stretch', {}, []],
+    ['nothing in a grid', { stretch: true, layout: 'grid' }, []],
+  ])('gives %s', (_, p, want) => {
+    expect([...axes(stack({ order: ['a'], ...p }))]).toEqual(want);
+  });
+  it('sees the children of the of of a view through its block', () => {
+    const inside: ResolvedView = { view: 'v', grid: 10, edges: [], nodes: [node('a')], policy: stack({ container: 'of', stretch: true, order: ['a'] }) };
+    expect(stretchedAxes(inside)).toEqual(new Map());
+    expect([...stretchedAxes(withBlock(inside))]).toEqual([['a', 'w']]);
   });
 });
 

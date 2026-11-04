@@ -17,7 +17,7 @@ import { draw } from './render';
 declare global {
   interface Window {
     dg?: {
-      render(view: ResolvedView): Promise<{ svg: string; json: string; too_small: string[] }>;
+      render(view: ResolvedView): Promise<{ svg: string; json: string; too_small: string[]; overflowing: string[] }>;
       setClock(ms: number): Promise<void>;
     };
   }
@@ -42,7 +42,7 @@ if (new URLSearchParams(location.search).has('export')) {
         const svg = toSVG(drawing);
         await mountSVG(svg, family);
         if (blocked.length) throw new Error('blocked requests: ' + blocked.join(', '));
-        return { svg, json: toJSON(drawing), too_small: drawing.nodes.filter((n) => n.tooSmall).map((n) => n.id) };
+        return { svg, json: toJSON(drawing), too_small: drawing.nodes.filter((n) => n.tooSmall).map((n) => n.id), overflowing: drawing.nodes.filter((n) => n.overflows).map((n) => n.id) };
       } finally {
         elk.terminateWorker();
       }

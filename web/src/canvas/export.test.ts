@@ -15,6 +15,7 @@ function drawn(id: string, style: Partial<NodeStyle> = {}, label = id): DrawnNod
     container: false,
     pinned: true,
     tooSmall: false,
+    overflows: false,
     style: nodeStyle(style),
     text: { lines: [label], font, w: 10, h: 20 },
     textBox: { x: 10, y: 10, w: 80, h: 20 },
@@ -95,6 +96,13 @@ describe('nodeMarkup', () => {
     ['stadium', 'rx="20"'],
   ])('draws a %s', (shape, want) => {
     expect(nodeMarkup(drawn('n', { shape }), m, { shapes: {} }).join('')).toContain(want);
+  });
+  it('draws the lines after a label\'s first line break in their own style', () => {
+    const sub = { font: { size: 10, weight: 400 }, color: '#666666', from: 1 };
+    const textBlock = { lines: ['title', 'sub'], font: { size: 14, weight: 400 }, w: 40, h: 34, sub };
+    const out = nodeMarkup({ ...drawn('n'), text: textBlock }, m, { shapes: {} }).join('');
+    expect(out).toMatch(/fill="#202124" font-size="14">title</);
+    expect(out).toMatch(/fill="#666666" font-size="10">sub</);
   });
   it('draws no outline for text and fades by opacity', () => {
     const out = nodeMarkup(drawn('n', { shape: 'text', opacity: 0.5 }), m, { shapes: {} }).join('');

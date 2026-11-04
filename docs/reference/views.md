@@ -11,6 +11,7 @@ a view shows is defined in `views.hcl`; where its nodes sit is in its layout fil
   - [Collapse and edge lifting](#collapse-and-edge-lifting)
   - [Drill-down](#drill-down)
   - [Overlays](#overlays)
+  - [Labels in a view](#labels-in-a-view)
   - [View style rules](#view-style-rules)
 - [Layout files](#layout-files)
   - [Pinned and unpinned nodes](#pinned-and-unpinned-nodes)
@@ -123,6 +124,23 @@ view "incident" {
 
 Overlays are drawn over expanded containers and under every other node. A member hidden by a
 collapse is represented by its collapsed container; an overlay with no member drawn is not drawn.
+
+### Labels in a view
+
+A `node` block in a view gives a node another label there, so views can say different things
+about one node without a second node in the model:
+
+```hcl
+view "sizing" {
+  node "workers" {
+    label = "Workers\n8 nodes, 8 GPUs each"
+  }
+}
+```
+
+Every other view, and the model, keep the model's label. The block names the node as its label
+does in the model; [`set_view_label`](operations.md#set_view_label) writes it. Renaming a node
+renames its blocks and deleting a node removes them.
 
 ### View style rules
 
@@ -245,7 +263,7 @@ Routes are never stored; `edge_hints` steer them:
 | Hint | Effect |
 |---|---|
 | `from_side`, `to_side` | the side the edge leaves its start or enters its end by, at the middle of that side |
-| `via` | points the route passes through, in canvas coordinates |
+| `via` | points the route passes through, in canvas coordinates; a `straight` edge ignores them |
 | `label_pos` | where the middle label sits along the route, from 0 to 1 |
 
 Without hints, an edge leaves and enters a box on the sides that face each other, edges on one

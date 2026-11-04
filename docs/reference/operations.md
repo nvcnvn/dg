@@ -12,7 +12,7 @@ Operations:
 
 <!-- begin generated operations-toc: go test ./cmd/dg -run TestDocs -update -->
 
-[create_node](#create_node), [delete_node](#delete_node), [set_label](#set_label), [set_parent](#set_parent), [set_kind](#set_kind), [set_tags](#set_tags), [set_props](#set_props), [add_port](#add_port), [remove_port](#remove_port), [set_rows](#set_rows), [connect](#connect), [disconnect](#disconnect), [set_edge_labels](#set_edge_labels), [move](#move), [resize](#resize), [reorder](#reorder), [unpin](#unpin), [pin_port](#pin_port), [set_edge_hint](#set_edge_hint), [rename_id](#rename_id), [create_view](#create_view), [update_view](#update_view), [delete_view](#delete_view), [show_node](#show_node), [hide_node](#hide_node), [add_decoration](#add_decoration), [update_decoration](#update_decoration), [delete_decoration](#delete_decoration), [promote_decoration](#promote_decoration), [batch](#batch)
+[create_node](#create_node), [delete_node](#delete_node), [set_label](#set_label), [set_view_label](#set_view_label), [set_parent](#set_parent), [set_kind](#set_kind), [set_tags](#set_tags), [set_props](#set_props), [add_port](#add_port), [remove_port](#remove_port), [set_rows](#set_rows), [connect](#connect), [disconnect](#disconnect), [set_edge_labels](#set_edge_labels), [move](#move), [resize](#resize), [reorder](#reorder), [unpin](#unpin), [pin_port](#pin_port), [set_edge_hint](#set_edge_hint), [rename_id](#rename_id), [create_view](#create_view), [update_view](#update_view), [delete_view](#delete_view), [show_node](#show_node), [hide_node](#hide_node), [add_decoration](#add_decoration), [update_decoration](#update_decoration), [delete_decoration](#delete_decoration), [promote_decoration](#promote_decoration), [batch](#batch)
 
 <!-- end operations-toc -->
 
@@ -131,6 +131,20 @@ Change a node's label. A node created in the same batch without a label or ID ta
 As JSON, with the required fields: `{"op": "set_label", "id": "api", "label": "API"}`
 
 Fields (`?` marks the optional ones): `id, label`
+
+### set_view_label
+
+Set the label a view draws a node with instead of the model's; without label, remove it, so the view draws the model's again.
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `--id` | string | (required) ID of the node |
+| `--label` | string | label of the node in this view; a newline character breaks a line (in a shell, $'a\nb') |
+| `--view` | string | (required) view ID |
+
+As JSON, with the required fields: `{"op": "set_view_label", "view": "main", "id": "api"}`
+
+Fields (`?` marks the optional ones): `view, id, label?`
 
 ### set_parent
 

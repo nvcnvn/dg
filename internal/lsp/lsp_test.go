@@ -283,6 +283,28 @@ func TestBurstPublishesOnce(t *testing.T) {
 
 // TestUnquotedLabel checks the range of an ID written as a block label without quotes, which
 // HCL allows.
+// TestViewNodeBlock checks that the ID of a node block in a view is a reference to the node.
+func TestViewNodeBlock(t *testing.T) {
+	dir := t.TempDir()
+	files := map[string]string{"model.hcl": "node \"abcd\" {}\n", "views.hcl": "view \"main\" {\n  node \"abcd\" {\n    label = \"A\"\n  }\n}\n"}
+	for name, src := range files {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(src), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	msgs := session(t, dir, []string{
+		`{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}`,
+		`{"jsonrpc": "2.0", "id": 2, "method": "textDocument/definition", "params": {"textDocument": {"uri": "$ROOT/views.hcl"}, "position": {"line": 1, "character": 9}}}`,
+	})
+	var reply struct{ Result Location }
+	if err := json.Unmarshal(msgs[1], &reply); err != nil {
+		t.Fatal(err)
+	}
+	if want := (Range{Position{0, 6}, Position{0, 10}}); reply.Result.Range != want || !strings.HasSuffix(reply.Result.URI, "model.hcl") {
+		t.Errorf("definition %+v, want %v in model.hcl", reply.Result, want)
+	}
+}
+
 func TestUnquotedLabel(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, "model.hcl"), []byte("node abcd {}\n\nnode \"b\" {\n  kind = \"group\"\n}\n\nedge e {\n  from = node.abcd\n  to   = node.b\n}\n"), 0o644); err != nil {

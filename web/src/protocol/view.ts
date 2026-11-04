@@ -68,6 +68,8 @@ export interface ViewNode {
   id: string;
   kind: string;
   label: string;
+  // view_label marks a label the view sets, not the model's.
+  view_label?: boolean;
   frame?: string;
   container?: boolean;
   // collapsed marks a collapsed container, drawn as a leaf with a "+" badge.
@@ -134,6 +136,9 @@ export interface NodeStyle {
   text_color: string;
   font_size: number;
   font_weight: number;
+  sub_text_color?: string;
+  sub_font_size?: number;
+  sub_font_weight?: number;
   icon?: string;
   image?: string;
   padding: number;

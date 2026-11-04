@@ -27,13 +27,18 @@ type Node struct {
 	TextColor    string    `json:"text_color"`
 	FontSize     float64   `json:"font_size"`
 	FontWeight   float64   `json:"font_weight"`
-	Icon         string    `json:"icon,omitempty"`
-	Image        string    `json:"image,omitempty"`
-	Padding      float64   `json:"padding"`
-	MinW         float64   `json:"min_w"`
-	MinH         float64   `json:"min_h"`
-	MaxW         float64   `json:"max_w"`
-	Z            float64   `json:"z"`
+	// SubTextColor, SubFontSize and SubFontWeight style a label after its first line break; zero
+	// values take the label's.
+	SubTextColor  string  `json:"sub_text_color,omitempty"`
+	SubFontSize   float64 `json:"sub_font_size,omitempty"`
+	SubFontWeight float64 `json:"sub_font_weight,omitempty"`
+	Icon          string  `json:"icon,omitempty"`
+	Image         string  `json:"image,omitempty"`
+	Padding       float64 `json:"padding"`
+	MinW          float64 `json:"min_w"`
+	MinH          float64 `json:"min_h"`
+	MaxW          float64 `json:"max_w"`
+	Z             float64 `json:"z"`
 	// LabelSide is left for a label drawn rotated along the left edge of a container, else "".
 	LabelSide string `json:"label_side,omitempty"`
 }
@@ -369,24 +374,27 @@ func Cascade(rules []Rule, labels []string) map[string]Setting {
 // DrawnNode returns the drawn part of a node's settings.
 func DrawnNode(props map[string]Setting) Node {
 	return Node{
-		Shape:        str(props, "shape"),
-		Fill:         str(props, "fill"),
-		Stroke:       str(props, "stroke"),
-		StrokeWidth:  num(props, "stroke_width"),
-		StrokeDash:   list(props, "stroke_dash"),
-		CornerRadius: num(props, "corner_radius"),
-		Opacity:      num(props, "opacity"),
-		TextColor:    str(props, "text_color"),
-		FontSize:     num(props, "font_size"),
-		FontWeight:   num(props, "font_weight"),
-		Icon:         str(props, "icon"),
-		Image:        str(props, "image"),
-		Padding:      num(props, "padding"),
-		MinW:         num(props, "min_w"),
-		MinH:         num(props, "min_h"),
-		MaxW:         num(props, "max_w"),
-		Z:            num(props, "z"),
-		LabelSide:    labelSide(props),
+		Shape:         str(props, "shape"),
+		Fill:          str(props, "fill"),
+		Stroke:        str(props, "stroke"),
+		StrokeWidth:   num(props, "stroke_width"),
+		StrokeDash:    list(props, "stroke_dash"),
+		CornerRadius:  num(props, "corner_radius"),
+		Opacity:       num(props, "opacity"),
+		TextColor:     str(props, "text_color"),
+		FontSize:      num(props, "font_size"),
+		FontWeight:    num(props, "font_weight"),
+		SubTextColor:  str(props, "sub_text_color"),
+		SubFontSize:   num(props, "sub_font_size"),
+		SubFontWeight: num(props, "sub_font_weight"),
+		Icon:          str(props, "icon"),
+		Image:         str(props, "image"),
+		Padding:       num(props, "padding"),
+		MinW:          num(props, "min_w"),
+		MinH:          num(props, "min_h"),
+		MaxW:          num(props, "max_w"),
+		Z:             num(props, "z"),
+		LabelSide:     labelSide(props),
 	}
 }
 

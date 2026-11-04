@@ -23,4 +23,6 @@ views.hcl:39:27: error: Invalid selector: Expected one of "all", "node.<id>", "k
 views.hcl:39:36: error: Invalid selector: Expected one of "all", "node.<id>", "kind.<id>", "tag.<id>", "children.<id>", "descendants.<id>".
 views.hcl:40:13: error: Invalid selector: Expected one of "node.<id>".
 views.hcl:44:15: error: Invalid value: "sideways" is not one of "down", "right", "up", "left".
+views.hcl:48:3: error: Undefined node: View "labels" labels undefined node "nope".
+views.hcl:54:3: error: Duplicate ID: View "labels" has two node blocks "g"; the first is at line 51.
 exit 1

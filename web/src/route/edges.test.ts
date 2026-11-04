@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { avoidRouter } from '../canvas/avoid';
 import { edge, libavoidWasm, node, text } from '../fixtures';
 import type { Box, Point } from '../geometry/geometry';
-import type { ResolvedView } from '../protocol/view';
-import { awayFromBorders, cornerLoop, keepStub, placeLabels, planPorts, routeEdges, type Router } from './edges';
+import type { ResolvedView, ViewEdge } from '../protocol/view';
+import { awayFromBorders, cornerLoop, joinLegs, keepStub, placeLabels, planPorts, routeEdges, type Router } from './edges';
+import { liveRoute, type LiveEdge } from './live';
+import { onRoute, segmentHitsBox, simplify } from './route';
 
 const avoid = avoidRouter(libavoidWasm);
 
@@ -14,7 +16,46 @@ async function routes(view: ResolvedView, boxes: Record<string, Box>, router: Ro
 
 const box = (x: number, y: number): Box => ({ x, y, w: 100, h: 40 });
 
+const pts = (...xy: [number, number][]): Point[] => xy.map(([x, y]) => ({ x, y }));
+
+describe('joinLegs', () => {
+  it.each<[string, Point[][], Point[], Point[]]>([
+    ['a route with no via', [pts([0, 0], [10, 0])], [], pts([0, 0], [10, 0])],
+    ['legs that meet at the via', [pts([0, 0], [10, 0]), pts([10, 0], [10, 10])], pts([10, 0]), pts([0, 0], [10, 0], [10, 10])],
+    [
+      'legs that double back, nudged apart',
+      [pts([112, 220], [290, 220], [290, 300]), pts([310, 300], [310, 100]), pts([300, 100], [450, 100], [450, 52])],
+      pts([300, 300], [300, 100]),
+      pts([112, 220], [290, 220], [290, 300], [300, 300], [300, 100], [450, 100], [450, 52]),
+    ],
+    [
+      'a turn nudged off its via',
+      [pts([0, 0], [100, 0], [100, 50]), pts([100, 60], [200, 60])],
+      pts([90, 60]),
+      pts([0, 0], [90, 0], [90, 60], [200, 60]),
+    ],
+    ['diagonal legs', [pts([0, 0], [10, 10]), pts([10, 10], [30, 0])], pts([10, 10]), pts([0, 0], [10, 10], [30, 0])],
+  ])('joins %s', (_, legs, via, want) => {
+    expect(joinLegs(legs, via)).toEqual(want);
+  });
+});
+
 describe('routeEdges', () => {
+  it('keeps a side hint by a rotated label off the label', async () => {
+    const lane = node('lane', { container: true }, { label_side: 'left' });
+    const view: ResolvedView = {
+      view: 'v',
+      grid: 10,
+      nodes: [lane, node('a', { frame: 'lane' }), node('b')],
+      edges: [{ ...edge('e', 'a', 'b'), hint: { from_side: 'left' } }],
+    };
+    const label = { x: 20, y: 120, w: 40, h: 100 };
+    const boxes = new Map(Object.entries({ lane: { x: 0, y: 0, w: 300, h: 340 }, a: { x: 80, y: 150, w: 100, h: 40 }, b: { x: -200, y: 150, w: 100, h: 40 } }));
+    const g = { view, boxes, headers: new Map([['lane', label]]), rows: new Map(), grid: 10 };
+    const r = (await routeEdges(g, planPorts(g), avoid)).get('e')!;
+    expect(r.slice(1).some((p, i) => segmentHitsBox(r[i], p, label))).toBe(false);
+  });
+
   it('spreads ends entering one side and keeps routes orthogonal', async () => {
     const view: ResolvedView = { view: 'v', grid: 10, nodes: [node('a'), node('b'), node('t')], edges: [edge('at', 'a', 't'), edge('bt', 'b', 't')] };
     const r = await routes(view, { a: box(100, 0), b: box(250, 0), t: { x: 100, y: 300, w: 300, h: 40 } });
@@ -161,10 +202,35 @@ describe('keepStub', () => {
     expect(keepStub(route, 'right', 10, [])).toEqual(route);
     expect(keepStub(route, 'right', 20, [{ x: 145, y: 100, w: 20, h: 20 }])).toEqual(route);
   });
+  it('leaves a stub that would run past a thin label', () => {
+    const route = pts([100, 50], [100, 40], [270, 40], [270, 50]);
+    expect(keepStub(route, 'top', 32, [{ x: 80, y: 22, w: 40, h: 10 }])).toEqual(route);
+  });
   it('steps past another route already there', () => {
     const route = [{ x: 130, y: 260 }, { x: 140, y: 260 }, { x: 140, y: 76 }, { x: 200, y: 76 }];
     const other = [{ x: 130, y: 220 }, { x: 150, y: 220 }, { x: 150, y: 50 }];
     expect(keepStub(route, 'right', 20, [], [other], 10)[1]).toEqual({ x: 160, y: 260 });
+  });
+});
+
+
+describe('a long marker by a container label', () => {
+  const crow = { ...edge('x', 'a', 'b').style, arrow_start: 'crow-zero-many', arrow_end: 'crow-zero-many' };
+  const top = { x: 20, y: 10, w: 120, h: 20 };
+  const rotated = { x: 10, y: 80, w: 20, h: 140 };
+  it.each<[string, 'left' | undefined, Box, ViewEdge['hint'], Box, Box]>([
+    ['from both ends over a top label', undefined, top, { from_side: 'top', to_side: 'top' }, box(50, 50), box(220, 50)],
+    ['to one end by a rotated label', 'left', rotated, { to_side: 'left' }, box(50, 120), box(50, 220)],
+    ['from one end by a rotated label', 'left', rotated, { from_side: 'left' }, box(50, 220), box(50, 120)],
+    ['from both ends by a rotated label', 'left', rotated, { from_side: 'left', to_side: 'left' }, box(50, 120), box(50, 220)],
+  ])('stays off it %s', async (_, side, label, hint, a, b) => {
+    const c = node('c', { container: true }, side ? { label_side: side } : {});
+    const view: ResolvedView = { view: 'v', grid: 10, nodes: [c, node('a', { frame: 'c' }), node('b', { frame: 'c' })], edges: [{ ...edge('e', 'a', 'b'), style: crow, hint }] };
+    const boxes = new Map(Object.entries({ c: { x: 0, y: 0, w: 400, h: 300 }, a, b }));
+    const g = { view, boxes, headers: new Map([['c', label]]), rows: new Map(), grid: 10 };
+    const r = (await routeEdges(g, planPorts(g), avoid)).get('e')!;
+    expect(r.slice(1).some((p, i) => segmentHitsBox(r[i], p, label))).toBe(false);
+    expect(axisAligned(r)).toBe(true);
   });
 });
 
@@ -176,6 +242,72 @@ describe('awayFromBorders', () => {
   });
   it('does not move it onto a leaf', () => {
     expect(awayFromBorders(route, [container], [{ x: 106, y: 100, w: 50, h: 50 }], 10)).toEqual(route);
+  });
+});
+
+describe('simplify', () => {
+  it.each<[string, Point[], Point[], Point[]]>([
+    ['drops a corner-free point', pts([0, 0], [10, 0], [20, 0]), [], pts([0, 0], [20, 0])],
+    ['drops a small back-and-forth with no via', pts([0, 0], [20, 0], [15, 0], [15, 30]), [], pts([0, 0], [15, 0], [15, 30])],
+    ['keeps a turn back at a via', pts([0, 0], [20, 0], [15, 0], [15, 30]), pts([20, 0]), pts([0, 0], [20, 0], [15, 0], [15, 30])],
+    ['drops a turn back past the via it stops at', pts([0, 0], [20, 0], [15, 0], [15, 30]), pts([15, 0]), pts([0, 0], [15, 0], [15, 30])],
+    ['keeps a turn back when the via is on the stretch it would cut', pts([0, 0], [10, 0], [20, 0], [5, 0], [5, 30]), pts([10, 0]), pts([0, 0], [20, 0], [5, 0], [5, 30])],
+  ])('%s', (_, route, via, want) => {
+    expect(simplify(route, via)).toEqual(want);
+  });
+});
+
+function passesInOrder(route: Point[], via: Point[]): boolean {
+  let from = 0;
+  for (const v of via) {
+    let done = 0;
+    let found = false;
+    for (let i = 0; i + 1 < route.length && !found; i++) {
+      const [a, b] = [route[i], route[i + 1]];
+      const len = Math.hypot(b.x - a.x, b.y - a.y);
+      const at = done + Math.hypot(v.x - a.x, v.y - a.y);
+      if (onRoute([a, b], v) && at >= from) [from, found] = [at, true];
+      done += len;
+    }
+    if (!found) return false;
+  }
+  return true;
+}
+
+const axisAligned = (route: Point[]) => route.slice(1).every((p, i) => p.x === route[i].x || p.y === route[i].y);
+
+describe('a via', () => {
+  const crow = { ...edge('x', 'a', 'b').style, arrow_start: 'crow-zero-many', arrow_end: 'crow-zero-many' };
+  const polyline = { ...edge('x', 'a', 'b').style, routing: 'polyline' as const };
+  const nodes = [node('a'), node('b'), node('g', { container: true }), node('x', { frame: 'g' })];
+  const boxes = { a: box(0, 0), b: box(400, 0), g: { x: 700, y: 0, w: 300, h: 340 }, x: box(720, 60) };
+  const right = { from_side: 'right' as const, to_side: 'left' as const };
+
+  it.each<[string, string, Partial<ViewEdge>, ViewEdge['hint']]>([
+    ['doubling back along one line', 'b', {}, { via: [[300, 100], [100, 100], [350, 100]] }],
+    ['doubling back along one line, polyline', 'b', { style: polyline }, { via: [[200, 200], [300, 200], [200, 200]] }],
+    ['doubling back on a self-loop', 'a', {}, { via: [[200, 100], [150, 100], [200, 100]] }],
+    ['just outside a container border', 'b', {}, { via: [[695, 170]] }],
+    ['just inside a container border', 'b', {}, { via: [[702, 100], [702, 200]] }],
+    ['on a container border', 'b', {}, { via: [[700, 170]] }],
+    ['along a top border', 'b', {}, { via: [[720, 0], [800, 0]] }],
+    ['in the stub at the end', 'b', {}, { ...right, via: [[110, 20], [110, 100], [390, 100], [390, 20]] }],
+    ['in the stub of a long marker', 'b', { style: crow }, { ...right, via: [[108, 20], [108, 100], [392, 100], [392, 20]] }],
+    ['beside the stub of a long marker', 'b', { style: crow }, { ...right, via: [[108, 60], [392, 60]] }],
+  ])('stays on an orthogonal or polyline route %s', async (_, to, over, hint) => {
+    const e = { ...edge('e', 'a', to), ...over, hint };
+    const r = (await routes({ view: 'v', grid: 10, nodes, edges: [e] }, boxes)).get('e')!;
+    expect(passesInOrder(r, hint!.via!.map(([x, y]) => ({ x, y })))).toBe(true);
+    if (e.style.routing === 'orthogonal') expect(axisAligned(r)).toBe(true);
+  });
+});
+
+describe('liveRoute', () => {
+  it('keeps a via where the route turns back along one line', () => {
+    const end = (x: number): LiveEdge['from'] => ({ node: 'n', at: { x, y: 100 }, dir: 'right', moves: false });
+    const via = pts([300, 100], [100, 100], [350, 100]);
+    const e: LiveEdge = { id: 'e', routing: 'orthogonal', from: end(0), to: end(500), via };
+    expect(liveRoute(e, pts([12, 100], [300, 100], [100, 100], [350, 100], [488, 100]), { x: 0, y: 0 }, () => box(0, 0))).toContainEqual({ x: 100, y: 100 });
   });
 });
 

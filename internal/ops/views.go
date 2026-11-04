@@ -273,6 +273,42 @@ func (s *state) viewBlock(id string) (string, *hclwrite.File, *hclwrite.Block, e
 	return name, f, b, err
 }
 
+func (s *state) setViewLabel(op Op) error {
+	p, err := s.project()
+	if err != nil {
+		return err
+	}
+	if p.Model.Nodes[op.ID] == nil {
+		return fmt.Errorf("node %q does not exist", op.ID)
+	}
+	if v := p.Views[op.View]; v != nil && op.Label == nil {
+		if _, ok := v.NodeLabels[op.ID]; !ok {
+			s.result(Result{Op: op.Op, ID: op.ID})
+			return nil
+		}
+	}
+	name, f, b, err := s.viewBlock(op.View)
+	if err != nil {
+		return err
+	}
+	nb := findBlock(b.Body(), "node", []string{op.ID})
+	switch {
+	case op.Label != nil && nb != nil:
+		setValue(nb.Body(), "label", cty.StringVal(*op.Label))
+	case op.Label != nil:
+		nb = hclwrite.NewBlock("node", []string{op.ID})
+		nb.Body().SetAttributeValue("label", cty.StringVal(*op.Label))
+		appendNested(b.Body(), nb)
+	case nb != nil:
+		if f, err = removeBlocks(f, []*hclwrite.Block{nb}); err != nil {
+			return err
+		}
+	}
+	s.putHCL(name, f)
+	s.result(Result{Op: op.Op, ID: op.ID})
+	return nil
+}
+
 func (s *state) createView(op Op) error {
 	p, err := s.project()
 	if err != nil {

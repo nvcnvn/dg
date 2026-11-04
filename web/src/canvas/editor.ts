@@ -68,6 +68,7 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
   const flowStyle = document.head.appendChild(document.createElement('style'));
   let serverDiags: Diagnostic[] = [];
   let tooSmall: string[] = [];
+  let overflowing: string[] = [];
   let model: ModelInfo = { kinds: [], edge_kinds: [], tags: [], nodes: [], edges: [] };
   let pending: { view: ResolvedView; model: ModelInfo } | undefined;
   let drawing = false;
@@ -93,7 +94,11 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
   };
 
   const showDiagnostics = () => {
-    const all = [...serverDiags, ...tooSmall.map((id): Diagnostic => ({ severity: 'warning', summary: 'Container too small', detail: `Node "${id}" has a pinned size too small for its children.` }))];
+    const all = [
+      ...serverDiags,
+      ...tooSmall.map((id): Diagnostic => ({ severity: 'warning', summary: 'Container too small', detail: `Node "${id}" has a pinned size too small for its children.` })),
+      ...overflowing.map((id): Diagnostic => ({ severity: 'warning', summary: 'Label overflows node', detail: `Node "${id}" has a pinned size too small for its label.` })),
+    ];
     const errors = all.filter((d) => d.severity === 'error');
     const stale = errors.length > 0;
     document.body.classList.toggle('stale', stale);
@@ -192,6 +197,7 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
     show(d, family);
     shown = view;
     tooSmall = d.nodes.filter((n) => n.tooSmall).map((n) => n.id);
+    overflowing = d.nodes.filter((n) => n.overflows).map((n) => n.id);
   };
 
   const drawLatest = async () => {

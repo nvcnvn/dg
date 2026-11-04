@@ -33,6 +33,7 @@ export async function loadFonts(view: ResolvedView): Promise<FontChoice> {
   const texts = new Map<number, string>();
   const add = (weight: number, text: string) => texts.set(weight, (texts.get(weight) ?? 'A') + text);
   for (const n of view.nodes) {
+    add(drawnWeight(n.style.sub_font_weight || n.style.font_weight), n.label);
     add(drawnWeight(n.style.font_weight), n.label);
     for (const r of n.compartments?.flatMap((c) => c.rows) ?? []) {
       add(400, r.name + (r.type ?? ''));

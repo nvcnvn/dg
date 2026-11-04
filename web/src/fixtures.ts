@@ -71,6 +71,7 @@ export function editScene(over: { pinned?: boolean; gPin?: { w?: number; h?: num
     container: false,
     pinned,
     tooSmall: false,
+    overflows: false,
     style: nodeStyle(),
     text: null,
     textBox: box,

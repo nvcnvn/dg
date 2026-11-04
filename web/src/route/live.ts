@@ -79,5 +79,5 @@ export function liveRoute(e: LiveEdge, raw: Point[] | undefined, d: Point, box: 
       { x: b.x, y: b.y + b.h },
     ];
   };
-  return clip(pts, rect(e.from), rect(e.to));
+  return clip(pts, rect(e.from), rect(e.to), e.via);
 }

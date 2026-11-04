@@ -86,9 +86,11 @@ type Font struct {
 
 // Node is a node drawn in a view.
 type Node struct {
-	ID        string `json:"id"`
-	Kind      string `json:"kind"`
-	Label     string `json:"label"`
+	ID    string `json:"id"`
+	Kind  string `json:"kind"`
+	Label string `json:"label"`
+	// ViewLabel is set when Label is the view's own, not the model's.
+	ViewLabel bool   `json:"view_label,omitempty"`
 	Frame     string `json:"frame,omitempty"`
 	Container bool   `json:"container,omitempty"`
 	// Collapsed is set for a collapsed container, which is drawn as a leaf (Container unset).
@@ -222,6 +224,9 @@ func (s *Sources) Resolve(id string) (*Resolved, hcl.Diagnostics) {
 			Drill:     s.drill(id, nid),
 			Ports:     s.ports(n),
 			Style:     style.DrawnNode(props),
+		}
+		if l, ok := v.NodeLabels[nid]; ok {
+			node.Label, node.ViewLabel = l.Label, true
 		}
 		for _, c := range n.Compartments {
 			rc := Compartment{Name: c.Name, Rows: []Row{}}

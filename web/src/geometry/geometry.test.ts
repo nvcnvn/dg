@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { node, text } from '../fixtures';
 import type { ResolvedView } from '../protocol/view';
-import { absoluteBoxes, BADGE, containerSize, contentLayout, drillBadge, GAP, measureNode, fitZoom, MIN_ZOOM, union } from './geometry';
+import { absoluteBoxes, BADGE, containerSize, contentLayout, drillBadge, GAP, measureNode, fitZoom, MIN_ZOOM, overflows, union } from './geometry';
 import { innerBox, outerSize, svgSize } from './shapes';
-import { lineHeight, textBlock } from './text';
+import { labelBlock, lineHeight, textBlock } from './text';
 
 const font = { size: 14, weight: 400 };
 
@@ -22,6 +22,26 @@ describe('textBlock', () => {
   it('is as tall as its lines', () => {
     expect(textBlock('a\nb', 0, font, text).h).toBe(2 * lineHeight(14));
     expect(textBlock('', 0, font, text).h).toBe(0);
+  });
+});
+
+describe('labelBlock', () => {
+  const sub = { font: { size: 10, weight: 700 }, color: '#666666' };
+  it('is a text block without a sub style or a line break', () => {
+    expect(labelBlock('a\nb', 0, font, undefined, text)).toEqual(textBlock('a\nb', 0, font, text));
+    expect(labelBlock('a b', 0, font, sub, text)).toEqual(textBlock('a b', 0, font, text));
+  });
+  it('wraps and sizes what follows the first line break in the sub style', () => {
+    const t = labelBlock('title\nsub title\nmore', 48, font, sub, text);
+    expect(t.lines[0]).toBe('title');
+    expect(t.sub).toEqual({ ...sub, from: 1 });
+    expect(t.lines.slice(1)).toEqual(textBlock('sub title\nmore', 48, sub.font, text).lines);
+    expect(t.h).toBe(lineHeight(14) + (t.lines.length - 1) * lineHeight(10));
+  });
+  it('sizes a node by it', () => {
+    const style = { min_w: 0, min_h: 0, padding: 0, sub_font_size: 10, sub_text_color: '#666666' };
+    const m = measureNode(node('a', { label: 'a\nb' }, style), text, 1);
+    expect(m.text).toMatchObject({ h: lineHeight(14) + lineHeight(10), sub: { from: 1, color: '#666666', font: { size: 10, weight: 400 } } });
   });
 });
 
@@ -66,6 +86,38 @@ describe('measureNode', () => {
   it('takes a pinned size', () => {
     expect(measureNode(node('a', { pin: { x: 0, y: 0, w: 333 } }), text, 10).size).toEqual({ w: 333, h: 40 });
   });
+  it.each([
+    ['past max_w', { w: 600 }, { max_w: 240 }, 584],
+    ['short of max_w', { w: 100 }, { max_w: 240 }, 84],
+    ['with no max_w', { w: 100 }, { max_w: 0 }, 84],
+    ['in the text area of its shape', { w: 200 }, { max_w: 0, shape: 'diamond' as const }, 84],
+  ])('wraps at a pinned width %s', (_, pin, style, width) => {
+    const label = 'a long label that wraps on a line of any width up to about here and beyond';
+    const t = measureNode(node('a', { label, pin: { x: 0, y: 0, ...pin } }, { padding: 8, ...style }), text, 10).text!;
+    expect(t).toEqual(textBlock(label, width, font, text));
+  });
+  it.each([
+    ['leaf width', {}, { w: 100 }, 'w', {}, 220],
+    ['leaf width along the stack', {}, { w: 100, h: 60 }, 'h', {}, 80],
+    ['container width', { container: true }, { w: 100 }, 'w', {}, 220],
+    ['left label height', { container: true }, { h: 100 }, 'h', { label_side: 'left' }, 220],
+    ['left label height along the stack', { container: true }, { h: 100 }, 'w', { label_side: 'left' }, 80],
+  ] as const)('wraps by a pin only off the stretched axis: %s', (_, over, pin, axis, style, width) => {
+    const label = 'a long label that wraps on a line of any width up to about here and beyond';
+    const n = node('a', { label, pin: { x: 0, y: 0, ...pin }, ...over }, style);
+    const m = measureNode(n, text, 10, undefined, axis);
+    expect(m.text).toEqual(textBlock(label, width, font, text));
+  });
+  it('keeps a pin on the stretched axis as the measured size', () => {
+    expect(measureNode(node('a', { pin: { x: 0, y: 0, w: 120 } }), text, 10, undefined, 'w').size.w).toBe(120);
+  });
+  it('wraps a container label at its pinned size', () => {
+    const label = 'a label that needs more than one line here';
+    const pin = { x: 0, y: 0, w: 100, h: 200 };
+    const lines = (style: object) => measureNode(node('g', { container: true, label, pin }, { padding: 10, max_w: 0, ...style }), text, 10).text!;
+    expect(lines({})).toEqual(textBlock(label, 80, font, text));
+    expect(lines({ label_side: 'left' })).toEqual(textBlock(label, 180, font, text));
+  });
   it('keeps the aspect ratio of a uniform custom shape', () => {
     const custom = { svg: '<svg viewBox="0 0 200 100"/>', text_box: [0, 0, 1, 1] as [number, number, number, number], stretch: 'uniform' as const };
     expect(measureNode(node('a', {}, { min_w: 0, min_h: 60 }), text, 10, custom).size).toEqual({ w: 120, h: 60 });
@@ -89,6 +141,47 @@ describe('containerSize', () => {
   it('reports a pinned size too small for the children', () => {
     const pinned = { ...g, pin: { x: 0, y: 0, w: 100, h: 100 } };
     expect(containerSize(pinned, m, [{ x: 0, y: 0, w: 300, h: 40 }], 10)).toEqual({ size: { w: 100, h: 100 }, tooSmall: true });
+  });
+});
+
+describe('containerSize of a pinned container', () => {
+  const g = node('g', { container: true, label: '' }, { padding: 20, min_w: 100, min_h: 100 });
+  const m = measureNode(g, text, 10);
+  const at = (w: number, h: number) => ({ ...g, pin: { x: 0, y: 0, w, h } });
+  it.each([
+    ['empty, under min_w', at(40, 300), [], false],
+    ['holding its child', at(140, 80), [{ x: 0, y: 0, w: 100, h: 40 }], false],
+    ['too narrow for its child', at(130, 80), [{ x: 0, y: 0, w: 100, h: 40 }], true],
+  ])('%s', (_, pinned, children, tooSmall) => {
+    expect(containerSize(pinned, m, children, 10).tooSmall).toBe(tooSmall);
+  });
+});
+
+describe('overflows', () => {
+  const label = 'a label long enough to need several lines at a narrow width';
+  const at = (b: { w: number; h: number }, pin?: object, style = {}) => {
+    const n = node('a', { label, ...(pin ? { pin: { x: 0, y: 0, ...pin } } : {}) }, style);
+    return overflows(n, measureNode(n, text, 10), { x: 0, y: 0, ...b });
+  };
+  it('is false for a node without a pinned size', () => {
+    expect(at({ w: 10, h: 10 })).toBe(false);
+  });
+  it('is false when the wrapped label fits', () => {
+    expect(at({ w: 200, h: 200 }, { w: 200, h: 200 })).toBe(false);
+  });
+  it('is true when the wrapped label is taller than the box', () => {
+    expect(at({ w: 100, h: 20 }, { w: 100, h: 20 })).toBe(true);
+  });
+  it('is false for a pin the box does not have', () => {
+    expect(at({ w: 240, h: 20 }, { w: 100 })).toBe(false);
+    expect(at({ w: 100, h: 300 }, { w: 90, h: 20 })).toBe(false);
+  });
+  it('is true when the box has one of two pins and does not hold the label', () => {
+    expect(at({ w: 240, h: 20 }, { w: 100, h: 20 })).toBe(true);
+  });
+  it('is true when a container is shorter than its label', () => {
+    const n = node('g', { container: true, label, pin: { x: 0, y: 0, w: 100, h: 20 } });
+    expect(overflows(n, measureNode(n, text, 10), { x: 0, y: 0, w: 100, h: 20 })).toBe(true);
   });
 });
 

@@ -97,6 +97,11 @@ var goldenOps = []struct{ name, op string }{
 	{"add_port-quoted", `{"op": "add_port", "id": "gateway", "name": "http/2"}`},
 	{"add_port-one-line", `{"op": "add_port", "id": "cache", "name": "sql"}`},
 	{"set_label-one-line", `{"op": "set_label", "id": "cache", "label": "Cache"}`},
+	{"set_view_label", `{"op": "set_view_label", "view": "calls", "id": "gateway", "label": "Gateway\n2 replicas"}`},
+	{"set_view_label-replace", `[{"op": "set_view_label", "view": "calls", "id": "gateway", "label": "One"}, {"op": "set_view_label", "view": "calls", "id": "gateway", "label": "Two"}]`},
+	{"set_view_label-one-line", `{"op": "set_view_label", "view": "main", "id": "kube-system/dns", "label": "DNS"}`},
+	{"rename_id-view-label", `[{"op": "set_view_label", "view": "main", "id": "cache", "label": "One"}, {"op": "rename_id", "type": "node", "old": "cache", "new": "store"}]`},
+	{"delete_node-view-label", `[{"op": "set_view_label", "view": "main", "id": "cache", "label": "One"}, {"op": "delete_node", "id": "cache"}]`},
 	{"set_parent-new", `{"op": "set_parent", "id": "cache", "parent": "rack"}`},
 	{"remove_port", `{"op": "remove_port", "id": "worker-1", "name": "nic1"}`},
 	{"set_rows", `{"op": "set_rows", "id": "orders", "compartments": [{"rows": [{"name": "id", "type": "uuid", "key": "pk"}, {"name": "total"}]}]}`},
@@ -235,6 +240,8 @@ func TestRefused(t *testing.T) {
 		{"edge in a read-only file", `{"op": "delete_node", "id": "gateway"}`, `generated.hcl is read-only`},
 		{"rename referenced from a read-only file", `{"op": "rename_id", "type": "node", "old": "gateway", "new": "gw"}`, `generated.hcl is read-only`},
 		{"read-only node", `{"op": "set_label", "id": "ext", "label": "External"}`, `generated.hcl is read-only`},
+		{"view label of an undefined node", `{"op": "set_view_label", "view": "main", "id": "nope", "label": "N"}`, `node "nope" does not exist`},
+		{"label in an undefined view", `{"op": "set_view_label", "view": "nope", "id": "cache", "label": "N"}`, `view "nope" does not exist`},
 		{"undefined kind", `{"op": "create_node", "kind": "nope"}`, `Undefined kind`},
 		{"undefined parent", `{"op": "set_parent", "id": "gateway", "parent": "nope"}`, `Undefined node`},
 		{"cycle", `{"op": "set_parent", "id": "pool", "parent": "pool"}`, `Containment cycle`},
@@ -654,6 +661,7 @@ func TestReadOnlyViews(t *testing.T) {
 		{"views.hcl", `{"op": "create_view", "id": "v"}`, "views.hcl"},
 		{"views.hcl", `{"op": "update_view", "id": "main", "title": "T"}`, "views.hcl"},
 		{"views.hcl", `{"op": "delete_view", "id": "main"}`, "views.hcl"},
+		{"views.hcl", `{"op": "set_view_label", "view": "main", "id": "a", "label": "A"}`, "views.hcl"},
 		{"views/*", `{"op": "delete_view", "id": "main"}`, "views/main.layout.yaml"},
 		{"views/*", `{"op": "add_decoration", "view": "main", "decoration": {"type": "text", "text": "T"}}`, "views/main.layout.yaml"},
 		{"views/*", `{"op": "update_decoration", "view": "main", "id": "t", "decoration": {"x": 10}}`, "views/main.layout.yaml"},
@@ -684,6 +692,28 @@ func TestReadOnlyViews(t *testing.T) {
 			sameTree(t, readTree(t, dir), before, "after the refusal")
 		})
 	}
+}
+
+// TestRemoveViewLabel checks that removing a view's label leaves the views file as it was, and
+// that removing one the view does not have writes nothing.
+func TestRemoveViewLabel(t *testing.T) {
+	dir := copyFixture(t)
+	before := readTree(t, dir)
+	remove := `{"op": "set_view_label", "view": "calls", "id": "gateway"}`
+	c, err := Apply(dir, mustDecode(t, remove), NewSession())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(c.Files) != 0 {
+		t.Errorf("removing no label wrote %v", c.Files)
+	}
+	if _, err := Apply(dir, mustDecode(t, `{"op": "set_view_label", "view": "calls", "id": "gateway", "label": "One"}`), NewSession()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Apply(dir, mustDecode(t, remove), NewSession()); err != nil {
+		t.Fatal(err)
+	}
+	sameTree(t, readTree(t, dir), before, "after the removal")
 }
 
 // TestUpdateViewKeepsOverlays checks that update_view leaves an overlay block it does not change

@@ -1,6 +1,6 @@
 import { AvoidLib } from 'libavoid-js';
 import { cmp, type Box, type Point } from '../geometry/geometry';
-import { BUFFER, type RouteEnd, type RouteRequest, type Router } from '../route/edges';
+import { BUFFER, joinLegs, type RouteEnd, type RouteRequest, type Router } from '../route/edges';
 
 interface Handle {
   readonly brand?: unknown;
@@ -162,15 +162,14 @@ function session(obstacles: Map<string, Box>, edges: RouteRequest[]) {
     router.processTransaction();
     const out = new Map<string, Point[]>();
     for (const e of edges) {
-      const pts: Point[] = [];
-      for (const c of legs.get(e.id)!) {
+      const points = legs.get(e.id)!.map((c) => {
         const route = c.displayRoute();
-        for (let i = pts.length ? 1 : 0; i < route.size(); i++) {
+        return Array.from({ length: route.size() }, (_, i) => {
           const p = route.get_ps(i);
-          pts.push({ x: p.x, y: p.y });
-        }
-      }
-      out.set(e.id, pts);
+          return { x: p.x, y: p.y };
+        });
+      });
+      out.set(e.id, joinLegs(points, e.via));
     }
     return out;
   };

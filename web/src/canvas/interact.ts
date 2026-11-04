@@ -25,6 +25,7 @@ import {
   type Handle,
   type Op,
   type Scene,
+  viewLabelOp,
 } from '../edit/edit';
 import { connectOp, copy, dropTarget, endAt, pasteOps, reparentOps, type Clip } from '../edit/model';
 import { fitZoom, MIN_ZOOM, roundTo, union, type Box, type Point } from '../geometry/geometry';
@@ -299,6 +300,11 @@ export function interact(paper: dia.Paper, scroller: HTMLElement, menu: HTMLElem
     const n = s?.nodes.get(id);
     const mn = s?.model.nodes.find((x) => x.id === id);
     if (!s || !n || !mn || !host.editable() || editing) return;
+    const own = s.view.nodes.find((x) => x.id === id);
+    if (own?.view_label) {
+      select([id]);
+      return editText(n.box, own.label, n.style.font_size, `Label of ${id} in this view`, (label) => host.send(viewLabelOp(s, id, label)));
+    }
     if (mn.read_only) return host.status(`Node "${id}" is defined in a read-only file; its label cannot change.`);
     select([id]);
     editText(n.box, mn.label, n.style.font_size, `Label of ${id}`, (label) => host.send({ op: 'set_label', id, label }, act.pick('set_label', 'node')));

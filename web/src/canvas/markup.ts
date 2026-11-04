@@ -22,6 +22,7 @@ export interface DrawnNode {
   // orderedIn is the stack or grid container that places the node, which a move cannot.
   orderedIn?: string;
   tooSmall: boolean;
+  overflows: boolean;
   style: NodeStyle;
   custom?: string;
   text: TextBlock | null;
@@ -143,9 +144,14 @@ export function dataURI(svg: string): string {
 }
 
 function textLines(t: TextBlock, b: Box, align: 'center' | 'left', color: string, m: FontMetrics): string[] {
-  const lh = lineHeight(t.font.size);
-  const top = b.y + (b.h - t.h) / 2;
-  return t.lines.map((line, i) => textLine(line, align === 'center' ? b.x + b.w / 2 : b.x, top + i * lh + lh / 2, align === 'center' ? 'middle' : undefined, t.font, color, m));
+  let top = b.y + (b.h - t.h) / 2;
+  return t.lines.map((line, i) => {
+    const sub = t.sub && i >= t.sub.from ? t.sub : undefined;
+    const font = sub?.font ?? t.font;
+    const lh = lineHeight(font.size);
+    top += lh;
+    return textLine(line, align === 'center' ? b.x + b.w / 2 : b.x, top - lh / 2, align === 'center' ? 'middle' : undefined, font, sub?.color ?? color, m);
+  });
 }
 
 // textLine draws one line of text whose middle is at y.
@@ -450,6 +456,7 @@ export function kindPicture(style: NodeStyle, shapes: Record<string, CustomShape
     container: false,
     pinned: false,
     tooSmall: false,
+    overflows: false,
     style: { ...style, stroke_width: Math.min(style.stroke_width, 1.5), corner_radius: Math.min(style.corner_radius, 4), opacity: 1 },
     custom: shapes[style.shape] ? style.shape : undefined,
     text: null,

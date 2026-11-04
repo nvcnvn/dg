@@ -2969,6 +2969,57 @@
       }
     },
     {
+      "label": "sub_font_size",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "sub_font_size"
+      }
+    },
+    {
+      "label": "sub_font_weight",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "sub_font_weight"
+      }
+    },
+    {
+      "label": "sub_text_color",
+      "kind": 10,
+      "textEdit": {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 4
+          },
+          "end": {
+            "line": 16,
+            "character": 9
+          }
+        },
+        "newText": "sub_text_color"
+      }
+    },
+    {
       "label": "text_color",
       "kind": 10,
       "textEdit": {

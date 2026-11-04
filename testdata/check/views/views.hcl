@@ -43,3 +43,15 @@ view "bad" {
 view "sideways" {
   direction = "sideways"
 }
+
+view "labels" {
+  node "nope" {
+    label = "Undefined"
+  }
+  node "g" {
+    label = "First"
+  }
+  node "g" {
+    label = "Second"
+  }
+}

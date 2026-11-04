@@ -173,6 +173,9 @@ func (s *Server) export(ctx context.Context, args json.RawMessage) *sdk.CallTool
 	for _, id := range res.TooSmall {
 		warnings = append(warnings, p.TooSmall(a.View, id).String())
 	}
+	for _, id := range res.Overflowing {
+		warnings = append(warnings, p.Overflowing(a.View, id).String())
+	}
 	if len(warnings) > 0 {
 		out.Content = append(out.Content, &sdk.TextContent{Text: strings.Join(warnings, "\n")})
 	}

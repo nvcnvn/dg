@@ -30,7 +30,10 @@ func TestRun(t *testing.T) {
 		files map[string]string
 	}{
 		{name: "no command", code: 1, stderr: "usage"},
+		{name: "version", args: []string{"--version"}, code: 0},
 		{name: "unknown command", args: []string{"draw"}, code: 1, stderr: `unknown command "draw"`},
+		{name: "scale out of range", args: []string{"export", "--format", "png", "--scale", "0.5"}, code: 1, stderr: "--scale is a number from 1 to 8"},
+		{name: "scale of a vector format", args: []string{"export", "--scale", "2"}, code: 1, stderr: "--scale needs --format png"},
 		{name: "unknown format", args: []string{"export", "--format", "pdf"}, code: 1, stderr: `unknown format "pdf"`},
 		{name: "missing project directory", args: []string{"export", "-C", "does-not-exist"}, code: 2, stderr: "does-not-exist"},
 		{name: "check warnings", args: []string{"check", "-C", "../../testdata/check/no-model"}, code: 0},

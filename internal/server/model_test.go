@@ -180,6 +180,12 @@ func TestEditorModel(t *testing.T) {
 			files{"model.hcl": {"node \"node-2\" {\n  parent = node.lane\n}"}, "views/main.layout.yaml": {"order: [s1, node-2, s2, s3]"}}, nil},
 		{"label in place", []chromedp.Action[chromedp.Void]{dblclick(`[data-node="b"]`), edit("Bravo")}, "set_label",
 			files{"model.hcl": {"label = \"Bravo\""}}, nil},
+		{"label in this view", []chromedp.Action[chromedp.Void]{click(`[data-node="b"]`), chromedp.Poll[chromedp.Void](`document.querySelector('#inspector .id')?.textContent === 'b'`), inspect(`textarea[placeholder]`, "Here")}, "set_view_label",
+			files{"views.hcl": {"node \"b\" {\n    label = \"Here\"\n  }"}}, nil},
+		{"view label in place", []chromedp.Action[chromedp.Void]{chromedp.Poll[chromedp.Void](`document.querySelector('[data-node="b"] text')?.textContent === 'Here'`), dblclick(`[data-node="b"]`), edit("There")}, "set_view_label",
+			files{"views.hcl": {"label = \"There\""}, "model.hcl": {"label = \"Bravo\""}}, nil},
+		{"label in this view emptied", []chromedp.Action[chromedp.Void]{click(`[data-node="b"]`), chromedp.Poll[chromedp.Void](`document.querySelector('#inspector textarea[placeholder]')?.value === 'There'`), inspect(`textarea[placeholder]`, "")}, "set_view_label",
+			nil, files{"views.hcl": {"node \"b\""}}},
 		{"edge label in place", []chromedp.Action[chromedp.Void]{dblclick(`[data-edge="ab"] text`), edit("invokes")}, "set_edge_labels",
 			files{"model.hcl": {"label = \"invokes\""}}, files{"model.hcl": {"\"calls\""}}},
 		{"connect two nodes", []chromedp.Action[chromedp.Void]{chromedp.Click(chromedp.CSS(`#connect`)), toolMenu("edge-kind", "async"), dragOnto(`[data-node="a"]`, `[data-node="c"]`, 0.5, 0.5, 0, 0)}, "connect",
@@ -521,6 +527,8 @@ func TestEditorKeyboard(t *testing.T) {
 		chromedp.KeyEvent("!"),
 		chromedp.KeyEvent(kb.Tab),
 		e.idle(),
+		chromedp.Poll[chromedp.Void](`document.activeElement?.placeholder === 'Gamma!'`),
+		chromedp.KeyEvent(kb.Tab),
 		chromedp.Poll[chromedp.Void](`document.activeElement?.tagName === 'SELECT' && document.activeElement.closest('#inspector') !== null && document.activeElement.value === 'node'`),
 	)
 	if err != nil {

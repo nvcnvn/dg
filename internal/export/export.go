@@ -30,17 +30,25 @@ const (
 	GIFDelay  = 50 * time.Millisecond
 )
 
-// Result is a drawn view, and TooSmall the containers too small for their children (spec 7.2).
+// Result is a drawn view, TooSmall the containers too small for their children and Overflowing
+// the nodes too small for their labels (spec 7.2).
 type Result struct {
-	SVG      []byte
-	JSON     []byte
-	PNG      []byte // only for format "png": the drawing at animation time 0
-	GIF      []byte // only for format "gif": one frame per GIFDelay of animation time
-	TooSmall []string
+	SVG         []byte
+	JSON        []byte
+	PNG         []byte // only for format "png": the drawing at animation time 0
+	GIF         []byte // only for format "gif": one frame per GIFDelay of animation time
+	TooSmall    []string
+	Overflowing []string
 }
 
-// Render draws v as SVG, JSON geometry and, when format is "png" or "gif", that picture.
+// Render draws v as SVG, JSON geometry and, when format is "png" or "gif", that picture at one
+// pixel per unit.
 func Render(ctx context.Context, v *view.Resolved, format string) (*Result, error) {
+	return RenderScaled(ctx, v, format, 1)
+}
+
+// RenderScaled is Render with PNG pictures at scale pixels per unit.
+func RenderScaled(ctx context.Context, v *view.Resolved, format string, scale float64) (*Result, error) {
 	viewJSON, err := json.Marshal(v)
 	if err != nil {
 		return nil, err
@@ -48,9 +56,10 @@ func Render(ctx context.Context, v *view.Resolved, format string) (*Result, erro
 	ctx, cancel := context.WithTimeout(ctx, Timeout)
 	defer cancel()
 	type drawn struct {
-		SVG      string   `json:"svg"`
-		JSON     string   `json:"json"`
-		TooSmall []string `json:"too_small"`
+		SVG         string   `json:"svg"`
+		JSON        string   `json:"json"`
+		TooSmall    []string `json:"too_small"`
+		Overflowing []string `json:"overflowing"`
 	}
 	var out drawn
 	res := &Result{}
@@ -60,7 +69,7 @@ func Render(ctx context.Context, v *view.Resolved, format string) (*Result, erro
 		out, err = chromedp.Run(ctx, chromedp.Evaluate[drawn]("window.dg.render("+string(viewJSON)+")", chromedp.EvalAwaitPromise))
 	}
 	if err == nil && format == "png" {
-		res.PNG, err = capture(ctx, 0)
+		res.PNG, err = capture(ctx, 0, scale)
 	}
 	if err == nil && format == "gif" {
 		res.GIF, err = captureGIF(ctx)
@@ -71,23 +80,24 @@ func Render(ctx context.Context, v *view.Resolved, format string) (*Result, erro
 	if err != nil {
 		return nil, fmt.Errorf("export: %w", err)
 	}
-	res.SVG, res.JSON, res.TooSmall = []byte(out.SVG), []byte(out.JSON), out.TooSmall
+	res.SVG, res.JSON, res.TooSmall, res.Overflowing = []byte(out.SVG), []byte(out.JSON), out.TooSmall, out.Overflowing
 	return res, nil
 }
 
-// capture returns a PNG screenshot of the drawn view with the animation clock at t.
-func capture(ctx context.Context, t time.Duration) ([]byte, error) {
+// capture returns a PNG screenshot of the drawn view with the animation clock at t, at scale
+// pixels per unit.
+func capture(ctx context.Context, t time.Duration, scale float64) ([]byte, error) {
 	_, err := chromedp.Run(ctx, chromedp.Evaluate[chromedp.Void](fmt.Sprintf("window.dg.setClock(%d)", t.Milliseconds()), chromedp.EvalAwaitPromise))
 	if err != nil {
 		return nil, err
 	}
-	return chromedp.Run(ctx, chromedp.Screenshot(chromedp.CSS("#export > svg")))
+	return chromedp.Run(ctx, chromedp.ScreenshotScale(chromedp.CSS("#export > svg"), scale))
 }
 
 func captureGIF(ctx context.Context) ([]byte, error) {
 	frames := make([]image.Image, GIFFrames)
 	for i := range frames {
-		data, err := capture(ctx, time.Duration(i)*GIFDelay)
+		data, err := capture(ctx, time.Duration(i)*GIFDelay, 1)
 		if err != nil {
 			return nil, err
 		}

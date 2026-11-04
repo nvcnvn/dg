@@ -139,13 +139,10 @@ export async function mountSVG(svg: string, family: string): Promise<void> {
   const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
   const el = document.importNode(doc.documentElement, true);
   el.setAttribute('font-family', `${family}, sans-serif`);
-  let host = document.getElementById('export');
-  if (!host) {
-    host = document.createElement('div');
-    host.id = 'export';
-    document.body.append(host);
-  }
-  host.replaceChildren(el);
+  const host = document.createElement('div');
+  host.id = 'export';
+  host.append(el);
+  document.body.replaceChildren(host);
   checkStyle(el.querySelector('style'));
   await Promise.all(
     [...el.querySelectorAll('image')].map(

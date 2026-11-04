@@ -6,6 +6,7 @@ export type Op =
   | { op: "create_node"; kind: string; id?: string; label?: string; parent?: string; view?: string; x?: number; y?: number; before?: string }
   | { op: "delete_node"; id: string; recursive?: boolean }
   | { op: "set_label"; id: string; label: string }
+  | { op: "set_view_label"; view: string; id: string; label?: string }
   | { op: "set_parent"; id: string; parent?: string }
   | { op: "set_kind"; id: string; kind: string; type?: "node" | "edge" }
   | { op: "set_tags"; id: string; tags: string[]; type?: "node" | "edge" }

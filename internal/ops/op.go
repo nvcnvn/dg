@@ -136,6 +136,7 @@ var Defs = []Def{
 	{"delete_node", "Remove a node with its edges, layout entries, decorations attached to it or placed in it, view selectors and node.<id> view rules. Refused while a view has of on it.", []Field{
 		fNode.req(), {Name: "recursive", Schema: `{"type":"boolean"}`, Help: "also delete the node's descendants; otherwise its children move to its parent, unpinned", Example: `true`}}},
 	{"set_label", "Change a node's label. A node created in the same batch without a label or ID takes a new ID from this first label (spec 6.3).", []Field{fNode.req(), fLabel.req()}},
+	{"set_view_label", "Set the label a view draws a node with instead of the model's; without label, remove it, so the view draws the model's again.", []Field{fView.req(), fNode.req(), fLabel.help("label of the node in this view; a newline character breaks a line (in a shell, $'a\\nb')")}},
 	{"set_parent", "Set or remove a node's parent.", []Field{fNode.req(), fParent.help("ID of the container node; empty or omitted removes the parent")}},
 	{"set_kind", "Change the kind of a node or edge.", []Field{fElement.req(), fKind.help("kind of the node, or edge kind of the edge").req(), fType}},
 	{"set_tags", "Replace the tags of a node or edge.", []Field{fElement.req(), fTags.req(), fType}},

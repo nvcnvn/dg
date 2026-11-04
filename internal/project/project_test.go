@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 	"testing/fstest"
 
@@ -41,7 +42,8 @@ func TestStyleCascade(t *testing.T) {
 }
 
 // TestGenericDefaults checks that the generic pack's root styles set every property that has a
-// default (spec 8.4); icon and image have none.
+// default of its own (spec 8.4): icon and image have none, and the sub_ properties take the
+// label's.
 func TestGenericDefaults(t *testing.T) {
 	p, diags, err := load(fstest.MapFS{"model.hcl": {}}, ".")
 	if err != nil || diags.HasErrors() {
@@ -49,7 +51,7 @@ func TestGenericDefaults(t *testing.T) {
 	}
 	nodes := p.Styles.ForNode(p.Spec, "node", nil)
 	for name := range style.NodeProps {
-		if _, ok := nodes[name]; !ok && name != "icon" && name != "image" {
+		if _, ok := nodes[name]; !ok && name != "icon" && name != "image" && !strings.HasPrefix(name, "sub_") {
 			t.Errorf("style \"node\" does not set %s", name)
 		}
 	}

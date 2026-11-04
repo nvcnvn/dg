@@ -91,6 +91,9 @@ Colors are `"#RGB"`, `"#RRGGBB"` or `"none"`. Sizes are in pixels.
 | `text_color` | color or `none` | the label and rows |
 | `font_size` | number, at least 1 | the label and rows |
 | `font_weight` | 100, 200, … 900 | up to 500 is drawn regular, 600 and above bold |
+| `sub_font_size` | number, at least 1 | the label after its first line break; unset: `font_size` |
+| `sub_font_weight` | 100, 200, … 900 | the label after its first line break; unset: `font_weight` |
+| `sub_text_color` | color or `none` | the label after its first line break; unset: `text_color` |
 | `icon` | `file("….svg")` | a picture above the label, twice `font_size` square |
 | `image` | `file("….svg")` | the picture of the `image` shape |
 | `padding` | number, at least 0 | room between the outline and the label, rows or children |

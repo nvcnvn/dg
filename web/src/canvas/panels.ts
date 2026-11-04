@@ -1,4 +1,4 @@
-import type { Scene } from '../edit/edit';
+import { viewLabelOp, type Scene } from '../edit/edit';
 import type { Point } from '../geometry/geometry';
 import { X } from 'lucide';
 import type { KindInfo, ModelInfo, ModelNode } from '../protocol/client';
@@ -122,6 +122,15 @@ export function inspector(root: HTMLElement, host: ActionHost, act: Actions) {
     return [label, chips, control, h('datalist', { id: 'dg-tags' }, ...s.model.tags.map((t) => h('option', { value: t })))];
   };
 
+  // viewLabelField edits the label this view draws the node with; emptied, the view draws the
+  // model's again.
+  const viewLabelField = (s: Scene, n: ModelNode) => {
+    const own = s.view.nodes.find((x) => x.id === n.id);
+    if (!own) return [];
+    const value = own.view_label ? own.label : '';
+    return field('Label in this view', h('textarea', { rows: 2, value, placeholder: n.label }), (v) => v !== value && send(viewLabelOp(s, n.id, v)));
+  };
+
   const nodeView = (s: Scene, n: ModelNode) => {
     const kinds = s.model.kinds;
     const kind = kinds.find((k) => k.name === n.kind);
@@ -131,6 +140,7 @@ export function inspector(root: HTMLElement, host: ActionHost, act: Actions) {
       ro ? h('p', { class: 'lock' }, 'Read-only: defined in a read-only file, so only its layout can change.') : null,
       h('h3', {}, 'Text'),
       ...field('Label', h('textarea', { rows: 2, value: n.label }), (v) => v !== n.label && send({ op: 'set_label', id: n.id, label: v })),
+      ...viewLabelField(s, n),
       h('h3', {}, 'Kind and tags'),
       ...field('Kind', h('select', {}, ...kinds.map((k) => h('option', { value: k.name, selected: k.name === n.kind }, k.name))), (v) => send({ op: 'set_kind', id: n.id, kind: v })),
       ...tagsField(s, n.tags ?? [], (tags) => send({ op: 'set_tags', id: n.id, tags })),
@@ -239,7 +249,8 @@ export function inspector(root: HTMLElement, host: ActionHost, act: Actions) {
     timer = undefined;
     const { s, sel, locked } = next!;
     const n = sel.nodes.length === 1 ? s?.model.nodes.find((x) => x.id === sel.nodes[0]) : undefined;
-    const key = JSON.stringify([sel, locked, n, sel.edge && s?.model.edges.find((e) => e.id === sel.edge), sel.decoration && s?.view.decorations?.find((d) => d.id === sel.decoration), s?.view.view]);
+    const own = n && s?.view.nodes.find((x) => x.id === n.id);
+    const key = JSON.stringify([sel, locked, n, own?.view_label && own.label, sel.edge && s?.model.edges.find((e) => e.id === sel.edge), sel.decoration && s?.view.decorations?.find((d) => d.id === sel.decoration), s?.view.view]);
     if (key === shown) return;
     const same = shown && JSON.stringify(sel) === JSON.stringify(JSON.parse(shown)[0]);
     shown = key;

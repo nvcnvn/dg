@@ -1,7 +1,7 @@
-import type { CustomShape, ResolvedView, ViewNode } from '../protocol/view';
+import type { CustomShape, NodeStyle, ResolvedView, ViewNode } from '../protocol/view';
 import { innerBox, LABELLESS, outerSize, svgSize } from './shapes';
 import { isTable, measureTable, type TableMeasure } from './table';
-import { drawnWeight, textBlock, type TextBlock, type TextMeasure } from './text';
+import { drawnWeight, labelBlock, type SubStyle, type TextBlock, type TextMeasure } from './text';
 
 export interface Point {
   x: number;
@@ -14,6 +14,8 @@ export interface Size {
 }
 
 export interface Box extends Point, Size {}
+
+export type Axis = keyof Size;
 
 // GAP separates an icon or picture from the label under it, and a label from the collapse badge
 // under it.
@@ -54,13 +56,35 @@ export function pictureSide(fontSize: number): number {
   return Math.round(fontSize * 6);
 }
 
+// subStyle returns how the lines of a node's label after its first line break are drawn, if
+// they differ from the first (spec 4.3).
+function subStyle(s: NodeStyle): SubStyle | undefined {
+  if (!s.sub_font_size && !s.sub_font_weight && !s.sub_text_color) return undefined;
+  const font = { size: s.sub_font_size || s.font_size, weight: drawnWeight(s.sub_font_weight || s.font_weight) };
+  return { font, color: s.sub_text_color };
+}
+
+// wrapWidth returns the width a node's label wraps at (0: no wrapping): the room a pinned size
+// gives it, else max_w. A pin on the stretched axis gives none.
+function wrapWidth(n: ViewNode, custom?: CustomShape, stretched?: Axis): number {
+  const s = n.style;
+  const pad = s.padding;
+  const w = stretched === 'w' ? undefined : n.pin?.w;
+  const h = stretched === 'h' ? undefined : n.pin?.h;
+  const left = n.container && s.label_side === 'left';
+  const room = n.container ? (left ? h : w) : w && innerBox(s.shape, { x: 0, y: 0, w, h: h ?? s.min_h }, custom).w;
+  if (room !== undefined) return Math.max(1, room - 2 * pad);
+  return s.max_w > 0 ? s.max_w - 2 * pad : 0;
+}
+
 // measureNode sizes a node by spec 7.2 rules 1–3; a container's size is completed by
-// containerSize once its children are placed.
-export function measureNode(n: ViewNode, m: TextMeasure, grid: number, custom?: CustomShape): NodeMeasure {
+// containerSize once its children are placed. stretched is the axis of its size a stretching
+// stack sets, if any.
+export function measureNode(n: ViewNode, m: TextMeasure, grid: number, custom?: CustomShape, stretched?: Axis): NodeMeasure {
   const s = n.style;
   const pad = s.padding;
   const font = { size: s.font_size, weight: drawnWeight(s.font_weight) };
-  const text = LABELLESS.has(s.shape) || n.label === '' ? null : textBlock(n.label, s.max_w > 0 ? s.max_w - 2 * pad : 0, font, m);
+  const text = LABELLESS.has(s.shape) || n.label === '' ? null : labelBlock(n.label, wrapWidth(n, custom, stretched), font, subStyle(s), m);
   const icon = s.icon ? iconSide(s.font_size) : 0;
   const picture = s.shape === 'image' && !n.container ? pictureSide(s.font_size) : 0;
   const top = Math.max(icon, picture);
@@ -116,6 +140,20 @@ export function drillBadge(n: ViewNode, b: Box, custom?: CustomShape): Box {
   return { x: Math.round(area.x + area.w - BADGE - inset), y: Math.round(area.y + inset), w: BADGE, h: BADGE };
 }
 
+// overflows reports whether a node's pinned size leaves its label, icon or rows outside its box.
+// A pin a stretching stack overrode, so that the box does not have it, is no pinned size.
+export function overflows(n: ViewNode, m: NodeMeasure, b: Box, custom?: CustomShape): boolean {
+  if (n.pin?.w !== b.w && n.pin?.h !== b.h) return false;
+  if (m.table) return b.w < m.table.size.w || b.h < m.table.size.h;
+  if (n.container) {
+    const [along, across] = n.style.label_side === 'left' ? [b.h, b.w] : [b.w, b.h];
+    return n.style.padding + m.content.w > along || (m.content.h > 0 && n.style.padding / 2 + m.content.h > across);
+  }
+  const inner = innerBox(n.style.shape, b, custom);
+  const content = m.picture ? { w: m.text?.w ?? 0, h: m.text?.h ?? 0 } : m.content;
+  return content.w > inner.w || content.h > inner.h;
+}
+
 // containerSize fits a container to its label and its children, whose boxes are relative to
 // its content origin (spec 7.2 rule 4), unless its size is pinned; tooSmall reports a pinned
 // size that does not hold the children (rule 5).
@@ -127,12 +165,9 @@ export function containerSize(n: ViewNode, m: NodeMeasure, children: Box[], grid
     bottom = Math.max(bottom, Math.max(0, c.y) + c.h);
   }
   const pad = n.style.padding;
-  const fit = {
-    w: Math.max(m.size.w, ceilTo(m.origin.x + right + pad, grid)),
-    h: Math.max(m.size.h, ceilTo(m.origin.y + bottom + pad, grid)),
-  };
-  const size = { w: n.pin?.w ?? fit.w, h: n.pin?.h ?? fit.h };
-  return { size, tooSmall: size.w < fit.w || size.h < fit.h };
+  const held = { w: m.origin.x + right + pad, h: m.origin.y + bottom + pad };
+  const size = { w: n.pin?.w ?? Math.max(m.size.w, ceilTo(held.w, grid)), h: n.pin?.h ?? Math.max(m.size.h, ceilTo(held.h, grid)) };
+  return { size, tooSmall: children.length > 0 && (size.w < held.w || size.h < held.h) };
 }
 
 export function depth(byId: Map<string, ViewNode>, node: ViewNode): number {

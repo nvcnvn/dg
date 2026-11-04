@@ -54,6 +54,107 @@ func TestExamples(t *testing.T) {
 	}
 }
 
+// TestPinnedLabels exports a node pinned too small for its label, which is reported and stays in
+// the picture, and a pinned empty container narrower than min_w, which is not too small for
+// anything. The PNG holds nothing but the drawing: no pixel of the page around it.
+func TestPinnedLabels(t *testing.T) {
+	if testing.Short() {
+		t.Skip("starts Chromium")
+	}
+	dir := t.TempDir()
+	files := map[string]string{
+		"model.hcl": `node "short" {
+  label = "A label long enough to wrap over several lines in a box this narrow"
+}
+
+node "bar" {
+  kind = "group"
+}
+`,
+		"views/main.layout.yaml": `version: 1
+place:
+  bar: {x: 300, y: 0, w: 40, h: 300}
+  short: {x: 0, y: 100, w: 120, h: 20}
+`,
+	}
+	for name, src := range files {
+		if err := os.MkdirAll(filepath.Dir(filepath.Join(dir, name)), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(src), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	p, diags, err := project.Load(dir)
+	if err != nil || diags.HasErrors() {
+		t.Fatal(err, diags)
+	}
+	v, diags := p.Resolve(view.DefaultView)
+	if diags.HasErrors() {
+		t.Fatal(diags)
+	}
+	res, err := Render(context.Background(), v, "png")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.TooSmall) != 0 {
+		t.Errorf("too small containers %v, want none", res.TooSmall)
+	}
+	if len(res.Overflowing) != 1 || res.Overflowing[0] != "short" {
+		t.Errorf("overflowing nodes %v, want [short]", res.Overflowing)
+	}
+	pic, err := png.Decode(bytes.NewReader(res.PNG))
+	if err != nil {
+		t.Fatal(err)
+	}
+	b := pic.Bounds()
+	for x := b.Min.X; x < b.Max.X; x++ {
+		for y := b.Min.Y; y < b.Min.Y+10; y++ {
+			if r, g, b, _ := pic.At(x, y).RGBA(); r != 0xffff || g != 0xffff || b != 0xffff {
+				t.Fatalf("the top margin is not white at (%d, %d)", x, y)
+			}
+		}
+	}
+}
+
+// TestScale checks that a scaled PNG is that many pixels per unit, the same on every run, and
+// that geometry does not change with it.
+func TestScale(t *testing.T) {
+	if testing.Short() {
+		t.Skip("starts Chromium")
+	}
+	v := exampleViews(t)["hello"]
+	one, err := Render(context.Background(), v, "png")
+	if err != nil {
+		t.Fatal(err)
+	}
+	two, err := RenderScaled(context.Background(), v, "png", 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	again, err := RenderScaled(context.Background(), v, "png", 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, err := png.DecodeConfig(bytes.NewReader(one.PNG))
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := png.DecodeConfig(bytes.NewReader(two.PNG))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if b.Width != 2*a.Width || b.Height != 2*a.Height {
+		t.Errorf("at scale 2 the PNG is %dx%d, at 1 it is %dx%d", b.Width, b.Height, a.Width, a.Height)
+	}
+	if !bytes.Equal(two.PNG, again.PNG) {
+		t.Error("two exports at scale 2 differ")
+	}
+	if !bytes.Equal(one.JSON, two.JSON) {
+		t.Error("the geometry changes with the scale")
+	}
+}
+
 // exampleViews resolves every view of every example project, keyed by golden file name: the
 // example's name, followed by "-<view>" for views other than main.
 func exampleViews(t *testing.T) map[string]*view.Resolved {
@@ -148,7 +249,7 @@ func TestAnimation(t *testing.T) {
 	if _, err := chromedp.Run(ctx, chromedp.Evaluate[chromedp.Void]("window.dg.render("+string(viewJSON)+").then(() => {})", chromedp.EvalAwaitPromise)); err != nil {
 		t.Fatal(err)
 	}
-	start, err := capture(ctx, 0)
+	start, err := capture(ctx, 0, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -158,14 +259,14 @@ func TestAnimation(t *testing.T) {
 	if _, err := chromedp.Run(ctx, chromedp.Evaluate[chromedp.Void](stopAtEnd)); err != nil {
 		t.Fatal(err)
 	}
-	end, err := capture(ctx, GIFFrames*GIFDelay)
+	end, err := capture(ctx, GIFFrames*GIFDelay, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !bytes.Equal(start, end) {
 		t.Error("the drawing at the end of the period differs from the drawing at time 0")
 	}
-	before, err := capture(ctx, (GIFFrames-1)*GIFDelay)
+	before, err := capture(ctx, (GIFFrames-1)*GIFDelay, 1)
 	if err != nil {
 		t.Fatal(err)
 	}

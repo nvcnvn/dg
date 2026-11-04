@@ -1,5 +1,5 @@
 import type { NodeStyle, Policy, ResolvedView, ViewNode } from '../protocol/view';
-import type { NodeMeasure, Point, Size } from './geometry';
+import type { Axis, NodeMeasure, Point, Size } from './geometry';
 
 const ALIGN = { start: 0, center: 0.5, end: 1 };
 
@@ -64,6 +64,16 @@ export function arrangeFrame(byId: Map<string, ViewNode>, measures: Map<string, 
     const was = kids[i];
     if (byId.get(id)!.policy && (was.w !== out.sizes[i].w || was.h !== out.sizes[i].h)) arrangeFrame(byId, measures, id, rel, sizes, out.sizes[i]);
   });
+}
+
+// stretchedAxes returns, for each child of a stretched stack, the axis of its size arrange sets.
+export function stretchedAxes(view: ResolvedView): Map<string, Axis> {
+  const axes = new Map<string, Axis>();
+  for (const { policy: p } of view.nodes) {
+    if (!p?.stretch || p.layout !== 'stack') continue;
+    for (const id of p.order) axes.set(id, p.direction === 'vertical' ? 'w' : 'h');
+  }
+  return axes;
 }
 
 // alignHeaders gives the container children of a stretched stack one header: in a vertical

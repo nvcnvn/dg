@@ -65,11 +65,12 @@ Each gesture is sent when it is dropped, as one undo step.
 - **Create:** drag a kind from the palette onto the canvas or into a container, or click it (or
   press Enter on it) to create the node in the middle of the view. Type its label at once: the label also gives the
   node its ID.
-- **Labels:** double-click a node or an edge's label, or press F2 or Enter, to edit it in place.
+- **Labels:** double-click a node or an edge's label, or press F2 or Enter, to edit it in place. On
+  a node with a [label in this view](views.md#labels-in-a-view), that edits the view's label.
   Enter commits, Shift+Enter breaks the line, Escape cancels.
 - **Connect:** press C or the Connect button, then drag from a node, port or table row to another
   to draw an edge of the kind chosen beside the button. Escape leaves connect mode.
-- **Inspector:** edit the selected node's label, kind, tags, the properties its kind declares,
+- **Inspector:** edit the selected node's label, its label in this view (empty: the model's), kind, tags, the properties its kind declares,
   its ports, and the rows of a table or class; an edge's kind, labels and tags; a decoration's
   text. Each field is written when it changes.
 - **Copy and paste:** Ctrl/⌘+C copies the selected nodes with the nodes inside them and the edges

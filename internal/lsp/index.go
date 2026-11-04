@@ -167,6 +167,8 @@ func (ix *indexer) block(role string, b *hclsyntax.Block, parent string) {
 		ix.add(b.Type, label, rng, true)
 	case role == project.RoleViews && parent == "" && b.Type == "view":
 		ix.add(symView, label, rng, true)
+	case role == project.RoleViews && parent == "view" && b.Type == "node":
+		ix.add("node", label, rng, false)
 	case b.Type == "style" || b.Type == "edge_style":
 		if role != project.RoleStyle && !(role == project.RoleViews && parent == "view") {
 			return

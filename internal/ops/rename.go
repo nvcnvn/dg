@@ -46,6 +46,9 @@ func (s *state) rename(typ, old, id string) error {
 		if err := s.renameInViews([]string{"node", "children", "descendants"}, "style", "node.", old, id); err != nil {
 			return err
 		}
+		if err := s.renameInViews(nil, "node", "", old, id); err != nil {
+			return err
+		}
 		return s.renameInModel(p, "node", []string{"node"}, old, id)
 	case "edge":
 		if p.Model.Edges[old] == nil {

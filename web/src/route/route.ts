@@ -106,31 +106,46 @@ function clipStart(pts: Point[], poly: Point[]): Point[] {
 
 // clip trims a route that starts or ends inside a shape outline (an end attached to a node's
 // center) so it starts and ends on the outline, rounds it to whole pixels and drops repeated
-// and collinear points.
-export function clip(route: Point[], from: Point[] | null, to: Point[] | null): Point[] {
+// and collinear points, keeping the route on every point of via.
+export function clip(route: Point[], from: Point[] | null, to: Point[] | null, via: Point[] = []): Point[] {
   let pts = route;
   if (from) pts = clipStart(pts, from);
   if (to) pts = clipStart([...pts].reverse(), to).reverse();
-  return simplify(pts.map(round));
+  return simplify(pts.map(round), via);
 }
 
 function round(p: Point): Point {
   return { x: Math.round(p.x), y: Math.round(p.y) };
 }
 
-export function simplify(pts: Point[]): Point[] {
+// simplify drops repeated points and the middle of three points in line, which also removes a
+// back-and-forth along one line, unless that would take the route off a point of via.
+export function simplify(pts: Point[], via: Point[] = []): Point[] {
   const out: Point[] = [];
   for (const p of pts) {
     const last = out[out.length - 1];
     if (last && last.x === p.x && last.y === p.y) continue;
     const prev = out[out.length - 2];
     if (prev && last && (prev.x - last.x) * (last.y - p.y) === (prev.y - last.y) * (last.x - p.x)) {
-      out[out.length - 1] = p;
-      continue;
+      const needed = via.some((v) => (onSegment(v, prev, last) || onSegment(v, last, p)) && !onSegment(v, prev, p));
+      if (!needed) {
+        out[out.length - 1] = p;
+        continue;
+      }
     }
     out.push(p);
   }
   return out;
+}
+
+function onSegment(p: Point, a: Point, b: Point): boolean {
+  const inLine = (b.x - a.x) * (p.y - a.y) === (b.y - a.y) * (p.x - a.x);
+  return inLine && p.x >= Math.min(a.x, b.x) && p.x <= Math.max(a.x, b.x) && p.y >= Math.min(a.y, b.y) && p.y <= Math.max(a.y, b.y);
+}
+
+// onRoute reports whether p lies on the route.
+export function onRoute(route: Point[], p: Point): boolean {
+  return route.slice(1).some((q, i) => onSegment(p, route[i], q));
 }
 
 // pointAlong returns the point at fraction t of the route's length, and whether the segment it

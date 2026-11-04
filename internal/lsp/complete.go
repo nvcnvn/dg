@@ -278,6 +278,12 @@ func (c *completer) styleLabels(block string, ctx cursor, role string) {
 	}
 	voc := c.p.Vocabulary()
 	switch block {
+	case "node":
+		if inView {
+			for id, n := range c.p.Model.Nodes {
+				c.add(id, itemVariable, n.Kind)
+			}
+		}
 	case "style":
 		for _, k := range voc.Kinds {
 			c.add(k.Name, itemClass, "kind")

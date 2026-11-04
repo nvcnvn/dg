@@ -3,7 +3,7 @@ import { outline } from '../geometry/shapes';
 import { lineHeight, textBlock, type TextBlock, type TextMeasure } from '../geometry/text';
 import type { End, ResolvedView, Side, ViewEdge } from '../protocol/view';
 import { MARKER_HALF, markerLength, type MarkerPart } from './markers';
-import { clip, insidePolygon, onSide, overlapScore, placeEndLabel, placeLabel, portPositions, rowSide, segmentHitsBox, sideFacing, simplify, type PortPos } from './route';
+import { clip, insidePolygon, onRoute, onSide, overlapScore, placeEndLabel, placeLabel, portPositions, rowSide, segmentHitsBox, sideFacing, simplify, type PortPos } from './route';
 
 // BUFFER is the clearance the router keeps around every obstacle.
 export const BUFFER = 10;
@@ -147,12 +147,15 @@ export async function routeEdges(g: EdgeGeometry, ports: Map<string, Map<string,
   }
 
   // A label's key starts with a control character, which no node ID has. Its box is shortened by
-  // the buffer at the bottom, so the buffer there covers the text and leaves room for an edge
-  // between the label and the container's first row of children.
+  // the buffer on the side facing the container's content, so the buffer there covers the text
+  // and leaves room for an edge between the label and the children, and a free end by a child is
+  // not inside it, where libavoid would route straight through.
   const obstacles = new Map<string, Box>([
     ...view.nodes.filter((n) => !n.container).map((n): [string, Box] => [n.id, boxes.get(n.id)!]),
-    ...[...g.headers].map(([id, b]): [string, Box] => ['\0' + id, { ...b, h: Math.max(1, b.h - BUFFER) }]),
+    ...[...g.headers].map(([id, b]): [string, Box] => ['\0' + id, byId.get(id)!.style.label_side === 'left' ? { ...b, w: Math.max(1, b.w - BUFFER) } : { ...b, h: Math.max(1, b.h - BUFFER) }]),
   ]);
+  const blocks = [...obstacles.values()];
+  const viaOf = (e: ViewEdge): Point[] => (e.hint?.via ?? []).map(([x, y]) => ({ x, y }));
 
   const routeAll = async () => {
     const requests: RouteRequest[] = routed
@@ -160,7 +163,7 @@ export async function routeEdges(g: EdgeGeometry, ports: Map<string, Map<string,
       .map((e) => {
         const [from, to] = plans.get(e.id)!;
         const type = e.style.routing === 'polyline' ? 'polyline' : 'orthogonal';
-        return { id: e.id, type, from: request(from, markerAt(e, 0)), to: request(to, markerAt(e, 1)), via: (e.hint?.via ?? []).map(([x, y]) => ({ x, y })) };
+        return { id: e.id, type, from: request(from, markerAt(e, 0), blocks), to: request(to, markerAt(e, 1), blocks), via: viaOf(e) };
       });
     const routes = requests.length ? await router(obstacles, requests) : new Map<string, Point[]>();
     return new Map(
@@ -171,7 +174,7 @@ export async function routeEdges(g: EdgeGeometry, ports: Map<string, Map<string,
           if (from.dir !== 'all') raw = [...join(from, raw[0]), ...raw];
           if (to.dir !== 'all') raw = [...raw, ...join(to, raw[raw.length - 1]).reverse()];
         }
-        return [e.id, clip(raw, from.clipTo ?? null, to.clipTo ?? null)];
+        return [e.id, clip(raw, from.clipTo ?? null, to.clipTo ?? null, viaOf(e))];
       }),
     );
   };
@@ -240,7 +243,7 @@ export async function routeEdges(g: EdgeGeometry, ports: Map<string, Map<string,
 
   const second = sides.size ? await routeAll() : first;
   const containers = view.nodes.filter((n) => n.container).map((n) => boxes.get(n.id)!);
-  const leaves = view.nodes.filter((n) => !n.container).map((n) => boxes.get(n.id)!);
+  const solid = [...view.nodes.filter((n) => !n.container).map((n) => boxes.get(n.id)!), ...g.headers.values()];
   const out = new Map<string, Point[]>();
   for (const e of routed) {
     // libavoid draws a straight line where it finds no route; such an edge keeps its first route.
@@ -249,16 +252,18 @@ export async function routeEdges(g: EdgeGeometry, ports: Map<string, Map<string,
     const [from, to] = plans.get(e.id)!;
     if (from.outlineOf && pts.length > 1) pts[0] = ontoOutline(pts[0], from.dir as Side, boxes.get(from.outlineOf)!, outlineOf(from.outlineOf));
     if (to.outlineOf && pts.length > 1) pts[pts.length - 1] = ontoOutline(pts[pts.length - 1], to.dir as Side, boxes.get(to.outlineOf)!, outlineOf(to.outlineOf));
-    pts = simplify(pts.map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) })));
+    const via = viaOf(e);
+    pts = simplify(pts.map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) })), via);
     if (e.style.routing === 'orthogonal') {
-      pts = awayFromBorders(pts, containers, leaves, grid);
+      const held = via.filter((v) => onRoute(pts, v));
+      pts = awayFromBorders(pts, containers, solid, grid, held);
       [from, to].forEach((p, i) => {
         const marker = markerAt(e, i);
         const label = i === 0 ? e.labels.start : e.labels.end;
         if (p.dir === 'all' || (marker === 'none' && p.stub === undefined && !label)) return;
         const len = Math.max(p.stub ?? stubLength(marker), label ? 2 * LABEL_PAD + lineHeight(e.style.font_size) : 0);
         const done = routed.filter((o) => o.id !== e.id).map((o) => out.get(o.id) ?? second.get(o.id)!);
-        pts = i === 0 ? keepStub(pts, p.dir, len, leaves, done, grid) : keepStub([...pts].reverse(), p.dir, len, leaves, done, grid).reverse();
+        pts = i === 0 ? keepStub(pts, p.dir, len, solid, done, grid, held) : keepStub([...pts].reverse(), p.dir, len, solid, done, grid, held).reverse();
       });
     }
     out.set(e.id, pts);
@@ -283,9 +288,9 @@ export async function routeEdges(g: EdgeGeometry, ports: Map<string, Map<string,
 
 // keepStub moves the segment after a route's first one so that the first, which leaves an end with
 // direction dir, runs at least len, and a further gap at a time while the moved segment would lie
-// on a segment of another route in others, unless that would cross a leaf box: libavoid's nudging
-// can pull a stub's free point back toward the box.
-export function keepStub(route: Point[], dir: Side, len: number, leaves: Box[], others: Point[][] = [], gap = 10): Point[] {
+// on a segment of another route in others, unless that would cross a box of solid or take the
+// route off a point of via: libavoid's nudging can pull a stub's free point back toward the box.
+export function keepStub(route: Point[], dir: Side, len: number, solid: Box[], others: Point[][] = [], gap = 10, via: Point[] = []): Point[] {
   if (route.length < 4) return route;
   const k = dir === 'left' || dir === 'right' ? 'x' : 'y';
   const o = k === 'x' ? 'y' : 'x';
@@ -298,8 +303,38 @@ export function keepStub(route: Point[], dir: Side, len: number, leaves: Box[], 
   let v = a[k] + s * len;
   for (let n = 0; n < 10 && onOther(v); n++) v += s * gap;
   const moved = route.map((p, i) => (i === 1 || i === 2 ? { ...p, [k]: v } : p));
-  if (leaves.some((l) => segmentHitsBox(moved[1], moved[2], l) || segmentHitsBox(moved[2], moved[3], l))) return route;
-  return simplify(moved);
+  if (solid.some((l) => segmentHitsBox(b, moved[1], l) || segmentHitsBox(moved[1], moved[2], l) || segmentHitsBox(moved[2], moved[3], l))) return route;
+  const out = simplify(moved, via);
+  return via.every((p) => onRoute(out, p)) ? out : route;
+}
+
+// joinLegs joins the legs of a route at the via points between them, so the route passes through
+// each exactly. libavoid moves a leg's end when it nudges the leg's first or last segment. The
+// first segment of each leg goes back onto its via; so does the last segment of the leg before,
+// unless the route doubles back there, where nudging keeps the two apart: that one stays beside
+// the next and is joined to the via by a short segment.
+export function joinLegs(legs: Point[][], via: Point[]): Point[] {
+  const out = [...legs[0]];
+  via.forEach((v, i) => {
+    const [start, second, ...rest] = legs[i + 1];
+    const end = out[out.length - 1];
+    const before = out[out.length - 2];
+    const moved = end.x !== v.x || end.y !== v.y;
+    const doublesBack = moved && (end.x - before.x) * (second.x - start.x) + (end.y - before.y) * (second.y - start.y) < 0;
+    if (!doublesBack) {
+      out[out.length - 2] = slide(before, end, v);
+      out.pop();
+    }
+    out.push(v, slide(second, start, v), ...rest);
+  });
+  return out;
+}
+
+// slide returns p, the far point of a segment from end, once the segment has moved across its
+// direction to pass through v. A segment that is neither horizontal nor vertical is not nudged.
+function slide(p: Point, end: Point, v: Point): Point {
+  if (p.x === end.x) return { ...p, x: v.x };
+  return p.y === end.y ? { ...p, y: v.y } : p;
 }
 
 // join returns the points from an end with a direction to the first point of its route: the end,
@@ -320,10 +355,28 @@ function stubLength(marker: string): number {
 
 // request returns the end of a route request; an end with a direction is routed from a free point
 // its stub outside it.
-function request(p: Plan, marker: string): RouteEnd {
+function request(p: Plan, marker: string, obstacles: Box[]): RouteEnd {
   if (p.dir === 'all') return { at: p.at, obstacle: p.obstacle };
-  const stub = p.stub ?? stubLength(marker);
+  const stub = clearStub(p.at, p.dir, p.stub ?? stubLength(marker), obstacles);
   return { at: { x: p.at.x + stub * step[p.dir].x, y: p.at.y + stub * step[p.dir].y } };
+}
+
+// clearStub returns stub, cut to end at the buffer of the first obstacle in its way, but no shorter
+// than STUB: libavoid routes straight through an obstacle from a free point in its buffer, and a
+// long stub reaches past the gap between a child and its container's label. A buffer the end is
+// already in, like that of its own node, does not count.
+function clearStub(at: Point, dir: Side, stub: number, obstacles: Box[]): number {
+  const k = dir === 'left' || dir === 'right' ? 'x' : 'y';
+  const tip = { ...at, [k]: at[k] + step[dir][k] * stub };
+  let clear = stub;
+  for (const o of obstacles) {
+    const b = { x: o.x - BUFFER, y: o.y - BUFFER, w: o.w + 2 * BUFFER, h: o.h + 2 * BUFFER };
+    const holdsEnd = at.x >= b.x && at.x <= b.x + b.w && at.y >= b.y && at.y <= b.y + b.h;
+    if (holdsEnd || !segmentHitsBox(at, tip, b)) continue;
+    const near = step[dir][k] > 0 ? b[k] : b[k] + (k === 'x' ? b.w : b.h);
+    clear = Math.min(clear, Math.abs(near - at[k]));
+  }
+  return Math.max(STUB, clear);
 }
 
 // isCornerLoop reports whether an edge is a self-loop between two plain ends of a node, which is
@@ -384,9 +437,10 @@ function straighten(a: Plan, b: Plan, boxes: Map<string, Box>, grid: number) {
 }
 
 // awayFromBorders moves each inner segment of an orthogonal route that runs along a container's
-// border, closer to it than gap, to gap from it, unless that would cross a leaf box, so an edge
-// is never drawn on top of a border. The first and last segments stay, so the ends do not move.
-export function awayFromBorders(route: Point[], containers: Box[], leaves: Box[], gap: number): Point[] {
+// border, closer to it than gap, to gap from it, unless that would cross a box of solid or take
+// the route off a point of via, so an edge is drawn on top of a border only to pass a via. The
+// first and last segments stay, so the ends do not move.
+export function awayFromBorders(route: Point[], containers: Box[], solid: Box[], gap: number, via: Point[] = []): Point[] {
   const pts = route.map((p) => ({ ...p }));
   for (let i = 1; i + 2 < pts.length; i++) {
     const a = pts[i];
@@ -405,13 +459,14 @@ export function awayFromBorders(route: Point[], containers: Box[], leaves: Box[]
       const moved = v + Math.sign(a[k] - v || outward) * gap;
       const trial = pts.map((p, j) => (j === i || j === i + 1 ? { ...p, [k]: moved } : p));
       const touched = [trial[i - 1], trial[i], trial[i + 1], trial[i + 2]];
-      if (leaves.some((l) => touched.slice(1).some((p, j) => segmentHitsBox(touched[j], p, l)))) continue;
+      if (solid.some((l) => touched.slice(1).some((p, j) => segmentHitsBox(touched[j], p, l)))) continue;
+      if (!via.every((p) => onRoute(trial, p))) continue;
       pts[i] = trial[i];
       pts[i + 1] = trial[i + 1];
       break;
     }
   }
-  return simplify(pts);
+  return simplify(pts, via);
 }
 
 export interface PlacedLabel {

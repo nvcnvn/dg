@@ -32,6 +32,11 @@ export function scene(view: ResolvedView, drawing: Drawing, model: ModelInfo = N
   return { view, drawing, nodes: new Map(drawing.nodes.map((n) => [n.id, n])), model };
 }
 
+// viewLabelOp sets the label the scene's view draws node id with, or, empty, removes it.
+export function viewLabelOp(s: Scene, id: string, label: string): Op {
+  return { op: 'set_view_label', view: s.view.view, id, ...(label ? { label } : {}) };
+}
+
 function resolved(s: Scene, id: string) {
   return s.view.nodes.find((n) => n.id === id);
 }

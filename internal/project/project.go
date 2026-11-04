@@ -465,9 +465,19 @@ func readFile(dir, rel string) ([]byte, error) {
 // TooSmall is the warning for container id, pinned in view too small for its children; the
 // browser finds these (spec 7.2 rule 5).
 func (p *Project) TooSmall(view, id string) diag.Diagnostic {
-	detail := fmt.Sprintf("Node %q is pinned in view %q at a size too small for its children.", id, view)
+	return p.pinWarning(view, id, "Container too small", "its children")
+}
+
+// Overflowing is the warning for node id, pinned in view too small for its label; the browser
+// finds these (spec 7.2 rule 1).
+func (p *Project) Overflowing(view, id string) diag.Diagnostic {
+	return p.pinWarning(view, id, "Label overflows node", "its label")
+}
+
+func (p *Project) pinWarning(view, id, summary, content string) diag.Diagnostic {
+	detail := fmt.Sprintf("Node %q is pinned in view %q at a size too small for %s.", id, view, content)
 	if l := p.Layouts[view]; l != nil && l.Place[id] != nil {
-		return diag.At(diag.Warning, l.Place[id].Range, "Container too small", detail)
+		return diag.At(diag.Warning, l.Place[id].Range, summary, detail)
 	}
-	return diag.Diagnostic{Severity: diag.Warning, Summary: "Container too small", Detail: detail}
+	return diag.Diagnostic{Severity: diag.Warning, Summary: summary, Detail: detail}
 }

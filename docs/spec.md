@@ -38,7 +38,7 @@ Diagrams where **position is data**: sequence diagrams (vertical order = message
 | **Model** | HTML | `*.hcl` model files | node and edge instances, containment, tags, properties |
 | **View** | a page that shows part of the document, plus where things sit on it | `views.hcl` + `views/<view-id>.layout.yaml` | which elements a view shows; positions; edge hints; decorations |
 
-A **pack** is a spec and style shipped together (for example `generic`, `inference`, `kubernetes`). Most users only write the model and arrange views.
+A **pack** is a spec and style shipped together (for example `generic`, `inference`, `kubernetes`). A local pack belongs to its project; an installed pack is copied from a git repository (section 4.7). Most users only write the model and arrange views.
 
 ### 2.2 Rules that hold everywhere
 
@@ -104,6 +104,7 @@ Layout files are YAML, because they are machine-owned and rarely edited by hand.
 | Project lock on Windows | `golang.org/x/sys/windows` (BSD-3-Clause) |
 | Embedding the web app in the binary | standard library `embed` |
 | Language Server Protocol | none: `internal/lsp` frames JSON-RPC and declares the few protocol types it uses with the standard library |
+| Fetching installed packs | none: `dg pack` runs the user's `git` (FR-21) |
 
 **TypeScript (browser)**
 
@@ -143,6 +144,7 @@ A project `font` (section 4.1) replaces Inter for every weight; the app loads it
 ```
 my-diagrams/
 ├── dg.hcl                       # project file
+├── dg.lock                      # what dg pack installed (section 4.7)
 ├── spec.hcl                     # optional project-local kinds
 ├── style.hcl                    # optional project-local styles
 ├── model.hcl                    # hand-written model
@@ -151,10 +153,12 @@ my-diagrams/
 ├── views/
 │   ├── overview.layout.yaml
 │   └── rdma.layout.yaml
-└── packs/inference/             # optional local pack
-    ├── spec.hcl
-    ├── style.hcl
-    └── shapes/gpu.svg
+└── packs/
+    ├── inference/               # optional local pack
+    │   ├── spec.hcl
+    │   ├── style.hcl
+    │   └── shapes/gpu.svg
+    └── aws/                     # optional installed pack (section 4.7)
 ```
 
 ### 4.1 Project file — `dg.hcl`
@@ -168,6 +172,11 @@ project "inference-stack" {
   layout_dir = "views"                          # default "views"
   grid       = 10                               # default 10
   font       = "fonts/Inter.ttf"                # optional; default is the bundled font
+
+  pack "aws" {                                  # an installed pack (section 4.7)
+    source  = "github.com/dg-packs/aws"
+    version = "v1.2.0"
+  }
 }
 ```
 
@@ -176,11 +185,12 @@ project "inference-stack" {
 - Paths are slash-separated, relative to the project root, and stay inside it.
 - Symbolic links are followed only while they stay inside the project.
 - `packs` lists local pack directories, each holding an optional `spec.hcl` and `style.hcl`; the project root itself is not a pack. The built-in `generic` pack is always loaded first, whether or not `packs` lists it.
+- `pack` blocks declare installed packs (section 4.7); `dg pack` writes them, and `packs` cannot list their directories.
 - `models` lists glob patterns (`path.Match` syntax, no `**`). Default: every `*.hcl` in the root. `dg.hcl`, the `views` file, and the `spec.hcl` and `style.hcl` of the project and its packs are never model files. A pattern that matches no file is a warning; a directory it matches is an error.
-- `read_only` lists glob patterns of files dg never writes: `dg fmt` skips them, and operations that would write them fail naming the file.
+- `read_only` lists glob patterns of files dg never writes: `dg fmt` skips them, and operations that would write them fail naming the file. Every file of an installed pack is read-only without being listed.
 - `font` is checked to exist and is the font of every drawn text (section 3.4).
 
-Load order for kinds and styles: built-in `generic` pack, then packs in listed order, then project-local `spec.hcl` / `style.hcl`. A later `kind`, `edge_kind`, `shape` or `overlay_style` with the same name replaces the earlier one; a later `style` or `edge_style` with the same label overrides only the properties it sets (later wins, as in the cascade, section 8.4). Defining a name twice in one file is an error. `dg check` reports each override across files as information, a severity that `--strict` never turns into an error.
+Load order for kinds and styles: built-in `generic` pack, then installed packs in the order of their blocks, then local packs in listed order, then project-local `spec.hcl` / `style.hcl`. A later `kind`, `edge_kind`, `shape` or `overlay_style` with the same name replaces the earlier one; a later `style` or `edge_style` with the same label overrides only the properties it sets (later wins, as in the cascade, section 8.4). Defining a name twice in one file is an error. `dg check` reports each override across files as information, a severity that `--strict` never turns into an error.
 
 ### 4.2 Spec — kinds
 
@@ -215,7 +225,7 @@ edge_kind "default" {}
 edge_kind "rdma" {}
 ```
 
-A kind without `extends` extends `node`, and every edge kind other than `default` extends `default`. A kind inherits `container`, `rows`, `ports`, `default_port_side` and properties from the kind it `extends`, and may add ports and properties; redeclaring an inherited port or property is an error. Property types are `string`, `number` and `bool`.
+A kind without `extends` extends `node`, and every edge kind other than `default` extends `default`. A kind inherits `container`, `rows`, `ports`, `default_port_side` and properties from the kind it `extends`, and may add ports and properties; redeclaring an inherited port or property is an error. Property types are `string`, `number` and `bool`. `category`, an optional string that is not inherited, names the kind's group within its pack in the palette (FR-20).
 
 ### 4.3 Style
 
@@ -237,7 +247,7 @@ style "service" {
   padding       = 12
   min_w         = 120
   min_h         = 48
-  max_w         = 240                  # labels wrap at this width
+  max_w         = 240                  # labels of nodes without a pinned width wrap at this width
 }
 
 style "tag.deprecated" {
@@ -277,13 +287,13 @@ shape "gpu-node" {
 }
 ```
 
-**Node style properties:** `shape`, `fill`, `stroke`, `stroke_width`, `stroke_dash`, `corner_radius`, `opacity`, `text_color`, `font_size`, `font_weight`, `icon`, `image`, `padding`, `min_w`, `min_h`, `max_w`, `z`. `icon` and `image` (the picture for the `image` shape) take `file("…")`, an SVG resolved relative to the file that calls it; other picture formats are not supported. A picture (also a custom shape's `svg`) must be well-formed XML whose root element is `svg` in the SVG namespace, which a browser needs to draw it; otherwise `dg check` reports an error at the `file` call. The app draws pictures from `data:` URIs of that text.
+**Node style properties:** `shape`, `fill`, `stroke`, `stroke_width`, `stroke_dash`, `corner_radius`, `opacity`, `text_color`, `font_size`, `font_weight`, `sub_text_color`, `sub_font_size`, `sub_font_weight`, `icon`, `image`, `padding`, `min_w`, `min_h`, `max_w`, `z`. `icon` and `image` (the picture for the `image` shape) take `file("…")`, an SVG resolved relative to the file that calls it; other picture formats are not supported. A picture (also a custom shape's `svg`) must be well-formed XML whose root element is `svg` in the SVG namespace, which a browser needs to draw it; otherwise `dg check` reports an error at the `file` call. The app draws pictures from `data:` URIs of that text.
 **Container properties:** `layout`, `direction` (`horizontal` | `vertical`), `gap`, `stretch`, `columns`, `align` (`start` | `center` | `end`) (section 7.3), `label_side` (`top` | `left`). `left` draws the label and icon a quarter turn counterclockwise, centered along the left edge, as on a swimlane: the label sits half a padding from the edge, a line in the stroke color runs the full height half a padding past it, and the content origin is a full padding past the label; the container is at least as tall as the label is long plus a padding above and below.
 **Overlay style properties:** `fill`, `stroke`, `stroke_width`, `stroke_dash`, `opacity`, `padding`. An overlay is styled by `overlay_style "hull"` with the properties of the overlay style it names set over it, so `hull` holds every default.
 **Values:** colors are `#RGB`, `#RRGGBB` or `none`; sizes, widths, gaps and padding are numbers of at least 0, `font_size` at least 1; `opacity` is 0–1; `font_weight` is 100–900 in steps of 100; `z` and `columns` are whole numbers; `stroke_dash` is a list of numbers.
 **Custom shapes:** a shape's name may not be a built-in shape. Each of its `anchors` must name a port of every kind whose style (by kind, section 8.4 step 1–2) uses the shape; ports without an anchor are placed by section 7.5. `text_box` defaults to `[0, 0, 1, 1]` and `stretch` to `nine-slice`. The picture's natural size is its `viewBox`, else its `width` and `height`, else 100 by 100. `nine-slice` cuts the picture a quarter of its width and height in from each edge: corners keep their natural size (scaled down only when the box is smaller than half the picture), edges stretch along their side, the center both ways. `uniform` scales the picture to fit and keeps the box at its aspect ratio; `none` draws it at its natural size, centered, in a box at least that large. A custom shape's `fill` and `stroke` are not drawn; the picture has its own.
 
-**Drawing:** labels break at `\n` and wrap at `max_w` minus twice `padding` (`max_w = 0`: no wrapping), by words, a word wider than the line broken between characters; lines are `ceil(1.4 × font_size)` apart. An `icon` is drawn above the label, `2 × font_size` square. The `image` shape draws its picture above the label, at least `6 × font_size` square, and no outline; `text` draws no outline. `point` and `bullseye` draw no label and are sized by `min_w` and `min_h`. `corner_radius` applies to `rounded`. `table` draws rows as section 5.4 says, and a node without rows as `rect`. Expanded containers are drawn first, then the other nodes, each in order of `z`, then depth in the containment tree, then ID; overlays are drawn between the two (section 5.8), and edges over nodes. So `z` orders containers among containers and other nodes among other nodes: no `z` raises a container above a leaf.
+**Drawing:** labels break at `\n` and wrap at `max_w` minus twice `padding` (`max_w = 0`: no wrapping), or, with a pinned width, at the room it leaves (section 7.2), by words, a word wider than the line broken between characters; lines are `ceil(1.4 × font_size)` apart. The text after a label's first `\n` is a subtitle, drawn and wrapped in `sub_text_color`, `sub_font_size` and `sub_font_weight`, each defaulting to the label's own property. An `icon` is drawn above the label, `2 × font_size` square. The `image` shape draws its picture above the label, at least `6 × font_size` square, and no outline; `text` draws no outline. `point` and `bullseye` draw no label and are sized by `min_w` and `min_h`. `corner_radius` applies to `rounded`. `table` draws rows as section 5.4 says, and a node without rows as `rect`. Expanded containers are drawn first, then the other nodes, each in order of `z`, then depth in the containment tree, then ID; overlays are drawn between the two (section 5.8), and edges over nodes. So `z` orders containers among containers and other nodes among other nodes: no `z` raises a container above a leaf.
 **Edge style properties:** `stroke`, `stroke_width`, `stroke_dash`, `arrow_start`, `arrow_end`, `routing`, `font_size`, `animate`.
 **Animation** (`animate`): `none` (default) or `flow`. `flow` draws the edge dashed (its `stroke_dash`, or `[6, 4]` when it has no value above 0) and moves the dashes along the route from `from` toward `to` by one dash period every half second, so every animated edge repeats with the same half-second period. The period is the pattern's length: the sum of its values, twice that for an odd number of values, which SVG repeats. At time `t` seconds the dash offset is `−period × 2t` (CSS `stroke-dashoffset` animated linearly from 0 to minus the period over 500 ms, repeating), so time 0 is the edge drawn still and the drawing at half a second equals it. Markers are never dashed. Animation is style, so it is selected by kind or tag (`edge_style "tag.hot" { animate = "flow" }`), never set in the model.
 **Arrow markers** (`arrow_start`, `arrow_end`): `none`, `arrow` (open), `triangle`, `triangle-open`, `diamond`, `diamond-open`, `circle`, `circle-open`, and crow's-foot `crow-one`, `crow-zero-one`, `crow-many`, `crow-one-many`, `crow-zero-many`. A marker lies along the last segment of the route at its end, in the edge's `stroke` and `stroke_width`, never dashed; `-open` markers are filled white, the others with the stroke color. Crow's-foot markers read outward from the node: `crow-one` two bars, `crow-zero-one` a bar then a ring, `crow-many` a foot spread across the end, `crow-one-many` a foot then a bar, `crow-zero-many` a foot then a ring.
@@ -388,6 +398,12 @@ view "incident" {
     stroke_width = 3
   }
 }
+
+view "sizing" {
+  node "pool" {                          # the label this view draws the node with
+    label = "GPU pool\n8 nodes, 8 GPUs each"
+  }
+}
 ```
 
 **Selectors** (used in `include`, `exclude`, `collapse`, overlay `members`): `all`, `node.<id>` / `node["<id>"]`, `kind.<kind>` (includes sub-kinds), `tag.<tag>`, `children.<id>` (direct children), `descendants.<id>`. `edges` uses `edge_kind.<kind>`, `tag.<tag>` and `edge.<id>`; by default all edges whose endpoints are both visible are included.
@@ -397,6 +413,8 @@ view "incident" {
 `direction` (`down`, `right`, `up` or `left`) sets the way the layers of the view's first layout run (section 7.4).
 
 View style rules (`style` and `edge_style` blocks in a view) take the labels of section 4.3, `node.<id>` and `edge.<id>` included, and apply only in that view (section 8.4).
+
+A `node` block in a view, labeled with a node's ID, gives its `label`, required and possibly empty, which that view draws instead of the model's. A block naming an undefined node, or a second block for one node, is an error. Edges have no such block.
 
 If no view is defined, the project behaves as if `views.hcl` contained `view "main" { include = [all] }`, so a model with no views still draws. The first operation that writes `views.hcl` writes that block out.
 
@@ -431,6 +449,66 @@ decorations:
 - `order` lists the children of a `stack` or `grid` container in the order it places them (section 7.3). An entry with only `order` does not pin its node.
 - Wherever an ID appears in a layout file, as a key or a value, the characters `%`, `:` and `#` inside it are percent-encoded (`%25`, `%3A`, `%23`), so `lift:` keys stay unambiguous for quoted IDs such as `system:controller`.
 - The file is fully regenerated on every write: sorted keys, one entry per line where possible.
+
+### 4.7 Installed packs
+
+An installed pack is a pack that `dg pack` (FR-21) copied into the project from a git repository. The copy is part of the project: `dg check`, `dg serve` and `dg export` read it as they read any other file and never use the network, the same files draw the same picture on any machine, and a clone of the project needs no install step.
+
+```
+dg pack add github.com/dg-packs/aws@v1.2.0
+```
+
+This writes the `pack "aws"` block in `dg.hcl` (section 4.1), the pack's files in `packs/aws/`, and the pack's entry in `dg.lock`.
+
+- The block's label is the pack's **local name**, which belongs to the project: the last segment of the source, or what `--as` gives. It is a simple ID (section 6.1), not `generic`, and is also the directory under `packs/`, which must not hold a local pack.
+- `source` is `<host>/<path>`, fetched over HTTPS, or an `https://`, `ssh://` or `file://` URL. A `//<dir>` at its end names a directory of the repository when the pack is not at its root.
+- `version` is a tag or a full commit hash. A branch is refused, since it moves.
+
+**Names.** Every name an installed pack defines is `<local name>-<name>` to the project. The author writes the short name:
+
+```hcl
+# packs/aws/spec.hcl
+kind "vpc" {
+  extends  = "group"
+  category = "Networking"
+}
+
+# packs/aws/style.hcl
+style "vpc" {
+  icon = file("icons/vpc.svg")
+}
+```
+
+and the project writes `kind = "aws-vpc"` on a node, `kind.aws-vpc` in a selector and `style "aws-vpc"` in its own `style.hcl`. The source and version never appear in a name, so an update changes `dg.hcl`, `dg.lock` and the pack's files and no model, view or layout file, and a fork or a moved repository changes only `source`. Two packs that share a default name, or two versions of one pack, install side by side under different local names.
+
+- The prefix applies to the names of `kind`, `edge_kind`, `shape` and `overlay_style` blocks and to the `style` and `edge_style` labels that name a kind or edge kind. Tags stay as written: they belong to the model.
+- Inside the pack, a name in `extends`, a style label or the `shape` property means the pack's own definition if it has one, otherwise `generic`'s.
+- Local packs and the project load later, so they override an installed pack by its prefixed name (section 4.1).
+- Since `-` is allowed in a name, pack `a` with kind `b-c` and pack `a-b` with kind `c` both yield `a-b-c`. Two installed packs that yield one name are an error at both `pack` blocks; `--as` resolves it.
+
+**Boundaries.** An installed pack reaches nothing outside its names. Its style labels name its own kinds and edge kinds or a tag, so it cannot restyle `node` or another pack. It extends only its own kinds and `generic`'s: a pack does not depend on another. `file` in it stays inside the pack's directory.
+
+**Lock file.** `dg.lock` is YAML in canonical form, with packs in sorted order. `commit` is what `version` resolved to, so a tag moved later changes nothing. `hash` is the SHA-256 of the pack's sorted paths and contents, with CRLF read as LF, since git may change line endings at checkout.
+
+```yaml
+version: 1
+packs:
+  aws:
+    source: github.com/dg-packs/aws
+    version: v1.2.0
+    commit: 9fceb02d0ae598e95dc970b74767f19372d61af8
+    hash: sha256:3a7bd3e2360a3d29eea436fcfb7e44c735d117c42d1c1835420b6b9942dd4f1b
+```
+
+**A pack is data.** A copy holds `spec.hcl`, `style.hcl`, `README*`, `LICENSE*` and `NOTICE*` from the pack's root and `*.svg` at any depth, and nothing else. It needs at least one of `spec.hcl` and `style.hcl`. A symbolic link among those files refuses the pack. Nothing in the repository is run. A picture is always drawn as an `<image>` from a `data:` URI, in the editor and in exports, never inlined as markup, so a browser neither runs a script in it nor loads anything it names.
+
+**Index.** A source with no `/`, as in `dg pack add aws`, is looked up in `index.json` of the git repository `github.com/dg-packs/index`, fetched as a pack is, and `dg pack search` reads the same file. The index only finds packs: `dg.hcl` holds the source it resolved to, and any git URL works without it. A community pack joins by pull request.
+
+```json
+{"version": 1, "packs": [{"name": "aws", "source": "github.com/dg-packs/aws", "description": "AWS services and resources", "license": "see NOTICE"}]}
+```
+
+**Cloud vendors' packs.** `aws`, `gcp` and `azure` live in repositories of their own, never in the binary or in this repository, whose only embedded pack is `generic`. A script in each repository generates the kinds and styles from the vendor's icon download, and `NOTICE` carries the vendor's terms. A vendor's pack is published with its icons only if those terms allow it; otherwise it ships the kinds and styles without them.
 
 ---
 
@@ -526,7 +604,7 @@ A named outline drawn around the boxes of its members, computed at render time f
 - **Quoted IDs:** any other non-empty string up to 200 characters without control characters; referenced with index syntax `node["kube-system/coredns"]`. Intended for generated models.
 - Reserved, cannot be simple IDs: `all`, `node`, `kind`, `tag`, `children`, `descendants`, `edge_kind`, `port`, `row`, `lift`. An edge ID may not start with `lift:`, which names lifted edges (section 8.3).
 - Node IDs and edge IDs are separate namespaces. Port and row names are unique within their node and may be simple or quoted.
-- Kind, edge kind, tag, view, overlay and decoration IDs must be simple IDs.
+- Kind, edge kind, tag, view, overlay and decoration IDs and the local names of installed packs must be simple IDs.
 
 ### 6.2 Generation (editor and operations)
 
@@ -556,7 +634,7 @@ Edge IDs: `slug(fromNode) + "-" + slug(toNode)` (node IDs only, without port or 
 ### 6.4 Renaming
 
 `rename_id {type: node | edge | view, old, new}` is an explicit atomic refactor. All files are written together (temporary files, then rename).
-- **Node:** the block label, every reference in all writable model files, selectors, `of` and `node.<id>` rules in `views.hcl`, and keys and values (`in:`, `attach:`, `order:` entries, `lift:` keys) in every layout file.
+- **Node:** the block label, every reference in all writable model files, selectors, `of`, `node.<id>` rules and `node` blocks in `views.hcl`, and keys and values (`in:`, `attach:`, `order:` entries, `lift:` keys) in every layout file.
 - **Edge:** the block label, `edge.<id>` selectors and rules in `views.hcl`, and `edge_hints` keys in every layout file.
 - **View:** the block label and the layout file's name.
 
@@ -585,11 +663,11 @@ All geometry is computed in the browser (section 2.3).
 
 ### 7.2 Sizes
 
-1. Pinned `w` / `h` in the layout, if present.
+1. Pinned `w` / `h` in the layout, if present; they override `min_w`, `min_h` and `max_w`. A pinned width sets where the label wraps: the shape's text area less twice `padding` (for a container with `label_side = "left"`, the pinned height less twice `padding`); a pin on the axis a stretched `stack` sets (section 7.3) does not count, and the label wraps as if unpinned. A size too small for the label, icon or rows draws them past the box, which a picture's bounds include, and gives a warning.
 2. Otherwise measured content: label (wrapped at `max_w`), icon, rows, plus `padding`; never smaller than `min_w` / `min_h`.
 3. Shapes with `stretch = "uniform"` keep their aspect ratio when resized.
 4. Containers without a pinned size fit their label, padding, and children (from the content origin to the furthest child edge).
-5. A container with a pinned size too small for its children is drawn with a warning outline; children are not clipped.
+5. A container with a pinned size too small for its children, from its content origin to the furthest child edge plus `padding`, is drawn with a warning outline; children are not clipped.
 6. A collapsed container is sized as a leaf node by rules 1–2, using this view's pinned size if any.
 
 ### 7.3 Container layout policies
@@ -640,10 +718,10 @@ Routing:
 - Leaf nodes, collapsed containers and the labels of expanded containers are obstacles, except an edge's own endpoints. Expanded containers are not: edges cross container borders, so an edge between two swimlanes can pass through the lanes between them.
 - An `auto` port faces the other end of the first edge, by ID, that uses it; a port with side `auto` that no drawn edge uses has no position.
 - An edge end at a leaf node without a port or side hint is routed in two passes: the first from the node's center finds the side the edge enters by; the edges entering one side are then spread evenly along it, ordered by where their other ends lie, and routed again from those points. An edge whose two spread ends face each other less than two grid units apart is straightened. Ends are moved onto the outline of non-rectangular shapes.
-- An end with a direction (a port, a row, a side hint, a spread end, an end at a container) leaves its side at a right angle: it is routed from a point just outside the router's clearance in that direction, joined to the end by a straight segment, which is longer at an end whose marker is longer than `arrow`, so the marker lies on one straight segment with some line beyond it. This also holds for `polyline` edges. When the router's nudging leaves such a segment of an orthogonal route at an end with a marker or a start or end label shorter than that (for a label, a line of its text and a few pixels), the next segment is moved out to make it that long, and further while it would lie on another edge, unless that would cross a leaf node.
-- An inner segment of an orthogonal route that runs along a container's border, closer than one grid unit, is moved one grid unit away from it, unless that would cross a leaf node, so an edge is never drawn on top of a border.
+- An end with a direction (a port, a row, a side hint, a spread end, an end at a container) leaves its side at a right angle: it is routed from a point just outside the router's clearance in that direction, joined to the end by a straight segment, which is longer at an end whose marker is longer than `arrow`, so the marker lies on one straight segment with some line beyond it. Where a longer segment would end within the router's clearance of a leaf node or a container's label, it stops at the clearance, but is never shorter than for `arrow`: the route stays in the gap, and a marker longer than the gap reaches past the turn. This also holds for `polyline` edges. When the router's nudging leaves such a segment of an orthogonal route at an end with a marker or a start or end label shorter than that (for a label, a line of its text and a few pixels), the next segment is moved out to make it that long, and further while it would lie on another edge, unless that would cross a leaf node or a container's label or take the route off a `via`.
+- An inner segment of an orthogonal route that runs along a container's border, closer than one grid unit, is moved one grid unit away from it, unless that would cross a leaf node or a container's label or take the route off a `via`, so an edge is drawn on top of a border only where a `via` puts it there.
 - An edge end at an expanded container without a port starts on the container's side that faces the other end, or, when the other end is inside the container, on its nearest side, at the point nearest the other end.
-- Hints: `from_side` / `to_side` attach the end at the middle of that side; `via` waypoints, in canvas coordinates, are passed in order; `label_pos` (0–1 along the path) places the middle label. Without `label_pos` the middle label goes to the first of the points at 0.5, 0.4, 0.6, 0.3, 0.7, 0.2 and 0.8 of the path, first on the path and then beside it (beside it first when the path is too short to hold the label), where it overlaps no leaf node, container label, marker or earlier label and crosses no other edge; if there is none, where it overlaps least.
+- Hints: `from_side` / `to_side` attach the end at the middle of that side; `via` waypoints, in canvas coordinates, are passed in order, each exactly, on every route but a `straight` one, which ignores them. A waypoint wins over what this section says about stubs and borders: a route that turns back along one line turns at the waypoint, though a back-and-forth with no waypoint on it is drawn as one line; where a route doubles back at one, the leg arriving runs beside the leg leaving and joins it at the waypoint; and a waypoint on the straight segment at an end, nearer than that segment's length, ends the segment there, so the route turns under a long marker; `label_pos` (0–1 along the path) places the middle label. Without `label_pos` the middle label goes to the first of the points at 0.5, 0.4, 0.6, 0.3, 0.7, 0.2 and 0.8 of the path, first on the path and then beside it (beside it first when the path is too short to hold the label), where it overlaps no leaf node, container label, marker or earlier label and crosses no other edge; if there is none, where it overlaps least.
 - Start and end labels are placed before middle labels, each next to its end: beside the route's last segment, clear of the widest marker, starting a few pixels outside the node and extending away from it; on one side of the segment, else the other, then both sides moved one and two labels further out, taking the first that overlaps nothing above, crosses no edge and has no other edge within a few pixels (where it would read as that edge's label), else the one that overlaps least.
 - A self-loop whose ends are the node itself (no port, row, side hint or `via`) is not routed: it leaves a vertical side and enters a horizontal one around one corner of the node, two grid units out (more for long markers). Each takes the corner, of those its node's other loops have not taken, where it and the room its end labels need overlap the least other nodes and edges, clockwise from the top right on ties; a fifth loop starts again one reach further out. Where edges are spread along a side a loop's end is on, the loop's end takes the slot nearest its corner among them. Other self-loops are routed like any edge.
 - While nodes are dragged, only the edges with one end on a moving node are routed again, each frame, by a libavoid router that keeps every leaf obstacle and those edges between frames and moves the dragged obstacles; an end at a leaf without a port, row or side hint is routed from the leaf's center and clipped to its box, any other end keeps the point and side it is drawn at and moves with its node. Edges between two moving nodes move with them. When one frame's routing takes longer than 8 milliseconds, the rest of the drag draws those edges as lines between their ends. These routes are previews: the drawing after the drop routes every edge as this section says.
@@ -710,7 +788,7 @@ Each requirement has acceptance criteria (AC).
 
 ### A. Project and language
 
-**FR-1 Load project.** Parse `dg.hcl`, packs (built-in and listed), project-local spec and style, model files, `views.hcl`, layout files. Evaluate HCL functions `port_range` and `file`.
+**FR-1 Load project.** Parse `dg.hcl`, `dg.lock`, packs (built-in, installed and listed), project-local spec and style, model files, `views.hcl`, layout files. Evaluate HCL functions `port_range` and `file`.
 - AC: syntax errors report file, line, column, message.
 - AC: missing optional files are not errors.
 - AC: a layout file is an error at its line and column (the line only, for YAML syntax errors) when it is not one YAML document, lacks `version: 1`, has unknown fields, values of the wrong type, a negative `w` or `h`, or IDs with a raw `:` or `#` or another escape than those of section 4.6. Port names in layout files are encoded like IDs.
@@ -725,15 +803,18 @@ Each requirement has acceptance criteria (AC).
 - unknown style properties or invalid style values;
 - decorations without a field their type requires, with a field it does not take, with invalid values, or whose picture cannot be read (section 5.7);
 - `of` or `collapse` naming a non-container;
-- layout files with no matching view definition.
+- layout files with no matching view definition;
+- a `pack` block with no directory, or with no `dg.lock` entry or one whose `source` or `version` differs (the detail names `dg pack install`); `packs` listing an installed pack's directory;
+- two installed packs that yield one name; an installed pack's style label outside its own names, `extends` outside its own and `generic`'s kinds, or `file` outside its directory (section 4.7).
 
 Warnings:
 - layout entries naming IDs that no longer exist, and `lift:` hints of lifted edges the view does not draw (orphans);
 - style labels naming undefined kinds; selectors that match nothing;
+- an installed pack whose files no longer match their hash in `dg.lock`, so a patched pack still loads but is visible; a style or edge style on one tag in two installed packs;
 - stale frames (section 7.1);
 - `x`/`y` on nodes a `stack` or `grid` container places (section 7.3);
 - `order` lists on containers that are not `stack` or `grid`, and entries of an `order` that name a node twice or a node that is not the container's child;
-- pinned containers too small for their children (computed at render time; reported by the editor and by `dg export`).
+- pinned containers too small for their children, and pinned nodes too small for their labels, icons or rows (computed at render time, so reported by the editor, `dg export` and the MCP tool, not by `dg check`).
 
 Information: a kind, edge kind, shape or style overridden by a later pack or the project (section 4.1).
 
@@ -748,7 +829,7 @@ When a model file does not parse, references, selectors and layout entries are n
 
 ### B. Resolution (Go)
 
-**FR-4 Resolve a view.** Produce the resolved view: visible nodes with kind, label, merged style (section 8.4), frame, ports, rows, pin data from the layout (relative coordinates, order lists), collapse state, drill-down targets, read-only flags; visible and lifted edges with labels, style, hints; decorations with their defaults; overlays with member IDs and style; breadcrumbs, the view's `direction` and its `of`.
+**FR-4 Resolve a view.** Produce the resolved view: visible nodes with kind, label (the view's, marked as such, or the model's), merged style (section 8.4), frame, ports, rows, pin data from the layout (relative coordinates, order lists), collapse state, drill-down targets, read-only flags; visible and lifted edges with labels, style, hints; decorations with their defaults; overlays with member IDs and style; breadcrumbs, the view's `direction` and its `of`.
 - AC: no absolute coordinates are computed in Go.
 - AC: lifting and merging follow section 8.3 exactly.
 
@@ -765,7 +846,7 @@ When a model file does not parse, references, selectors and layout entries are n
 ### D. Editor
 
 **FR-10 Serve (`dg serve`).** HTTP server, open the browser, WebSocket protocol:
-- server → client: `model` (`{model}`: what the editor edits: the packs, kinds, edge kinds and tags `dg vocabulary` prints, each kind with its default style and the custom shapes those styles name, for the palette's pictures, and every node, with its kind, label, parent, tags, properties, instance ports, rows and whether a read-only file defines it, and every edge, with its ends, kind, labels and tags), sent before a client's first snapshot and before any later snapshot when it changed since the client's last, and alone when the model changed but the drawing did not; `snapshot` (`{views, resolved}`: the views' IDs and titles and the resolved view), `diagnostics`, `history` (`{undo, redo}`: whether the session has a change to undo and to redo), `ack` (`{results, files, warnings}`: the operation's results as `dg op --json` gives them, including generated IDs, and the files written), `error` (`{message, diagnostics?}`, the diagnostics of a refused operation);
+- server → client: `model` (`{model}`: what the editor edits: the packs, kinds, edge kinds and tags `dg vocabulary` prints, each kind with its default style, without its pictures, and every node, with its kind, label, parent, tags, properties, instance ports, rows and whether a read-only file defines it, and every edge, with its ends, kind, labels and tags), sent before a client's first snapshot and before any later snapshot when it changed since the client's last, and alone when the model changed but the drawing did not; `pictures` (`{kinds, shapes}`: each kind's default `icon` and `image` and the custom shapes the kinds' default styles name, for the palette), sent before a client's first `model` and before any later one when they changed since the client's last; `snapshot` (`{views, resolved}`: the views' IDs and titles and the resolved view), `diagnostics`, `history` (`{undo, redo}`: whether the session has a change to undo and to redo), `ack` (`{results, files, warnings}`: the operation's results as `dg op --json` gives them, including generated IDs, and the files written), `error` (`{message, diagnostics?}`, the diagnostics of a refused operation);
 - client → server: `op` (`{op}`, an FR-12 operation object, a batch included), `select-view` (`{view}`), `undo`, `redo`. Each may carry a whole number `seq`, which the `ack` or `error` answering it repeats, also when the rest of the message is not valid. Selecting a view that is not defined is answered with `error`. An unknown message type or field is an `error`.
 - After an operation, undo or redo that wrote files, every client gets its new `snapshot` and then the `history`, before the `ack`; a client gets the `history` after each `select-view` too. The editor sends nothing while it waits for an answer and for the drawing it brings, or while the project has errors.
 - `dg serve` listens only on a loopback address and answers only requests whose `Host` is one, so another site cannot reach it by rebinding a host name; it has no authentication.
@@ -794,8 +875,8 @@ When a model file does not parse, references, selectors and layout entries are n
   - Palette: the kinds of the loaded packs. A kind dragged onto the canvas or into an expanded container is created there with `create_node` (`view`, `parent` and `x`, `y` in its frame, or `before` in a `stack` or `grid`; within a grid unit of the side of a stack's child, between it and the next, it goes into the stack itself, so a lane can be added between lanes); one chosen by click or Enter is created in the middle of what the canvas shows, or, where a node is already there, at the first free place to its right. The new node is selected with its label editor open; the creation and the label typed are two gestures, so two undo steps.
   - "Add node…" searches the model's nodes the view does not draw, by ID or label, and shows one (`show_node`).
   - Connect mode (the toolbar's Connect, or C; Escape leaves it): a drag from a node, a port (within a few pixels of it) or a table's row to another draws an edge (`connect` with `view`) of the kind chosen beside the button.
-  - Labels: a double-click on a node, or F2 or Enter on the selection, edits its label in place (Enter commits, Shift+Enter breaks the line, Escape cancels); on an edge's middle label it edits that.
-  - Inspector, beside the canvas: a node's label, kind, tags, its kind's properties (a field per declared property, typed: text, number, or a choice of unset, true and false), its instance ports with add and remove, and the rows of a node whose kind has rows (compartments of rows with key, name and type, sent together); an edge's kind, labels and tags; a decoration's text, attach or detach and promote. Each field sends one operation when it changes, and the focus stays where it went.
+  - Labels: a double-click on a node, or F2 or Enter on the selection, edits its label in place (Enter commits, Shift+Enter breaks the line, Escape cancels), the view's when the view has one for the node, emptying which draws the model's again; on an edge's middle label it edits that.
+  - Inspector, beside the canvas: a node's label, its label in this view (`set_view_label`; left empty, the view draws the model's), kind, tags, its kind's properties (a field per declared property, typed: text, number, or a choice of unset, true and false), its instance ports with add and remove, and the rows of a node whose kind has rows (compartments of rows with key, name and type, sent together); an edge's kind, labels and tags; a decoration's text, attach or detach and promote. Each field sends one operation when it changes, and the focus stays where it went.
   - Copy and paste: Ctrl/⌘+C copies the selected nodes with the drawn nodes inside them, their pinned sizes and ports; Ctrl/⌘+V pastes them with the top left corner of their box at the pointer, into the container under it, each paste at the same point a grid unit further.
   - Delete or Backspace deletes the selection from the model, or a decoration from the view.
   - Context menu (right button, Shift+F10 or the menu key; arrow keys move through it): for nodes, edit label, copy, paste, hide from view (`hide_node`, which hides what they hold too), delete from model, delete with contents (recursive), rename ID, add port, the views that open the node's inside, and the layout actions; for an edge, edit label, rename, delete and reset route; for a decoration, promote, attach or detach, delete; on the canvas, paste here, add node and add text. An item that does not apply is left out, one refused for a reason, such as a read-only file, is shown disabled with the reason.
@@ -809,7 +890,7 @@ When a model file does not parse, references, selectors and layout entries are n
 **FR-20 Look and guidance.** How the editor of FR-10 and FR-11 presents itself, so that someone who has not read the reference finds each gesture.
 - **Theme.** Colors, spacing, type sizes and radii are CSS custom properties defined once, in `web/src/theme.css`; every control uses them, and none keeps the browser's default look. A light and a dark theme follow `prefers-color-scheme`; in the VS Code panel they follow VS Code's theme, whose kind (`light`, `dark`, `high-contrast`) the extension passes to the frame when it opens and again when it changes; VS Code's light high-contrast theme is `light`. The theme colors the editor and the canvas around the drawing, never the drawing: its colors are the project's styles, so the paper stays white and exports do not change.
 - **Toolbar.** One row of groups, in order: the view (switcher, breadcrumbs, New view…); history (undo, redo); create (Add node…, Connect with the edge kind it draws, labeled "Edge: <kind>", Decoration…); arrange (Unpin, a menu of align and distribute); zoom (out, the level, in, fit); the palette and inspector toggles; Export; and `?`. Buttons are icons with a tooltip that names the action and its shortcut. A disabled control stays focusable, and its tooltip says what enables it ("Select two nodes or more"). Groups that do not fit the width go into an overflow menu at the end of the row, last group first; breadcrumbs that do not fit are shortened, each with its whole title in a tooltip.
-- **Palette.** Each kind shows a small picture of its shape in its default style, on the white of the paper, drawn by the canvas's renderer, beside its name. Kinds are grouped under their pack's name, in load order, the project's own last under "Project"; the filter matches names and hides empty groups.
+- **Palette.** Each kind shows a small picture of its shape in its default style, on the white of the paper, drawn by the canvas's renderer, beside its name, without an installed pack's prefix. Kinds are grouped under their pack's name, in load order, the project's own last under "Project", and within a pack by `category` (section 4.2), in sorted order, kinds without one first. A pack of more than 30 kinds starts with its categories collapsed, and a picture is drawn when its group opens, so a pack of a thousand kinds costs nothing until it is used. The filter matches names, with the prefix or without, and categories; it opens the groups with a match and hides empty ones.
 - **Canvas.** A view opens fitted: centered, at the largest zoom up to 100% that shows it whole. Fit (Shift+1) does that again and Zoom to selection (Shift+2) does it for the selection; the zoom level opens a menu of 50%, 100%, 200% and those two. The room above the drawing keeps a fitted view clear of the messages over the canvas.
 - **Empty and broken.** A view without nodes shows in its middle "Drag a kind from the palette, or click one, to add a node", with the palette shown. A project that has errors and no last good drawing shows its errors in the middle of the canvas; "showing the last good drawing" appears only when there is one.
 - **Diagnostics.** A bar under the toolbar, shown while there are diagnostics, counts errors and warnings ("2 errors, 1 warning") and expands to list them, each with its severity's icon, its file and line, and its message; information is listed only after "Show information". The bar overlays the canvas rather than moving it. In the VS Code panel, a click on a diagnostic opens its file at its position.
@@ -831,8 +912,9 @@ When a model file does not parse, references, selectors and layout entries are n
 |---|---|
 | `batch {ops}` | apply the operations in order, atomically, as one undo step; validation runs once, on the result |
 | `create_node {kind, id?, label?, parent?, view?, x?, y?, before?}` | append `node` block (without `kind` when it is `node`, the default); if `view` given, add `node.<id>` to its `include` when its selectors would not show the node (refused if the view still does not, because of `exclude` or a collapse) and, with `x`,`y`, pin it there (relative to the new node's frame); where a `stack` or `grid` container places it in the view, write the container's `order` with it before sibling `before`, else last |
-| `delete_node {id, recursive?}` | remove the block, its edges, its layout entries, the decorations attached to it or placed in it, its lifted-edge hints, and its entries in view selectors and `node.<id>` rules; children move to its parent (unpinned), or are deleted too with `recursive`; refused while a view has `of` on it |
+| `delete_node {id, recursive?}` | remove the block, its edges, its layout entries, the decorations attached to it or placed in it, its lifted-edge hints, and its entries in view selectors, `node.<id>` rules and `node` blocks; children move to its parent (unpinned), or are deleted too with `recursive`; refused while a view has `of` on it |
 | `set_label {id, label}` | change `label` |
+| `set_view_label {view, id, label?}` | write the `node` block of the view with `label`; without `label`, remove it |
 | `set_parent {id, parent?}` | set `parent`, or remove it when `parent` is empty or omitted; layout entries keep their frame, which may become stale (section 7.1) |
 | `set_kind {id, kind, type?}`, `set_tags {id, tags, type?}` | change the attribute of a node, or of an edge with `type = edge`; an empty `tags` removes it |
 | `set_props {id, props}` | replace `props` (strings, numbers, booleans); empty removes it |
@@ -873,8 +955,8 @@ Writers of one project are serialized: an operation, undo or redo holds a lock f
 
 ### F. Command line
 
-**FR-14 Export (`dg export --view <id> | --all --format svg|png|gif|json [--out path]`).** Go starts headless Chromium via `chromedp`, loads the embedded app in export mode, waits for geometry and routing, and reads back SVG, a PNG screenshot, a GIF, or JSON geometry (every node's box, port positions, the `y` of each row's line, whose ends are the box's left and right edges, and edge routes in canvas coordinates; and every node's `frame`, omitted for the canvas, and `rel`, its drawn position relative to the frame's content origin, as `move` takes it; a node a `stack` or `grid` container places, which `move` refuses, has `ordered_in`, that container's ID, as `reorder` takes it). With `--all`, `--out` is a directory that receives one `<view>.<format>` file per view, all written together, and nothing is written unless every view resolves. A picture the browser cannot draw fails the export, naming its node.
-- SVG keeps edge animation as CSS, in a `<style>` element. PNG and GIF are screenshots of the drawing on white, one pixel per unit; PNG shows the animation at time 0. GIF holds one half-second animation period as 10 frames of 50 milliseconds, looping forever; each frame is captured with the animation clock set to that frame's time, never the wall clock (the app pauses every animation at that time), and encoded with Go's `image/gif`: one palette of the 255 colors most frequent across the frames, each pixel the nearest of them without dithering, and in every frame after the first the pixels that did not change are transparent. The editor runs the same animation in real time.
+**FR-14 Export (`dg export --view <id> | --all --format svg|png|gif|json [--out path] [--scale n]`).** Go starts headless Chromium via `chromedp`, loads the embedded app in export mode, waits for geometry and routing, and reads back SVG, a PNG screenshot, a GIF, or JSON geometry (every node's box, port positions, the `y` of each row's line, whose ends are the box's left and right edges, and edge routes in canvas coordinates; and every node's `frame`, omitted for the canvas, and `rel`, its drawn position relative to the frame's content origin, as `move` takes it; a node a `stack` or `grid` container places, which `move` refuses, has `ordered_in`, that container's ID, as `reorder` takes it). With `--all`, `--out` is a directory that receives one `<view>.<format>` file per view, all written together, and nothing is written unless every view resolves. A picture the browser cannot draw fails the export, naming its node.
+- SVG keeps edge animation as CSS, in a `<style>` element. PNG and GIF are screenshots of the drawing on white, one pixel per unit, or for PNG `--scale` pixels (from 1 to 8; any other format refuses it), rasterized at that size; PNG shows the animation at time 0. GIF holds one half-second animation period as 10 frames of 50 milliseconds, looping forever; each frame is captured with the animation clock set to that frame's time, never the wall clock (the app pauses every animation at that time), and encoded with Go's `image/gif`: one palette of the 255 colors most frequent across the frames, each pixel the nearest of them without dithering, and in every frame after the first the pixels that did not change are transparent. The editor runs the same animation in real time.
 - AC: output matches the editor (no selection, unpinned nodes not faded, no drill-down badges).
 - The app writes the SVG and JSON from its computed geometry, not by copying a DOM, so the output holds no editor state.
 - AC: JSON geometry lets an agent pin nodes relative to the drawn layout without opening the editor.
@@ -882,6 +964,20 @@ Writers of one project are serialized: an operation, undo or redo holds a lock f
 
 **FR-15 Operations (`dg op <operation> [flags] [--json]`).** Direct mapping of FR-12: each field of an operation is a flag of the same name (`--id`, `--kind`, `--view`, `--x`; lists such as `--tags`, `--include` and `--unset` are repeated; `--props`, `--compartments`, `--overlays`, `--styles` and `--decoration` take JSON), except the ends of `connect` (`--from`, `--from-port`, `--from-row`, `--to`, …), labels (`--start-label`, `--label`, `--end-label`) and the hint of `set_edge_hint` (`--from-side`, `--to-side`, `--via x,y` repeated, `--label-pos`). `dg op batch` reads a JSON list of operations (or one operation) from standard input or `--file`. `dg op --help` lists the operations and `dg op <operation> --help` its flags and JSON form. `--json` prints `{"results", "files", "warnings"}` (warnings the operation added), or `{"error", "diagnostics"}` when it is refused. Exit code 0: applied; 1: refused or invalid; 2: dg failed. `dg vocabulary` prints, as JSON, the kinds (with inherited ports, properties and the `container` and `rows` flags), edge kinds, tags and views the project defines.
 - AC: an agent can build a full model and views using only `dg op`, `dg vocabulary`, `dg check`, and `dg export`.
+
+**FR-21 Packs (`dg pack`).** Installs packs as section 4.7 says. Only this command uses the network or needs `git` on the path, and only when the user runs it.
+- `dg pack add <source>[@<version>] [--as <name>]` installs a pack. With no version it takes the highest `vX.Y.Z` tag, and is refused if there is none. It prints the path of the pack's license files, and warns if there are none.
+- `dg pack update <name> [<version>]` replaces a pack's files, with the same default version.
+- `dg pack remove <name>` removes a pack's directory, block and `dg.lock` entry.
+- `dg pack install` writes every pack in `dg.lock` at its `commit` and refuses a pack whose files do not match its `hash`. It restores packs that a project chose not to commit, and repairs edited ones. It changes neither `dg.hcl` nor `dg.lock`.
+- `dg pack search <text>` lists the index's entries whose name or description holds the text.
+
+A fetch takes one revision into a temporary directory, without submodules, and with `--` before the source; a source that starts with `-` or has another scheme is refused. `dg.hcl` is edited with `hclwrite`, and `dg.lock` and the pack's files are written with it as one atomic write through `internal/ops`, so a failed fetch or a refused pack leaves the project untouched, and a read-only `dg.hcl` fails naming the file. `dg pack` is not an FR-12 operation, since neither the editor nor an agent's `op` reaches the network; as for `dg op`, git is its undo. `add`, `update` and `remove` then print `dg check`'s diagnostics, leaving the files written, and exit 1 on errors. A running `dg serve` picks the change up by FR-13.
+- AC: `add` then `remove` restores `dg.hcl` and `dg.lock` byte for byte; `add` of a tag and of its commit write the same pack files.
+- AC: `update` writes no model, view or layout file; a kind it removed is a `dg check` error at each use.
+- AC: tests fetch from `file://` repositories that they create, with no network.
+- AC: a repository with a hook, a submodule and a script runs none of them and copies only the files of section 4.7; one with a symbolic link is refused.
+- AC: `dg.lock`, `index.json` and `dg pack` arguments are fuzzed.
 
 ### G. Integrations
 
@@ -891,7 +987,7 @@ Writers of one project are serialized: an operation, undo or redo holds a lock f
 **FR-17 Language server (`dg lsp [-C dir]`).** Language Server Protocol over stdio for the HCL files of the project in `dir`, working on unsaved editor buffers: the project is loaded from its files with the open buffers in their place, again after a change to a buffer or a file the editor reports (`workspace/didChangeWatchedFiles`), once no more changes are waiting or a request needs it, so a burst of changes loads it once. Requests before `initialize` and after `shutdown` are refused as the protocol says.
 - diagnostics from FR-2 for every file of the project, layout files included, with the same positions as `dg check` (converted from byte offsets to the protocol's zero-based UTF-16 positions) and the message `summary: detail`. After a change the server sends the diagnostics of each file whose diagnostics changed, an empty list for a file that has none any more. A diagnostic without a file, or about the built-in pack, which an editor cannot open, is put at the start of `dg.hcl`.
 - completion, on text that does not parse too: kinds (a node's `kind`, a kind's `extends`), edge kinds (an edge's `kind`), node IDs in references (after `node.`, quoted IDs in index form), ports after `.port.`, rows after `.row.`, selectors (`all` and the forms of section 4.5, then the kinds, tags, nodes, containers, edge kinds or edges after them), style labels (kinds or edge kinds, `tag.<tag>`, and in a view `node.<id>` or `edge.<id>`), style property names, and the values of the properties that take few (choices, booleans, `none` for colors, shapes with the custom ones). While a file does not parse, the names come from the project as last loaded with every file parsed.
-- hover showing a referenced node's kind and label; go to definition and find references for node, edge, kind, edge kind and view IDs: block labels, references and selectors, `kind` and `extends` values, style labels, and the `place` and `edge_hints` keys of layout files; a view's layout file is a reference to it. The kinds of the built-in pack have no definition to go to.
+- hover showing a referenced node's kind and label; go to definition and find references for node, edge, kind, edge kind and view IDs: block labels, references and selectors, `kind` and `extends` values, style labels, and the `place` and `edge_hints` keys of layout files; a view's layout file is a reference to it. The kinds of the built-in pack have no definition to go to; a prefixed name goes to its definition in the installed pack, where it is written without the prefix.
 - rename of node, edge and view IDs through `rename_id`: the operation is planned on the buffers over the files and writes nothing; the server returns the files it would write, including layout files, as one workspace edit, a layout file renamed with a view as a file rename, and edits only where the text changes. It refuses as the operation does, naming a read-only file, and refuses to start renaming an ID defined in one.
 - formatting through `dg fmt`'s code of a writable file the project loads: an HCL file with `hclwrite.Format`, a layout file regenerated; nothing for a read-only file or one that does not parse, and refused while `dg.hcl` has errors, as `dg fmt` refuses.
 - AC: diagnostics match `dg check` on the same files.
@@ -926,7 +1022,7 @@ Writers of one project are serialized: an operation, undo or redo holds a lock f
 - **Deterministic:** the same files produce byte-identical layout writes and export output.
 - **Diff-friendly:** sorted keys, integer grid coordinates, relative frames so moving a container is a one-line change.
 - **Performance:** 60 frames per second dragging at 200 nodes / 400 edges; `dg check` under 1 second at 1,000 nodes.
-- **Offline:** no network at runtime; fonts and WebAssembly bundled. The playground uses the network only to load its page.
+- **Offline:** no network at runtime; fonts and WebAssembly bundled. The playground uses the network only to load its page, and `dg pack` (FR-21) only when the user runs it.
 - **Single binary:** the web app is embedded in the Go binary.
 
 ---
@@ -934,11 +1030,12 @@ Writers of one project are serialized: an operation, undo or redo holds a lock f
 ## 12. Repository layout
 
 ```
-/cmd/dg/                  # serve, check, fmt, export, op, vocabulary, mcp, lsp
+/cmd/dg/                  # serve, check, fmt, export, op, pack, vocabulary, mcp, lsp
 /cmd/dgwasm/              # the playground's Go half, GOOS=js GOARCH=wasm (FR-19)
 /internal/fsys/           # the file system project and ops use: a directory on disk (os.Root), or memory
 /internal/session/        # the editor session of FR-10 (model, snapshots, operations, undo), whatever carries its messages
-/internal/project/        # dg.hcl, packs, file discovery, read-only rules
+/internal/project/        # dg.hcl, dg.lock, packs, file discovery, read-only rules
+/internal/pack/           # dg pack: fetching, the index, copies (FR-21)
 /internal/spec/           # kinds, edge kinds, inheritance
 /internal/style/          # style blocks, shapes, cascade (section 8.4)
 /internal/model/          # nodes, edges, ports, rows, validation
@@ -1009,6 +1106,10 @@ The order follows two rules. First, export comes before editing: once `dg export
     *Done when:* FR-20's acceptance criteria are tests, and the editor's states (each example, empty, broken, a selection, the context menu, connect mode), in both themes at both widths, have been looked at in screenshots a test writes, which are not goldens.
 15. **M15 — Playground.** FR-19: `internal/fsys` under `internal/project` and `internal/ops`; `internal/session` out of `internal/server`, which keeps the WebSocket, the loopback checks and file watching; `cmd/dgwasm`; the client's second transport; the page with CodeMirror, examples, share links and downloads; `make playground`, and the Pages workflow that publishes it with the documentation.
     *Done when:* FR-19's acceptance criteria are tests: the SVG and operation goldens on the memory files in Go, and a Chromium test on the built site, served as static files with every other host blocked, that opens each example, compares its SVG download with the golden, relabels a node in the canvas and finds the label in the Model editor, undoes it, types an error in each editor and sees its diagnostic, drags a node, shares, and finds the node where it was dropped after loading the link; `dg serve`'s tests pass unchanged over the shared session; the site deploys from `main`.
+16. **M16 — Installed packs.** Section 4.7 and FR-21: `pack` blocks, prefixed names, `dg.lock`, `dg pack`, the index lookup; `category` and the palette's categories; the `pictures` message.
+    *Done when:* FR-21's acceptance criteria are tests; an SVG with a `<script>` and an external `href` runs and loads nothing in the editor or in an export; the `dg check` benchmark includes a pack of 850 kinds with icons and stays under 1 second; `examples/installed-pack`, a pack with art of dg's own, matches its golden SVG.
+17. **M17 — Cloud packs.** The index repository and the `aws`, `gcp` and `azure` packs (section 4.7), each vendor's terms read before its pack is published.
+    *Done when:* `dg pack add` of each pack by its short name works on a release build; an example in each pack's repository matches its golden SVG; `examples/` in this repository holds no vendor's art.
 
 ---
 
@@ -1020,7 +1121,7 @@ The order follows two rules. First, export comes before editing: once `dg export
 - Hyperedge routing for junctions.
 - Duplicate node instances in one view (`db#2`).
 - CUE for the spec layer.
-- Remote packs and importing another repository's model as a read-only module.
+- Importing another repository's model as a read-only module.
 - The language server (FR-17) in the playground: completion, hover and rename in its text editor, from `internal/lsp` built into `dg.wasm`.
 
 ---
@@ -1042,6 +1143,8 @@ The order follows two rules. First, export comes before editing: once `dg export
 | Persistent alignment constraints | no; one-shot align/distribute and container policies | Constraint solver (Penrose-style): unpredictable edits, large effort. |
 | Overlapping groupings | view overlays | Multiple parents: breaks the containment tree. |
 | Per-node colors | tags + style rules; view-level `node.<id>` rules | Style attributes in the model: violates rule 3. |
+| Labels per view | a `node` block in a view, in `views.hcl`, with the label; `set_view_label` | A label by view name in the model: breaks rule 2.2. `label` in a view's `style "node.<id>"` rule: text among style properties, meaningless in a kind or tag rule. A `labels` map on the view: `hclwrite` edits one attribute whole, losing the comments in it, and a rename would rewrite its keys. In the layout file: a label is not geometry, and references there are not validated. |
+| Subtitles of labels | the text after the first `\n`, styled by `sub_text_color`, `sub_font_size` and `sub_font_weight` | A `sublabel` attribute on nodes: a second text in the model, in every view, in `set_label` and in the editor, for what a line break already says. Markup in the label: styling in the model. |
 | Text measurement | browser only; export via headless Chromium | Measuring in both Go and the browser: results drift. |
 | Routes | never stored; hints only | Stored waypoints (draw.io): stale whenever a node moves. |
 | Diagrams where position is data | out of v1 | Forcing them into free placement fits poorly. |
@@ -1053,7 +1156,7 @@ The order follows two rules. First, export comes before editing: once `dg export
 | Operation IDs | an optional `id` on `create_node` and `connect`; generated from the label or ends when omitted | Generated IDs only: an agent cannot refer to a node it creates in the same batch without predicting the generated ID, nor rebuild a model with its IDs. |
 | Concurrent writers | serialized by an advisory lock on the project directory (Windows: a file in the user's cache directory), waited for up to 10 seconds | A lock file in the project: litters the user's repository. No lock, relying on the unchanged-since-read check: two writers can both pass it, and parallel `dg op` runs lost changes while reporting success. |
 | MCP `op` tool schema | the union of every operation's fields, each described per operation; required fields in the tool's description and checked by dg | `oneOf` with one schema per operation: the Anthropic API refuses `oneOf` at the top of a tool's input schema. |
-| PNG and GIF size | one pixel per unit, on white, also for MCP | A `--scale` flag: no use yet; an agent sees the text at the size it is drawn. |
+| PNG and GIF size | one pixel per unit on white, with `--scale` from 1 to 8 on `dg export` for a PNG, for slides and large prints; MCP stays at one pixel per unit, where an agent sees the text at the size it is drawn | A scale for GIF: frames multiply the file's size for a format meant for screens. A device scale factor set on the page: a second setting for what the screenshot's own clip scale does, and it would stay on for the frames of a GIF. |
 | Overlay outline | the convex hull of the padded member boxes, round-cornered (bubble sets are an open decision) | The bounding rectangle: covers far more that is not a member. The union of the padded boxes: separate islands for members apart, which reads as several overlays. A concave hull: its shape depends on a tuning parameter and jumps as nodes move. |
 | Merged lifted edges | one edge labeled `×N`, keyed `lift:<from>:<to>` whatever N | Joining the labels of the merged edges: long and unreadable at three or more. The key of the first edge when N = 1: its hint would follow it out of the lifted edge when a second edge joins. |
 | Breadcrumbs | levels of views leading back to where `X` is drawn, a level of several views one crumb with a menu | Only the views with `of` on ancestors: a container view whose system has no such view leads nowhere. Every view of every level in one row: reads as a path through views that are alternatives. |
@@ -1088,3 +1191,11 @@ The order follows two rules. First, export comes before editing: once `dg export
 | What the playground edits | two text editors, Model and Style, and the canvas; the layout file hidden, one view, the generic pack's kinds | An editor per file of a project (`dg.hcl`, `views.hcl`, `spec.hcl`, packs, layout files): a file tree on the first visit, for what the command line and VS Code already do; the examples that need those files stay there. The layout file shown: coordinates the canvas owns and nobody needs to type. |
 | Text editor of the playground | CodeMirror 6 with dg's own HCL tokenizer | Monaco: several megabytes, and HCL highlighting from the TextMate grammar needs Oniguruma in WebAssembly too. A plain `textarea`: no highlighting and no diagnostics at their positions. |
 | Go compiler for `dg.wasm` | the standard Go toolchain | TinyGo: smaller output, but it implements only part of `reflect` and of the standard library, which `encoding/json`, `go-cty` and `gohcl` lean on, so every upgrade would need checking against it; the standard toolchain's 2 MB compressed is within the budget. |
+| Where the cloud vendors' packs live | repositories of their own, installed with `dg pack`; the binary embeds `generic` alone | Embedded in the binary: the vendors' icons are not openly licensed (Azure's permit diagrams, training and documentation and reserve other rights), an embedded dependency needs a license that allows it, and icon sets would follow dg's releases. |
+| Where an installed pack's files live | a copy in `packs/<name>/`, committed with the project and pinned by `dg.lock` | A cache outside the project, as Terraform or Go modules keep: the same project files would draw by what the cache holds, every clone and CI job would need an install step and the network, and paths would leave the project root, which the loader, language server and file watcher rely on. A symbolic link to a clone: links stay inside the project. Git submodules: each clone needs `--recurse-submodules`, and they give no prefix, lock or file filter. |
+| Names of an installed pack | `<local name>-<name>`, applied at load, the local name chosen by the project | A prefix made of URL and version (`github-com-dg-packs-aws-v1-2-0-vpc`): each update rewrites every reference and cannot rewrite `read_only` files, a fork changes the model, and dropping punctuation is not unique (`github.com/a-b/c`, `github.com/a/b-c`). A prefix the author writes, with a warning on collisions: enforces nothing, and a fork cannot sit beside its original. `aws.vpc`: a dot is not in a simple ID and reads as a path in `kind.aws.vpc`. |
+| Fetching a pack | the user's `git`, one revision, nothing run | `go-git`: a dependency for what the command line does, with credentials for private repositories to implement again. Archives over HTTPS: a URL form per host. |
+| Pack registry | `index.json` in a git repository, fetched as a pack is | A hosted service: a server to run, protect and moderate for a lookup table. |
+| Packs depending on packs | none: a pack extends its own kinds and `generic`'s | Dependencies: a version solver and a diamond problem, for base kinds that a pack can repeat or take from `generic`. |
+| Pack metadata | what the repository already has: the tag, `LICENSE*`, `NOTICE*`, `README*`, and the index's description | A `pack.hcl` manifest: the project gives the name, git the version, and a pack too new for a dg fails `dg check`. |
+| Palette pictures on the wire | a `pictures` message, sent only when they change | Inside `model`: 850 icons of 2.7 KB add 2.3 MB to every model change. |

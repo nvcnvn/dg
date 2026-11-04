@@ -248,6 +248,26 @@
     "column": 15,
     "end_line": 44,
     "end_column": 25
+  },
+  {
+    "severity": "error",
+    "summary": "Undefined node",
+    "detail": "View \"labels\" labels undefined node \"nope\".",
+    "file": "views.hcl",
+    "line": 48,
+    "column": 3,
+    "end_line": 48,
+    "end_column": 14
+  },
+  {
+    "severity": "error",
+    "summary": "Duplicate ID",
+    "detail": "View \"labels\" has two node blocks \"g\"; the first is at line 51.",
+    "file": "views.hcl",
+    "line": 54,
+    "column": 3,
+    "end_line": 54,
+    "end_column": 11
   }
 ]
 exit 1

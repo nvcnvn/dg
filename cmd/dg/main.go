@@ -11,6 +11,7 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"slices"
 	"strings"
 
@@ -32,6 +33,7 @@ commands:
   op          apply an operation to the project's files (dg op --help lists them)
   mcp         serve the Model Context Protocol over standard input and output
   lsp         serve the Language Server Protocol over standard input and output
+  version     print dg's version
 `
 
 // errDiagnostics marks a failure already reported as diagnostics.
@@ -55,6 +57,9 @@ func run(args []string, stdout, stderr io.Writer) int {
 	switch args[0] {
 	case "-h", "-help", "--help", "help":
 		fmt.Fprint(stdout, usage)
+		return 0
+	case "-version", "--version", "version":
+		fmt.Fprintln(stdout, "dg", version())
 		return 0
 	case "check":
 		err = runCheck(args[1:], stdout, stderr)
@@ -91,6 +96,15 @@ func run(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "dg: %v\n", err)
 		return 1
 	}
+}
+
+// version returns the version the Go toolchain stamped in the binary, from the build's module or
+// its Git checkout.
+func version() string {
+	if info, ok := debug.ReadBuildInfo(); ok {
+		return info.Main.Version
+	}
+	return "unknown"
 }
 
 func flags(name string, args []string, stderr io.Writer, define func(*flag.FlagSet)) (dir string, err error) {
@@ -206,17 +220,25 @@ func runFmt(args []string, stdout, stderr io.Writer) error {
 func runExport(args []string, stdout, stderr io.Writer) error {
 	var viewID, format, out string
 	var all bool
+	var scale float64
 	dir, err := flags("export", args, stderr, func(fl *flag.FlagSet) {
 		fl.StringVar(&viewID, "view", "", "view to export (default \""+view.DefaultView+"\")")
 		fl.BoolVar(&all, "all", false, "export every view into the --out directory, one <view>.<format> file each")
 		fl.StringVar(&format, "format", "svg", "output format: svg, png, gif or json")
 		fl.StringVar(&out, "out", "", "output file, or directory with --all (default standard output)")
+		fl.Float64Var(&scale, "scale", 1, "pixels per unit of a PNG, from 1 to 8")
 	})
 	if err != nil {
 		return err
 	}
 	if !slices.Contains([]string{"svg", "png", "gif", "json"}, format) {
 		return fmt.Errorf("export: unknown format %q (want svg, png, gif or json)", format)
+	}
+	if !(scale >= 1 && scale <= 8) {
+		return errors.New("export: --scale is a number from 1 to 8")
+	}
+	if scale != 1 && format != "png" {
+		return errors.New("export: --scale needs --format png")
 	}
 	if all && out == "" {
 		return errors.New("export: --all needs --out, the directory to write into")
@@ -253,12 +275,15 @@ func runExport(args []string, stdout, stderr io.Writer) error {
 	}
 	files := map[string][]byte{}
 	for i, v := range resolved {
-		res, err := export.Render(context.Background(), v, format)
+		res, err := export.RenderScaled(context.Background(), v, format, scale)
 		if err != nil {
 			return internalError{fmt.Errorf("view %s: %w", ids[i], err)}
 		}
 		for _, id := range res.TooSmall {
 			fmt.Fprintln(stderr, p.TooSmall(ids[i], id))
+		}
+		for _, id := range res.Overflowing {
+			fmt.Fprintln(stderr, p.Overflowing(ids[i], id))
 		}
 		data := map[string][]byte{"svg": res.SVG, "png": res.PNG, "gif": res.GIF, "json": res.JSON}[format]
 		if !all && out == "" {

@@ -16,6 +16,14 @@ export interface TextBlock {
   font: Font;
   w: number;
   h: number;
+  // sub styles the lines from from on.
+  sub?: SubStyle & { from: number };
+}
+
+// SubStyle is how a label's lines after its first line break differ from the first.
+export interface SubStyle {
+  font: Font;
+  color?: string;
 }
 
 const graphemes = new Intl.Segmenter('en', { granularity: 'grapheme' });
@@ -56,4 +64,20 @@ export function textBlock(text: string, maxWidth: number, font: Font, m: TextMea
   }
   const w = Math.max(0, ...lines.map((l) => m.width(l, font)));
   return { lines, font, w, h: text === '' ? 0 : lines.length * lineHeight(font.size) };
+}
+
+// labelBlock is textBlock for a node's label: the text after the first line break, if any, is
+// wrapped and drawn in sub.
+export function labelBlock(text: string, maxWidth: number, font: Font, sub: SubStyle | undefined, m: TextMeasure): TextBlock {
+  const cut = text.indexOf('\n');
+  if (!sub || cut < 0) return textBlock(text, maxWidth, font, m);
+  const head = textBlock(text.slice(0, cut), maxWidth, font, m);
+  const rest = textBlock(text.slice(cut + 1), maxWidth, sub.font, m);
+  return {
+    lines: [...head.lines, ...rest.lines],
+    font,
+    w: Math.max(head.w, rest.w),
+    h: head.lines.length * lineHeight(font.size) + rest.lines.length * lineHeight(sub.font.size),
+    sub: { ...sub, from: head.lines.length },
+  };
 }

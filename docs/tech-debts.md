@@ -29,14 +29,15 @@ to remove it.
 ## How dg drives libavoid
 
 - **Where:** `web/src/canvas/avoid.ts` (the local `Avoid` interface, `UNIFY_MAX_EDGES`) and
-  `web/src/route/edges.ts` (`STUB`, `join`, `awayFromBorders`).
+  `web/src/route/edges.ts` (`STUB`, `clearStub`, `join`, `joinLegs`, `awayFromBorders`).
 - **Why:** the package's typings do not match its module (no `destroy`, wrong `ConnEnd`
   overloads), and its WebIDL binds neither `ConnEnd(point, directions)` nor
   `ConnRef::setRoutingCheckpoints` nor `ClusterRef`. Pins with directions on a box's border make
   libavoid about fifty times slower, so every end with a direction is routed from a free point a
-  stub outside it; a `via` route is separate legs; segments along container borders are moved in
-  dg's own code; and libavoid's unifying nudging step, which keeps parallel segments apart but
-  takes minutes on dense views, runs only up to 60 edges.
+  stub outside it, cut short where it would land in an obstacle's buffer, from which libavoid
+  routes straight through the obstacle; a `via` route is separate legs; segments along container
+  borders are moved in dg's own code; and libavoid's unifying nudging step, which keeps parallel
+  segments apart but takes minutes on dense views, runs only up to 60 edges.
 - **Remove when:** `libavoid-js` ships matching typings and binds the calls above, and directional
   pins and the unifying step are fast at 400 edges.
 

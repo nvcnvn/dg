@@ -14,6 +14,7 @@ commands:
   op          apply an operation to the project's files (dg op --help lists them)
   mcp         serve the Model Context Protocol over standard input and output
   lsp         serve the Language Server Protocol over standard input and output
+  version     print dg's version
 ```
 
 <!-- end dg -->
@@ -76,6 +77,7 @@ exits with 1 if there are any.
 | `--all` |  | export every view into the --out directory, one &lt;view&gt;.&lt;format&gt; file each |
 | `--format` | string | output format: svg, png, gif or json (default "svg") |
 | `--out` | string | output file, or directory with --all (default standard output) |
+| `--scale` | float | pixels per unit of a PNG, from 1 to 8 (default 1) |
 | `--view` | string | view to export (default "main") |
 
 <!-- end dg-export -->
@@ -86,7 +88,7 @@ it, without the editor's selection, fading or drill-down badges.
 | Format | Output |
 |---|---|
 | `svg` | an SVG file; animated edges keep their animation as CSS. Text names the font (`Inter, sans-serif`) without embedding it |
-| `png` | a picture on white, one pixel per unit, animations at their start |
+| `png` | a picture on white, one pixel per unit or `--scale` pixels, animations at their start |
 | `gif` | one half-second animation period in 10 frames, looping |
 | `json` | the geometry: each node's box, port positions and row lines, each edge's route, in canvas coordinates; and each node's `frame` and its position `rel` in it, as [`move`](operations.md#move) takes them, or `ordered_in`, the stack or grid that places it |
 

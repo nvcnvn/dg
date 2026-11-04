@@ -16,6 +16,7 @@ draws it.
 - [Network and infrastructure](#network-and-infrastructure)
 - [Incident board: overlays and decorations](#incident-board-overlays-and-decorations)
 - [Shapes and styles](#shapes-and-styles)
+- [Labels: subtitles, and a label per view](#labels-subtitles-and-a-label-per-view)
 
 ## Architecture: a C4 container diagram
 
@@ -37,7 +38,7 @@ node "web-app" {
 }
 ```
 
-`\n` breaks a label into lines; longer lines wrap at the style's `max_w`. The pack's kinds are
+`\n` breaks a label into lines; longer lines wrap at the style's `max_w`, or at a pinned width. The pack's kinds are
 plain declarations, and their look is in its `style.hcl`:
 
 ```hcl
@@ -420,3 +421,38 @@ The view `wiring` pins nodes and a port, and gives edges hints: the sides they l
 by, a point to pass through, and where the label sits.
 
 ![Ports and edge hints](../testdata/export/shapes-wiring.svg)
+
+## Labels: subtitles, and a label per view
+
+[`examples/labels`](https://github.com/nvcnvn/dg/blob/main/examples/labels/views.hcl) draws one
+model twice. The style draws what follows the first line break of a label as a subtitle:
+
+```hcl
+style "node" {
+  font_weight     = 600
+  sub_font_size   = 11
+  sub_font_weight = 400
+  sub_text_color  = "#5F6368"
+}
+```
+
+The view `main` shows the model's labels, and `sizing` gives three nodes labels of its own, with
+no second set of nodes in the model:
+
+```hcl
+view "sizing" {
+  title = "How large it is"
+
+  node "gateway" {
+    label = "Inference gateway\n3 replicas, 2 vCPU each"
+  }
+  node "workers" {
+    label = "Workers\n8 nodes, 8 GPUs each"
+  }
+  node "storage" {
+    label = "Model storage\n200 TB NVMe"
+  }
+}
+```
+
+![The labels example's sizing view](../testdata/export/labels-sizing.svg)
