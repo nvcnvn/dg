@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: "*/package-lock.json"
+      - run: make lint
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: "*/package-lock.json"
+      - run: cd web && npm ci && npm run build && npm test
+      - run: go test ./...
+      - name: VS Code extension test
+        run: |
+          cd vscode && npm ci && cd ..
+          mkdir -p vscode/bin
+          go build -o vscode/bin/dg$([ "$RUNNER_OS" = Windows ] && echo .exe) ./cmd/dg
+          cd vscode && if [ "$RUNNER_OS" = Linux ]; then xvfb-run -a npm test; else npm test; fi

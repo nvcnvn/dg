@@ -107,12 +107,67 @@ embeds both. `make` runs `npm ci` again, which puts back the published files, on
 
 ## Releasing
 
-There is no release automation yet. Any `dg` binary or VSIX distributed to others must have,
-beside it, a source archive of libavoid's corresponding source at the versions it was built
-from: the adaptagrams fork at the tag `ADAPTAGRAMS_TAG` in the `Makefile` names, and `libavoid-js`
-at the tag of the version `web/package-lock.json` names (LGPL-2.1, section 6). When `libavoid-js`
-changes version, set `ADAPTAGRAMS_TAG` to the tag its `tools/generate.py` clones, update the
-versions the README's Licensing section names, and run `make notices`.
+Push a tag `vX.Y.Z` on `main`, with the Marketplace's three numbers and no suffix:
+
+```sh
+git tag v0.1.0 && git push origin v0.1.0
+```
+
+`.github/workflows/release.yml` then runs `make lint test` and `make release VERSION=v0.1.0` on
+Linux, runs `dg check` and `dg export` from each archive on its own platform, publishes the
+GitHub release, and then publishes to each channel below that is set up. `make release` fills
+`dist/` with what the release holds, and works on any machine:
+
+- `dg-<version>-<os>-<arch>.tar.gz` (`.zip` for Windows) for darwin, linux and windows on amd64
+  and arm64, each holding `dg`, `LICENSE`, `THIRD_PARTY_NOTICES` and `README.md`
+  (`make dist-<target>` builds one);
+- `dg-<target>.vsix` for each VS Code target, with the version in `vscode/package.json`, which
+  the workflow sets from the tag;
+- `libavoid-source-….tar.gz`, libavoid's corresponding source: the adaptagrams fork at
+  `ADAPTAGRAMS_TAG` (checked against `ADAPTAGRAMS_COMMIT`) and `libavoid-js` at the version
+  `web/package-lock.json` names. Any `dg` binary or VSIX distributed to others must have this
+  archive beside it (LGPL-2.1, section 6); the release is where the Marketplace, Open VSX and
+  Homebrew copies have it;
+- `SHA256SUMS`, and `dg.rb`, the formula of `.github/homebrew/dg.rb` with the version and
+  checksums filled in, which the release does not hold.
+
+When `libavoid-js` changes version, set `ADAPTAGRAMS_TAG` and `ADAPTAGRAMS_COMMIT` in the
+`Makefile` to the tag its `tools/generate.py` clones, update the versions the README's Licensing
+section names, and run `make notices`.
+
+### Channels
+
+Each channel is set up once, in the repository's Settings → Secrets and variables → Actions; the
+workflow skips a channel whose variable is unset.
+
+**VS Code Marketplace** (variables `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`). The workflow signs in
+to Azure with GitHub's OIDC token as a managed identity and runs `vsce publish
+--azure-credential`; there is no token to store or renew.
+
+1. Create the publisher `nvcnvn`, the `publisher` of `vscode/package.json`, at
+   <https://marketplace.visualstudio.com/manage>, signed in with a Microsoft account.
+2. In the Azure portal, create a user-assigned managed identity (an app registration signs in
+   but the Marketplace refuses it). Under its Federated credentials add one for "GitHub Actions
+   deploying Azure resources": organization `nvcnvn`, repository `dg`, entity type Environment,
+   environment `marketplace`.
+3. Set the variables `AZURE_CLIENT_ID` and `AZURE_TENANT_ID` to the identity's client and tenant
+   IDs.
+4. Find the identity's Marketplace ID: in a workflow run in the environment `marketplace`, after
+   `azure/login` as in the release workflow, run
+   `az rest -u https://app.vssps.visualstudio.com/_apis/profile/profiles/me --resource 499b84ac-1321-427f-aa17-267ca6975798`
+   and take the `id` of its answer. Add that ID to the publisher's Members as a Contributor.
+
+**Open VSX** (variable `OPEN_VSX` = `true`), the registry of VSCodium, Cursor, Windsurf and
+Gitpod. Sign in at <https://open-vsx.org> with GitHub, link an Eclipse account and sign the
+publisher agreement, create an access token, store it as the secret `OVSX_PAT`, and run
+`npx ovsx create-namespace nvcnvn -p <token>` once. After the first release, register the
+workflow as a trusted publisher (Settings → Trusted Publishers: `nvcnvn`, `dg`, `release.yml`)
+and delete the secret; `ovsx` then publishes with the workflow's OIDC token.
+
+**Homebrew** (variable `HOMEBREW_TAP` = `nvcnvn/homebrew-tap`). Create the public repository
+`nvcnvn/homebrew-tap` and a fine-grained token with Contents read and write on it alone, stored
+as the secret `HOMEBREW_TAP_TOKEN`. Each release commits `Formula/dg.rb` there, and users run
+`brew install nvcnvn/tap/dg`.
 
 ## Documentation
 

@@ -1,0 +1,149 @@
+name: Release
+
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: "*/package-lock.json"
+      - run: cd vscode && npm pkg set version="${GITHUB_REF_NAME#v}"
+      - run: make lint test
+      - run: make release VERSION="$GITHUB_REF_NAME"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist
+          if-no-files-found: error
+
+  # Runs each archive on its own platform.
+  smoke:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: ubuntu-latest, target: linux-amd64, ext: tar.gz, export: true }
+          - { runner: ubuntu-24.04-arm, target: linux-arm64, ext: tar.gz, export: false }
+          - { runner: macos-latest, target: darwin-arm64, ext: tar.gz, export: true }
+          - { runner: macos-15-intel, target: darwin-amd64, ext: tar.gz, export: true }
+          - { runner: windows-latest, target: windows-amd64, ext: zip, export: true }
+          - { runner: windows-11-arm, target: windows-arm64, ext: zip, export: false }
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist
+      - run: |
+          archive="dg-$GITHUB_REF_NAME-${{ matrix.target }}"
+          if [ "${{ matrix.ext }}" = zip ]; then unzip -q "dist/$archive.zip"; else tar -xzf "dist/$archive.tar.gz"; fi
+          mv "$archive" smoke
+      - run: smoke/dg check -C examples/c4
+      - if: matrix.export
+        run: smoke/dg export -C examples/c4 --all --format svg --out pictures && ls pictures
+
+  github-release:
+    needs: smoke
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag \
+            --title "dg $GITHUB_REF_NAME" --generate-notes \
+            $(find dist -type f ! -name dg.rb | sort)
+
+  # Signs in to Azure as a managed identity through GitHub's OIDC token; docs/development.md
+  # (Releasing) says how the identity and the variables are set up.
+  vs-marketplace:
+    needs: github-release
+    if: vars.AZURE_CLIENT_ID != ''
+    runs-on: ubuntu-latest
+    environment: marketplace
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+      - run: cd vscode && npm ci && npx vsce publish --azure-credential --skip-duplicate --packagePath ../dist/*.vsix
+
+  open-vsx:
+    needs: github-release
+    if: vars.OPEN_VSX == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist
+      - env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: |
+          [ -n "$OVSX_PAT" ] || unset OVSX_PAT
+          cd vscode && npm ci && npx ovsx publish --skip-duplicate --packagePath ../dist/*.vsix
+
+  homebrew:
+    needs: github-release
+    if: vars.HOMEBREW_TAP != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist
+      - env:
+          TAP: ${{ vars.HOMEBREW_TAP }}
+          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          git clone -q "https://x-access-token:$TAP_TOKEN@github.com/$TAP" tap
+          mkdir -p tap/Formula
+          cp dist/dg.rb tap/Formula/dg.rb
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/dg.rb
+          git commit -q -m "dg $GITHUB_REF_NAME"
+          git push -q

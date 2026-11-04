@@ -1,6 +1,6 @@
 # The Go packages embed web/dist, so build the web app before any go command.
 
-.PHONY: all build web test lint test-vscode test-vsix vsix vsix-all notices
+.PHONY: all build web test lint test-vscode test-vsix vsix vsix-all dist-all release notices
 
 all: lint test build
 
@@ -37,9 +37,11 @@ lint: web vscode/node_modules
 notices: web/node_modules vscode/node_modules
 	@$(NOTICES) > THIRD_PARTY_NOTICES
 
-# The adaptagrams tag from which tools/generate.py of the libavoid-js version in
+# The adaptagrams tag, and its commit, from which tools/generate.py of the libavoid-js version in
 # web/package-lock.json builds libavoid (its ADAPTAGRAMS_VERSION).
-ADAPTAGRAMS_TAG = v1.0.4 (commit dd3236536399e5297b353d02c0b751eeaaf63aee)
+ADAPTAGRAMS_TAG = v1.0.4
+ADAPTAGRAMS_COMMIT = dd3236536399e5297b353d02c0b751eeaaf63aee
+LIBAVOID_JS_VERSION = $(shell node -p "require('./web/package-lock.json').packages['node_modules/libavoid-js'].version")
 
 define NOTICES
 { \
@@ -54,7 +56,7 @@ define NOTICES
 		while read -r mod version dir; do notice "$$mod $$version" "$$(licenses "$$dir")"; done; \
 	for dir in $$(cd web && npm ls --omit=dev --all --parseable | tail -n +2 | LC_ALL=C sort) $$(cd vscode && npm ls --omit=dev --all --parseable | tail -n +2 | LC_ALL=C sort); do \
 		notice "$$(node -p "const p = require('$$dir/package.json'); p.name + ' ' + p.version")" "$$(licenses "$$dir")"; done; \
-	printf '\n%s\n%s\n\n' '--------------------------------------------------------------------------------' "libavoid from adaptagrams $(ADAPTAGRAMS_TAG), in libavoid-js $$(node -p "require('./web/node_modules/libavoid-js/package.json').version")"; \
+	printf '\n%s\n%s\n\n' '--------------------------------------------------------------------------------' "libavoid from adaptagrams $(ADAPTAGRAMS_TAG) (commit $(ADAPTAGRAMS_COMMIT)), in libavoid-js $$(node -p "require('./web/node_modules/libavoid-js/package.json').version")"; \
 	echo 'Copyright (C) 2004-2015 Monash University. Author: Michael Wybrow.'; \
 	echo "Parts of geometry.cpp: Copyright (C) 1998 Joseph O'Rourke."; \
 	echo; \
@@ -81,10 +83,13 @@ HOST_TARGET := $(subst windows,win32,$(shell go env GOOS))-$(subst amd64,x64,$(s
 target_os = $(subst win32,windows,$(word 1,$(subst -, ,$1)))
 target_arch = $(subst x64,amd64,$(word 2,$(subst -, ,$1)))
 
+exe = $(if $(findstring win32,$1),.exe)
+go_build = CGO_ENABLED=0 GOOS=$(call target_os,$1) GOARCH=$(call target_arch,$1) \
+	go build -trimpath -ldflags '-s -w' -o $2 ./cmd/dg
+
 vsix-%: web vscode/node_modules
 	rm -rf vscode/bin
-	CGO_ENABLED=0 GOOS=$(call target_os,$*) GOARCH=$(call target_arch,$*) \
-		go build -trimpath -ldflags '-s -w' -o vscode/bin/dg$(if $(findstring win32,$*),.exe) ./cmd/dg
+	$(call go_build,$*,vscode/bin/dg$(call exe,$*))
 	cp LICENSE THIRD_PARTY_NOTICES vscode/
 	mkdir -p bin
 	cd vscode && npm run compile && npx vsce package --target $* -o ../bin/dg-$*.vsix
@@ -95,3 +100,40 @@ vsix-all: $(addprefix vsix-,$(VSIX_TARGETS))
 
 test-vsix: vsix
 	cd vscode && npm run compile && DG_VSIX=../bin/dg-$(HOST_TARGET).vsix node out/test/run.js
+
+# dist-<target> packs dg built for a VS Code platform target, with LICENSE, THIRD_PARTY_NOTICES
+# and README.md, into dist/dg-<version>-<goos>-<goarch>.tar.gz (.zip for Windows).
+VERSION ?= $(shell git describe --tags --always --dirty)
+archive = dg-$(VERSION)-$(call target_os,$1)-$(call target_arch,$1)
+
+dist-%: web
+	rm -rf dist/$(call archive,$*)
+	$(call go_build,$*,dist/$(call archive,$*)/dg$(call exe,$*))
+	cp LICENSE THIRD_PARTY_NOTICES README.md dist/$(call archive,$*)/
+	cd dist && $(if $(call exe,$*),zip -qr $(call archive,$*).zip,COPYFILE_DISABLE=1 tar -czf $(call archive,$*).tar.gz) $(call archive,$*)
+	rm -rf dist/$(call archive,$*)
+
+dist-all: $(addprefix dist-,$(VSIX_TARGETS))
+
+# libavoid's corresponding source (LGPL-2.1, section 6), which a release carries beside the
+# binaries and the packages that hold libavoid.
+LIBAVOID_SOURCE = libavoid-source-adaptagrams-$(ADAPTAGRAMS_TAG)-libavoid-js-v$(LIBAVOID_JS_VERSION)
+
+dist/$(LIBAVOID_SOURCE).tar.gz:
+	rm -rf dist/$(LIBAVOID_SOURCE)
+	git clone -q --depth 1 -b $(ADAPTAGRAMS_TAG) https://github.com/Aksem/adaptagrams dist/$(LIBAVOID_SOURCE)/adaptagrams
+	test "$$(git -C dist/$(LIBAVOID_SOURCE)/adaptagrams rev-parse HEAD)" = $(ADAPTAGRAMS_COMMIT)
+	git clone -q --depth 1 -b v$(LIBAVOID_JS_VERSION) https://github.com/Aksem/libavoid-js dist/$(LIBAVOID_SOURCE)/libavoid-js
+	rm -rf dist/$(LIBAVOID_SOURCE)/*/.git
+	cd dist && COPYFILE_DISABLE=1 tar -czf $(LIBAVOID_SOURCE).tar.gz $(LIBAVOID_SOURCE)
+	rm -rf dist/$(LIBAVOID_SOURCE)
+
+# release fills dist with what a GitHub release holds: the archives, a VSIX per target, libavoid's
+# source, SHA256SUMS, and dg.rb, the Homebrew formula for the archives. The VSIX take the version
+# in vscode/package.json, which the release workflow sets from the tag.
+release: dist-all vsix-all dist/$(LIBAVOID_SOURCE).tar.gz
+	cp $(addprefix bin/dg-,$(addsuffix .vsix,$(VSIX_TARGETS))) dist/
+	cd dist && shasum -a 256 *.tar.gz *.zip *.vsix > SHA256SUMS
+	sed -e 's/@VERSION@/$(VERSION:v%=%)/g' \
+		$(foreach t,darwin-arm64 darwin-amd64 linux-arm64 linux-amd64,-e "s/@$t@/$$(grep ' dg-$(VERSION)-$t.tar.gz$$' dist/SHA256SUMS | cut -d' ' -f1)/") \
+		.github/homebrew/dg.rb > dist/dg.rb
