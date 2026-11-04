@@ -151,22 +151,15 @@ section names, and run `make notices`.
 Each channel is set up once, in the repository's Settings → Secrets and variables → Actions; the
 workflow skips a channel whose variable is unset.
 
-**VS Code Marketplace** (variables `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`). The workflow signs in
-to Azure with GitHub's OIDC token as a managed identity and runs `vsce publish
---azure-credential`; there is no token to store or renew.
+**VS Code Marketplace** (variable `VS_MARKETPLACE` = `true`). The workflow runs `vsce publish
+--oidc`, which trades GitHub's OIDC token for a Marketplace credential; there is no token to store
+or renew.
 
 1. Create the publisher `nvcnvn`, the `publisher` of `vscode/package.json`, at
    <https://marketplace.visualstudio.com/manage>, signed in with a Microsoft account.
-2. In the Azure portal, create a user-assigned managed identity (an app registration signs in
-   but the Marketplace refuses it). Under its Federated credentials add one for "GitHub Actions
-   deploying Azure resources": organization `nvcnvn`, repository `dg`, entity type Environment,
-   environment `marketplace`.
-3. Set the variables `AZURE_CLIENT_ID` and `AZURE_TENANT_ID` to the identity's client and tenant
-   IDs.
-4. Find the identity's Marketplace ID: in a workflow run in the environment `marketplace`, after
-   `azure/login` as in the release workflow, run
-   `az rest -u https://app.vssps.visualstudio.com/_apis/profile/profiles/me --resource 499b84ac-1321-427f-aa17-267ca6975798`
-   and take the `id` of its answer. Add that ID to the publisher's Members as a Contributor.
+2. On the publisher's Trusted Publishing tab, create a policy: repository owner `nvcnvn`,
+   repository `dg`, workflow `release.yml`, environment `marketplace`.
+3. Set the variable `VS_MARKETPLACE` to `true`.
 
 **Open VSX** (variable `OPEN_VSX` = `true`), the registry of VSCodium, Cursor, Windsurf and
 Gitpod. Sign in at <https://open-vsx.org> with GitHub, link an Eclipse account and sign the

@@ -85,11 +85,11 @@ jobs:
             --title "dg $GITHUB_REF_NAME" --generate-notes \
             $(find dist -type f ! -name dg.rb | sort)
 
-  # Signs in to Azure as a managed identity through GitHub's OIDC token; docs/development.md
-  # (Releasing) says how the identity and the variables are set up.
+  # Trades GitHub's OIDC token for a Marketplace credential; docs/development.md (Releasing) says
+  # how the publisher's Trusted Publishing policy is set up.
   vs-marketplace:
     needs: github-release
-    if: vars.AZURE_CLIENT_ID != ''
+    if: vars.VS_MARKETPLACE == 'true'
     runs-on: ubuntu-latest
     environment: marketplace
     permissions:
@@ -104,12 +104,7 @@ jobs:
         with:
           name: dist
           path: dist
-      - uses: azure/login@v3
-        with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          allow-no-subscriptions: true
-      - run: cd vscode && npm ci && npx vsce publish --azure-credential --skip-duplicate --packagePath ../dist/*.vsix
+      - run: cd vscode && npm ci && npx vsce publish --oidc --skip-duplicate --packagePath ../dist/*.vsix
 
   open-vsx:
     needs: github-release
