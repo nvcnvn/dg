@@ -355,7 +355,9 @@ func TestDrillDown(t *testing.T) {
 	}
 	err = chromedp.Do(ctx,
 		chromedp.Poll[chromedp.Void](`[...document.querySelectorAll('#views option')].some((o) => o.value === 'security')`),
-		chromedp.Click(chromedp.CSS(`[data-drill="api"]`)),
+		// The redraw of this reload can replace the badge at any moment, and a press and a release
+		// on different elements click neither; a dispatched click is one step.
+		js(`(() => { const b = document.querySelector('[data-drill="api"]'); const r = b.getBoundingClientRect(); b.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: r.x, clientY: r.y })); })()`),
 		chromedp.Poll[chromedp.Void](`!document.getElementById('drill-menu').hidden && document.querySelectorAll('#drill-menu button').length === 2`),
 		chromedp.Click(chromedp.CSS(`#drill-menu button[data-view="security"]`)),
 		shows("security"),
