@@ -6,7 +6,8 @@ Diagram-as-code: HCL model, browser-arranged layout, arrows routed at render tim
 ## Boundaries
 - Go parses, validates, resolves views and writes files. The browser measures text, sizes,
   places, routes and draws. Go never measures text or computes an absolute coordinate; the
-  browser never writes a project file. A feature that seems to need either is in the wrong half.
+  browser's TypeScript never writes a project file (in the playground, Go compiled to WebAssembly
+  writes them, to memory; spec FR-19). A feature that seems to need either is in the wrong half.
 - The model never holds a color, shape, position, view name or file path (spec 2.2). Styling goes
   through kinds, tags and style rules; geometry goes in layout files.
 - Everything Go writes goes through `internal/ops`: model edits with `hclwrite` (never text

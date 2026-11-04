@@ -58,6 +58,8 @@ A **pack** is a spec and style shipped together (for example `generic`, `inferen
 
 Go never measures text and never computes absolute coordinates. This keeps the browser renderer the single source of geometry, so the editor and exported files always match.
 
+In the playground (FR-19) both halves run in one page, Go compiled to WebAssembly. The split stays as the table gives it: Go code resolves and writes, to files in memory; TypeScript measures, places, routes and draws, and never writes a file.
+
 ### 2.4 Pinned and unpinned
 
 - A node **listed** in its view's layout file with a position or size is **pinned**: drawn where stored. An entry holding only a container's `order` pins nothing; a child of a `stack` or `grid` container is placed by its container and is drawn pinned when the container is, and a child of the `of` of a view whose policy places it on the canvas (section 7.3) when the view has pinned nodes.
@@ -113,6 +115,7 @@ Layout files are YAML, because they are machine-owned and rarely edited by hand.
 | Bundled font | Inter (OFL-1.1) from `@fontsource/inter` |
 | Build | Vite, with `tsc` for type checking |
 | Unit tests | Vitest |
+| Text editor of the playground | CodeMirror 6 (`@codemirror/state`, `view`, `language`, `lint`, `commands`; MIT), with dg's own HCL tokenizer as a `StreamLanguage` |
 
 **TypeScript (VS Code extension)**
 
@@ -875,6 +878,23 @@ Writers of one project are serialized: an operation, undo or redo holds a lock f
 - AC: diagnostics match `dg check` on the same files.
 
 **FR-18 VS Code extension (`vscode/`).** A dg project is a folder, at any depth of a workspace folder, that holds `dg.hcl` or that the setting `dg.projectFolders` (resource scope: paths from the workspace folder, compared without letter case on macOS and Windows) lists; a file belongs to the nearest project above it, as `dg -C` loads it. The extension contributes the language `dg`, with no file extensions and with the HCL TextMate grammar under the scope `source.dg`, and gives it to a `.hcl` file of a project when the file opens as `plaintext` or `hcl`, once per opening, so that a language the user or another extension picks stays; every other file keeps its language. It runs its bundled `dg lsp -C <project>` for a project when the first of its `dg` documents opens, with a document selector of the language `dg` under the project's folder and a middleware that keeps the files of the projects inside it from the server. When a folder stops being a project (its `dg.hcl` deleted, the setting changed, its workspace folder removed) its server stops and the documents the extension gave `dg` get back their language; a `dg.hcl` created or a folder added claims the files already open. It activates on `workspaceContains:**/dg.hcl`, and otherwise on `onStartupFinished`, since no activation event follows a setting. The command "dg: Open diagram" is in the Command Palette, as a button in the title bar of an editor of a `dg` document and in its tab's context menu, as Markdown's preview is, and in the Explorer's context menu of a `dg.hcl` file; none of these shows for files that are not dg's, such as Terraform's. It starts `dg serve -C <project> -open=false -stdin` for the project of the file it is run on (from the Command Palette, the active file; else the first `dg.hcl` in the workspace) on a free loopback port and opens a panel beside the text editor, or shows the panel already open for that project; a panel for another project closes. The panel is a webview whose only content is a frame of the served app, so the panel has every editor feature that the browser has, layout editing included. Closing the panel stops the server, and `-stdin` stops it when its standard input closes, however the extension host ends. The extension's icon is `vscode/images/icon.png`, rendered from `icon.svg` beside it (`docs/development.md`). Each VSIX is built for one VS Code platform target with `dg` built for it (`make vsix-<target>`), and holds dg's `LICENSE` and `THIRD_PARTY_NOTICES`, the copyright and license of every component the binary and the VSIX hold, with libavoid's corresponding source named (`make notices` regenerates it; `make lint` fails while it is out of date). The README's Licensing section points users of the binary to the same file, names libavoid's corresponding source, and links the steps in `docs/development.md` for rebuilding dg with a modified libavoid; a distributed binary or VSIX must have an archive of that source beside it (`docs/development.md`, Releasing).
+
+**FR-19 Playground (`web/playground.html`, `cmd/dgwasm`).** A page of the documentation site, at `/playground/`, where a visitor writes a diagram and arranges it with nothing installed: two text editors, Model and Style, beside the canvas, which is the editor of FR-11 with every gesture.
+- **The project.** `model.hcl`, which the Model editor shows; `style.hcl`, which the Style editor shows; and the layout file of the one view, `main`, which the canvas writes and the page never shows. There is no `dg.hcl`, `views.hcl` or `spec.hcl`, so the kinds are the generic pack's and `main` is the default view of every node.
+- **One session, two transports.** `internal/session` holds what `dg serve` does per project: load and reload, `model`, `snapshot`, `diagnostics` and `history` messages, operations, undo and redo (FR-10, FR-12). `dg serve` carries its messages over a WebSocket and gets outside changes from fsnotify (FR-13); `cmd/dgwasm`, built with `GOOS=js GOARCH=wasm` as `dg.wasm`, carries them through two JavaScript functions over a project in memory (`internal/fsys`). The web app's client chooses the transport, so the canvas, editing and undo code are the same in both.
+- **Files in memory.** `internal/project` and `internal/ops` read and write through `internal/fsys`: a directory on disk through `os.Root`, as before, or files in memory with the same atomic writes, sorted listings and errors. The memory files hold one project and live as long as the page.
+- **Text editors.** Both are CodeMirror, with dg's HCL highlighting and the FR-2 diagnostics at their positions; a diagnostic of the layout file is shown above the canvas. Two messages exist only in the playground: the client's `write-file` (`{path, text}`, for `model.hcl` or `style.hcl`), which the page sends 300 milliseconds after the last keystroke and Go handles as FR-13 handles an outside save; and the session's `files` (`{path: text}`), sent after every write, so a node created or relabeled in the canvas shows in the Model editor and an undo restores it there.
+- **Examples.** A menu with every project of `examples/` made of `model.hcl`, `style.hcl`, the layout of `main` and a `dg.hcl` without fields alone (`hello`, `class` and `er`), bundled at build time; the page opens `examples/hello`.
+- **Share.** The Share button puts the three files in the URL's fragment (`#p=`: the files as JSON, compressed with the browser's `CompressionStream("deflate-raw")`, in base64url), which never reaches the host; opening the link loads those files. The page warns when the link is longer than 8,000 characters, which some chat apps cut. The last project is kept in `localStorage` for that browser only.
+- **Downloads.** The SVG of the diagram, which is the SVG `dg export` writes (FR-14), made in the page without headless Chromium; and the project as a `.zip` that `archive/zip` writes in Go.
+- **Nothing to run elsewhere.** After the page loads it uses no network: `dg.wasm`, the web app, the font and the examples are files of the site. It writes only to memory and to the files the visitor downloads.
+- **Licensing.** The page links `THIRD_PARTY_NOTICES` and libavoid's corresponding source, as the README's Licensing section does, since the site distributes libavoid's WebAssembly.
+- **Site.** `.github/workflows/pages.yml` builds the documentation site with GitHub Pages' Jekyll and the playground with `make playground` into `/playground/`, and deploys both on every push to `main`.
+- AC: for every example in the menu, the SVG the playground downloads is byte-identical to the `dg export` golden; a test keeps the menu equal to the examples made of those files alone.
+- AC: the operation goldens of `testdata/ops` come out byte-identical on the memory files and on disk.
+- AC: a share link loads files byte-identical to the ones shared.
+- AC: an edit in either text editor redraws the canvas within 300 milliseconds of being sent, for every example.
+- AC: `dg.wasm` is at most 3 MB compressed with gzip.
 - AC: a `.hcl` file of a project gets the language `dg` and dg's diagnostics; a `.hcl` file outside every project, or one another language was given, keeps its language and gets none; a folder without `dg.hcl` that `dg.projectFolders` lists is a project; a project inside another gets its own server, and the outer server does not answer for its files.
 - AC: saving a model file updates the panel within 300 milliseconds (FR-10).
 - AC: a drag in the panel writes the layout file, which an open text editor shows, and Ctrl/⌘+Z pressed in the panel restores it. A press in the panel's frame focuses it, so its keys reach the editor rather than VS Code.
@@ -887,7 +907,7 @@ Writers of one project are serialized: an operation, undo or redo holds a lock f
 - **Deterministic:** the same files produce byte-identical layout writes and export output.
 - **Diff-friendly:** sorted keys, integer grid coordinates, relative frames so moving a container is a one-line change.
 - **Performance:** 60 frames per second dragging at 200 nodes / 400 edges; `dg check` under 1 second at 1,000 nodes.
-- **Offline:** no network at runtime; fonts and WebAssembly bundled.
+- **Offline:** no network at runtime; fonts and WebAssembly bundled. The playground uses the network only to load its page.
 - **Single binary:** the web app is embedded in the Go binary.
 
 ---
@@ -896,6 +916,9 @@ Writers of one project are serialized: an operation, undo or redo holds a lock f
 
 ```
 /cmd/dg/                  # serve, check, fmt, export, op, vocabulary, mcp, lsp
+/cmd/dgwasm/              # the playground's Go half, GOOS=js GOARCH=wasm (FR-19)
+/internal/fsys/           # the file system project and ops use: a directory on disk (os.Root), or memory
+/internal/session/        # the editor session of FR-10 (model, snapshots, operations, undo), whatever carries its messages
 /internal/project/        # dg.hcl, packs, file discovery, read-only rules
 /internal/spec/           # kinds, edge kinds, inheritance
 /internal/style/          # style blocks, shapes, cascade (section 8.4)
@@ -903,7 +926,7 @@ Writers of one project are serialized: an operation, undo or redo holds a lock f
 /internal/diag/           # diagnostics as dg check, dg serve and the language server report them
 /internal/view/           # views.hcl, selectors, collapse and lifting, layout YAML, resolve (FR-4)
 /internal/ops/            # operation API, hclwrite edits, undo log, atomic writes
-/internal/server/         # HTTP, WebSocket, fsnotify
+/internal/server/         # HTTP, WebSocket, fsnotify: carries internal/session's messages
 /internal/export/         # chromedp, GIF encoding
 /internal/mcp/            # MCP tools (FR-16)
 /internal/lsp/            # language server (FR-17)
@@ -914,13 +937,14 @@ Writers of one project are serialized: an operation, undo or redo holds a lock f
   /src/route/             # ports, hints, route clipping and labels, live routes while dragging
   /src/edit/              # gestures as operations: layout (move, resize, align, reorder, hints, ports) and model (create, paste, connect, re-parent, IDs)
   /src/canvas/            # JointJS shapes and interactions, context menu and keys, in-place text editing, palette, inspector, dialogs, the libavoid adapter, text measurement, SVG and JSON output
-  /src/protocol/          # WebSocket client; ops.ts, the operations' types generated from internal/ops
+  /src/protocol/          # the session's client over a WebSocket or the playground's module; ops.ts, the operations' types generated from internal/ops
+  /src/playground/        # the playground page: text editor, examples, share links, the WebAssembly transport (FR-19)
 /vscode/                  # VS Code extension (FR-18)
 /testdata/                # golden files: hclwrite round-trips, layout output, resolved views
 /examples/                # example projects, one per diagram type (section 13)
 /docs/                    # this specification, and the user documentation (M12)
 /README.md, /_config.yml  # the documentation's home page, and its GitHub Pages configuration
-/.github/workflows/       # CI on Linux, macOS and Windows; the release workflow (M13)
+/.github/workflows/       # CI on Linux, macOS and Windows; the release workflow (M13); the site's build and deployment (M14)
 /.github/homebrew/dg.rb   # template of the Homebrew formula a release writes to the tap
 ```
 
@@ -961,6 +985,8 @@ The order follows two rules. First, export comes before editing: once `dg export
     *Done when:* the pictures are export goldens; the lists that follow the code (operations and flags, commands' flags, the generic pack, style properties) are generated or checked by tests; the getting-started guide's commands other than `dg serve` run in a test that compares their output with the guide; every `dg` command the documentation shows names existing operations and flags; every link resolves on GitHub and on the site, and the site publishes no source code or test data other than the pictures.
 13. **M13 — Releases.** A tag `vX.Y.Z` runs `.github/workflows/release.yml` (`docs/development.md`, Releasing). On Linux, since dg needs no cgo, it cross-builds `dg` for darwin, linux and windows on amd64 and arm64, and packs each with `LICENSE`, `THIRD_PARTY_NOTICES` and `README.md` (`make dist-<target>`); builds a VSIX per VS Code target with the tag's version; archives libavoid's corresponding source; and writes `SHA256SUMS` and a Homebrew formula (`make release`). Each archive is then run on its own platform's runner, and only then does the workflow publish a GitHub release with every file, the VSIX to the VS Code Marketplace and Open VSX, and the formula to the Homebrew tap. A channel whose credentials are not configured is skipped. CI (`.github/workflows/ci.yml`) runs `make lint` on Linux and the Go, web and extension tests on Linux, macOS and Windows.
     *Done when:* `make release` builds every file on Linux; every archive passes `dg check` (and `dg export` where the runner has Chrome) on its platform; a tag publishes the GitHub release, and each configured channel installs the tag's version.
+14. **M14 — Playground.** FR-19: `internal/fsys` under `internal/project` and `internal/ops`; `internal/session` out of `internal/server`, which keeps the WebSocket, the loopback checks and file watching; `cmd/dgwasm`; the client's second transport; the page with CodeMirror, examples, share links and downloads; `make playground`, and the Pages workflow that publishes it with the documentation.
+    *Done when:* FR-19's acceptance criteria are tests: the SVG and operation goldens on the memory files in Go, and a Chromium test on the built site, served as static files with every other host blocked, that opens each example, compares its SVG download with the golden, relabels a node in the canvas and finds the label in the Model editor, undoes it, types an error in each editor and sees its diagnostic, drags a node, shares, and finds the node where it was dropped after loading the link; `dg serve`'s tests pass unchanged over the shared session; the site deploys from `main`.
 
 ---
 
@@ -973,6 +999,7 @@ The order follows two rules. First, export comes before editing: once `dg export
 - Duplicate node instances in one view (`db#2`).
 - CUE for the spec layer.
 - Remote packs and importing another repository's model as a read-only module.
+- The language server (FR-17) in the playground: completion, hover and rename in its text editor, from `internal/lsp` built into `dg.wasm`.
 
 ---
 
@@ -1027,4 +1054,9 @@ The order follows two rules. First, export comes before editing: once `dg export
 | Operation types in the web app | `web/src/protocol/ops.ts`, generated from `internal/ops`' definitions and checked by a test | Written by hand: they drift from the operations. |
 | Spiral clearance | four grid units | Two grid units: with libavoid's buffer around each box no edge fits between two neighbors, and libavoid draws a straight line through them. |
 | Release channels | GitHub releases holding an archive per platform, the VSIX, libavoid's source and checksums; the VSIX on the VS Code Marketplace and Open VSX; a formula in the tap `nvcnvn/homebrew-tap` that installs the release archive; everything built on one Linux runner by the Makefile, each archive run on its own platform before publishing | GoReleaser: a configuration and a tool for archives and checksums the Makefile makes in a few lines, while the VSIX, libavoid's source and the formula from a template stay outside it. homebrew-core: needs a project with users first, and builds from source with Go and Node. A Homebrew cask: casks are for apps, and an unsigned binary in a cask is quarantined by macOS. Building on macOS and Windows runners: cross-compiling needs no cgo, and one machine builds every file the same way. Signing and notarizing for macOS, Authenticode for Windows: paid certificates; the Go linker signs darwin/arm64 binaries ad hoc, and neither Homebrew nor VS Code quarantines what it installs. A Marketplace personal access token: Azure DevOps retired global tokens, so the workflow signs in with an OIDC token. |
-| Documentation site | GitHub Pages' built-in Jekyll, publishing the repository root of `main` with `README.md` as the home page; pictures are the export goldens; lists that follow the code are generated or checked by tests | The site in `docs/` alone: the pictures would be copies of the export goldens, kept equal by one more test, and `README.md` and `docs/index.md` would be two indexes. A static site generator (MkDocs, Hugo, VitePress) or a Pages workflow: build tooling and a toolchain in the repository for navigation the theme gives. |
+| Documentation site | GitHub Pages, built by `.github/workflows/pages.yml`: its Jekyll build of the repository root with `README.md` as the home page, and the playground built by `make playground` at `/playground/`; pictures are the export goldens; lists that follow the code are generated or checked by tests | The site in `docs/` alone: the pictures would be copies of the export goldens, kept equal by one more test, and `README.md` and `docs/index.md` would be two indexes. A static site generator (MkDocs, Hugo, VitePress): build tooling and a toolchain in the repository for navigation the theme gives. Deploying from the branch: the playground is build output, which the repository does not hold. |
+| Where the playground runs | in the visitor's page: Go as WebAssembly beside the web app, a static site on GitHub Pages | Cloudflare Workers: the free plan allows about 10 milliseconds of CPU per request and 3 MB per Worker, and the editor's session would need Durable Objects, state kept for every visitor. `dg serve` per visitor on a server: a machine to pay for, sandbox and protect from abuse, for work the visitor's browser does. Cloudflare Pages: a second host and account for the same static files; worth it only for a domain of its own. |
+| Files of the playground | `internal/fsys`, files in memory in Go | A JavaScript stand-in for Node's `fs`, which Go's `syscall/js` calls under `os`: no change in Go, but it follows the private interface of `wasm_exec.js` and is tested only in a browser. Files in the TypeScript app: TypeScript would write project files. |
+| What the playground edits | two text editors, Model and Style, and the canvas; the layout file hidden, one view, the generic pack's kinds | An editor per file of a project (`dg.hcl`, `views.hcl`, `spec.hcl`, packs, layout files): a file tree on the first visit, for what the command line and VS Code already do; the examples that need those files stay there. The layout file shown: coordinates the canvas owns and nobody needs to type. |
+| Text editor of the playground | CodeMirror 6 with dg's own HCL tokenizer | Monaco: several megabytes, and HCL highlighting from the TextMate grammar needs Oniguruma in WebAssembly too. A plain `textarea`: no highlighting and no diagnostics at their positions. |
+| Go compiler for `dg.wasm` | the standard Go toolchain | TinyGo: smaller output, but it implements only part of `reflect` and of the standard library, which `encoding/json`, `go-cty` and `gohcl` lean on, so every upgrade would need checking against it; the standard toolchain's 2 MB compressed is within the budget. |
