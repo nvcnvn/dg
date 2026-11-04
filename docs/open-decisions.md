@@ -33,19 +33,6 @@ the decision in `docs/spec.md`).
 - **Default:** (a).
 - **Milestone:** M1; revisited in M3.
 
-## Notices of the bare binary and LGPL relinking
-
-- **Question:** `THIRD_PARTY_NOTICES` (spec FR-18) ships in every VSIX, but the `dg` binary alone
-  carries no notices, and libavoid (LGPL-2.1+) must be replaceable by its users. How does a user
-  of the bare binary get the notices, and how does a user swap libavoid?
-- **Options:** (a) a `dg licenses` command printing the embedded notices, plus a flag or environment
-  variable naming a directory with a replacement `libavoid.wasm` and its glue `libavoid-*.js`;
-  (b) notices and instructions in release archives only; (c) both.
-- **Default:** none yet; the binary is not released on its own. The build keeps libavoid
-  replaceable: `libavoid.wasm` and the libavoid-js glue are separate files in `web/dist/assets`
-  (`web/vite.config.ts`). Decide before the first release of the binary.
-- **Milestone:** M1; narrowed in M9.
-
 ## Color syntax in styles
 
 - **Question:** which color values do `fill` and `stroke` accept?
@@ -109,18 +96,6 @@ the decision in `docs/spec.md`).
   bridges routed around non-members; (c) the convex hull, with non-members inside it marked.
 - **Default:** (a); (b) recommended.
 - **Milestone:** M7; not blocking.
-
-## The `hcl` language in VS Code
-
-- **Question:** the extension contributes the language `hcl` and HashiCorp's grammar for every
-  `.hcl` file in every workspace, dg project or not, once installed. With HashiCorp's HCL
-  extension installed, both contribute the grammar `source.hcl`, and VS Code uses one of them.
-- **Options:** (a) as now; (b) a language `dg` for the files of dg projects only, so other `.hcl`
-  files keep whatever highlights them; (c) leave highlighting to HashiCorp's extension, which a
-  user would have to install.
-- **Default:** (a). Both use the same grammar, so the highlighting is the same. Decide before the
-  extension is published to any marketplace.
-- **Milestone:** M9.
 
 ## Drawing a dense view after a drop
 

@@ -2810,7 +2810,18 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 --------------------------------------------------------------------------------
-HCL TextMate grammar, github.com/hashicorp/syntax v0.7.1 (vscode/syntaxes)
+libavoid from adaptagrams v1.0.4 (commit dd3236536399e5297b353d02c0b751eeaaf63aee), in libavoid-js 0.4.5
+
+Copyright (C) 2004-2015 Monash University. Author: Michael Wybrow.
+Parts of geometry.cpp: Copyright (C) 1998 Joseph O'Rourke.
+
+Licensed under the GNU Lesser General Public License 2.1 or later, whose text is under
+libavoid-js above. The corresponding source is the adaptagrams fork at
+https://github.com/Aksem/adaptagrams at that tag, with the patch and build scripts of
+https://github.com/Aksem/libavoid-js at the tag of its version.
+
+--------------------------------------------------------------------------------
+HCL TextMate grammar, github.com/hashicorp/syntax v0.7.1 (vscode/syntaxes), modified by dg: scopeName source.dg
 
 Copyright (c) 2020 HashiCorp, Inc.
 

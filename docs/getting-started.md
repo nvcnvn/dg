@@ -40,7 +40,7 @@ echo 'project "hello" {}' > dg.hcl
 ```
 
 `dg.hcl` is the project file. Every setting in it is optional and the file itself is too, but
-the [VS Code extension](vscode.md) only starts in a folder that has one.
+it is how the [VS Code extension](vscode.md) knows the folder is a dg project.
 
 Save this as `model.hcl`:
 

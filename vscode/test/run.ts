@@ -1,4 +1,6 @@
-// Runs the extension test in VS Code on a copy of examples/c4. VS Code is the one named by
+// Runs the extension test in VS Code on a folder that holds a copy of examples/c4 with a copy of
+// examples/hello inside it, a copy of examples/hello without dg.hcl, and a folder with a .hcl file
+// of no dg project. VS Code is the one named by
 // DG_VSCODE, else VS Code Insiders where macOS installs it, else a build @vscode/test-electron
 // downloads. With DG_VSIX set to a .vsix file, the test runs that package installed, rather than
 // this directory as a development extension.
@@ -18,8 +20,13 @@ async function main(): Promise<void> {
   }
   const root = path.resolve(__dirname, "../..");
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "dg-vscode-"));
-  const workspace = path.join(tmp, "c4");
-  fs.cpSync(path.resolve(root, "../examples/c4"), workspace, { recursive: true });
+  const workspace = path.join(tmp, "workspace");
+  fs.cpSync(path.resolve(root, "../examples/c4"), path.join(workspace, "c4"), { recursive: true });
+  fs.cpSync(path.resolve(root, "../examples/hello"), path.join(workspace, "nodg"), { recursive: true });
+  fs.rmSync(path.join(workspace, "nodg", "dg.hcl"));
+  fs.cpSync(path.resolve(root, "../examples/hello"), path.join(workspace, "c4", "nested"), { recursive: true });
+  fs.mkdirSync(path.join(workspace, "other"));
+  fs.writeFileSync(path.join(workspace, "other", "main.hcl"), 'resource "aws_s3_bucket" "logs" {\n  bucket = "logs"\n}\n');
   const vscodeExecutablePath = process.env.DG_VSCODE ?? (fs.existsSync(insiders) ? insiders : await downloadAndUnzipVSCode());
   const extensionsDir = path.join(tmp, "extensions");
   let extensionDevelopmentPath = root;

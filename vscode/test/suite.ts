@@ -18,10 +18,11 @@ export async function run(): Promise<void> {
   const ext = vscode.extensions.getExtension<API>("nvcnvn.dg");
   assert.ok(ext, "the dg extension is installed");
   const api = await ext.activate();
-  const folder = vscode.workspace.workspaceFolders![0].uri;
+  const top = vscode.workspace.workspaceFolders![0].uri;
+  const folder = vscode.Uri.joinPath(top, "c4");
   const model = vscode.Uri.joinPath(folder, "model.hcl");
   const doc = await vscode.workspace.openTextDocument(model);
-  assert.equal(doc.languageId, "hcl");
+  await waitFor("the language dg for a file of a project with dg.hcl", () => doc.languageId === "dg");
   const editor = await vscode.window.showTextDocument(doc);
 
   // An unsaved edit gets a diagnostic from dg lsp; editing it back clears the diagnostic.
@@ -137,6 +138,58 @@ export async function run(): Promise<void> {
   await waitFor("the text editor to show the new label", () => doc.getText().includes('label = "Customer"\n'));
   frame.close();
   win.close();
+
+  // Only the .hcl files of dg projects get the language dg and its server: a project is a folder
+  // with dg.hcl or one that dg.projectFolders lists. The extension handles documents in the order
+  // they open, so once a later file of c4 is dg, it has passed over the earlier ones.
+  const open = (uri: vscode.Uri) => vscode.workspace.openTextDocument(uri);
+  const barrier = async (file: string) => {
+    const d = await open(vscode.Uri.joinPath(folder, file));
+    await waitFor(`the language dg for ${file}`, () => d.languageId === "dg");
+    return d;
+  };
+  const completes = async (uri: vscode.Uri, before: string) => {
+    const d = await open(uri);
+    const at = d.positionAt(d.getText().indexOf(before) + before.length);
+    return (await vscode.commands.executeCommand<vscode.CompletionList>("vscode.executeCompletionItemProvider", uri, at)).items.map((i) => i.label);
+  };
+  const other = vscode.Uri.joinPath(top, "other", "main.hcl");
+  const otherDoc = await open(other);
+  const otherLanguage = otherDoc.languageId;
+  const hello = vscode.Uri.joinPath(top, "nodg", "model.hcl");
+  const helloDoc = await open(hello);
+  const helloLanguage = helloDoc.languageId;
+  const helloStyle = await open(vscode.Uri.joinPath(top, "nodg", "style.hcl"));
+  await vscode.languages.setTextDocumentLanguage(helloStyle, "ini");
+  await barrier("packs/c4/spec.hcl");
+  assert.notEqual(otherLanguage, "dg");
+  assert.notEqual(helloLanguage, "dg", "a folder without dg.hcl is not a project");
+
+  await vscode.workspace.getConfiguration("dg", top).update("projectFolders", ["nodg"], vscode.ConfigurationTarget.WorkspaceFolder);
+  await waitFor("the language dg for a folder dg.projectFolders lists", () => helloDoc.languageId === "dg");
+  await waitFor("completion from the server of the listed folder", async () => (await completes(hello, "parent = node.")).includes("backend"));
+  assert.equal(helloStyle.languageId, "ini", "a file another language was given keeps it");
+  assert.equal(otherDoc.languageId, otherLanguage, "a file of no dg project keeps its language");
+  assert.equal(vscode.languages.getDiagnostics(other).length, 0, "a file of no dg project gets no dg diagnostics");
+
+  await vscode.workspace.getConfiguration("dg", top).update("projectFolders", undefined, vscode.ConfigurationTarget.WorkspaceFolder);
+  await waitFor("the language a file had before its folder was listed", () => helloDoc.languageId === helloLanguage);
+
+  // A project inside another is a project of its own: its files go to its server only.
+  const nested = vscode.Uri.joinPath(folder, "nested", "model.hcl");
+  const nestedDoc = await open(nested);
+  await waitFor("the language dg for a file of a nested project", () => nestedDoc.languageId === "dg");
+  const labels = await waitFor("completion from the nested project's server", async () => {
+    const ls = await completes(nested, "parent = node.");
+    return ls.includes("backend") && ls;
+  });
+  assert.ok(!labels.includes("banking"), "the outer project's server does not complete in a nested project");
+
+  // A language the user picks for a file of a project stays.
+  const views = await barrier("views.hcl");
+  await vscode.languages.setTextDocumentLanguage(views, "plaintext");
+  await barrier("dg.hcl");
+  assert.equal(views.languageId, "plaintext");
 }
 
 /** devtools connects to a DevTools protocol target. */

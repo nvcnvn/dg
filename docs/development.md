@@ -63,7 +63,7 @@ operations alone.
 make vsix                 # bin/dg-<this platform>.vsix, such as bin/dg-darwin-arm64.vsix
 make vsix-linux-x64       # one target: darwin-arm64, darwin-x64, linux-arm64, linux-x64,
 make vsix-all             #   win32-arm64 or win32-x64; or all of them
-make test-vscode          # starts VS Code on a copy of examples/c4 with the extension from vscode/
+make test-vscode          # starts VS Code on copies of examples with the extension from vscode/
 make test-vsix            # the same test on the package for this platform, installed
 make notices              # regenerate THIRD_PARTY_NOTICES after a dependency changes
 ```
@@ -74,6 +74,45 @@ out of date.
 
 The tests use VS Code Insiders where macOS installs it, else the VS Code that `DG_VSCODE` names,
 else a build `@vscode/test-electron` downloads.
+
+## Replacing libavoid
+
+libavoid (LGPL-2.1-or-later) reaches dg through the npm package `libavoid-js`, whose build scripts
+compile it to WebAssembly with Emscripten in Docker. To build dg with a modified libavoid you need
+Git, Docker, Python 3 and Node with npm:
+
+1. Clone `libavoid-js` at the tag of the version `web/package-lock.json` names, and install its
+   build tools:
+
+   ```sh
+   git clone -b v0.4.5 https://github.com/Aksem/libavoid-js
+   cd libavoid-js
+   npm ci
+   ```
+
+2. Run `python3 tools/generate.py` once. It clones libavoid's source, the adaptagrams fork at the
+   tag its `ADAPTAGRAMS_VERSION` names, into `build/adaptagrams`, patches it, and compiles it.
+3. Change libavoid in `build/adaptagrams/cola/libavoid`.
+4. Run `python3 tools/generate.py` again, which compiles the changed source (it clones and patches
+   only when `build/adaptagrams` is missing), then `npm run build`. `dist/libavoid.wasm` is the
+   WebAssembly module and `dist/index.js` the JavaScript glue.
+5. In dg, run `make web` once, so that `web/node_modules` exists, then copy the two files over
+   `web/node_modules/libavoid-js/dist/libavoid.wasm` and `web/node_modules/libavoid-js/dist/index.js`.
+6. Run `make build` for `bin/dg`, or `make vsix` for the extension's package.
+
+The build keeps them files of their own (`web/vite.config.ts`): `web/dist/assets` gets the module
+unchanged as `libavoid-<hash>.wasm` and the glue minified as `libavoid-<hash>.js`, and the binary
+embeds both. `make` runs `npm ci` again, which puts back the published files, only after
+`web/package.json` or `web/package-lock.json` changes; copy yours again then.
+
+## Releasing
+
+There is no release automation yet. Any `dg` binary or VSIX distributed to others must have,
+beside it, a source archive of libavoid's corresponding source at the versions it was built
+from: the adaptagrams fork at the tag `ADAPTAGRAMS_TAG` in the `Makefile` names, and `libavoid-js`
+at the tag of the version `web/package-lock.json` names (LGPL-2.1, section 6). When `libavoid-js`
+changes version, set `ADAPTAGRAMS_TAG` to the tag its `tools/generate.py` clones, update the
+versions the README's Licensing section names, and run `make notices`.
 
 ## Documentation
 

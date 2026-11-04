@@ -47,5 +47,23 @@ or Venn diagrams.
 
 ## Status
 
-dg has no releases yet: [build it from source](docs/getting-started.md#install). It is licensed
-under the [Apache License 2.0](https://github.com/nvcnvn/dg/blob/main/LICENSE).
+dg has no releases yet: [build it from source](docs/getting-started.md#install).
+
+## Licensing
+
+dg is licensed under the [Apache License 2.0](https://github.com/nvcnvn/dg/blob/main/LICENSE). The
+`dg` binary and the VS Code extension's package also hold the code of others: Go modules, the npm
+packages of the web app and of the extension, libavoid, and the HCL grammar (with its scope name
+changed), each listed with its copyright and license in
+[`THIRD_PARTY_NOTICES`](https://github.com/nvcnvn/dg/blob/main/THIRD_PARTY_NOTICES).
+
+The arrows are routed by libavoid, Copyright (C) 2004-2015 Monash University (author Michael
+Wybrow), parts Copyright (C) 1998 Joseph O'Rourke, under the GNU Lesser General Public License 2.1
+or later. dg uses it compiled to WebAssembly by
+[libavoid-js](https://github.com/Aksem/libavoid-js) 0.4.5 (tag `v0.4.5`), whose build scripts
+compile libavoid from the [adaptagrams fork](https://github.com/Aksem/adaptagrams) at tag `v1.0.4`
+(commit `dd3236536399e5297b353d02c0b751eeaaf63aee`): those two are libavoid's corresponding
+source. You may replace libavoid with a modified version. dg keeps its WebAssembly module and
+JavaScript glue as files of their own, and dg's source is open, so replacing libavoid is
+rebuilding dg with your two files in their place:
+[Development](docs/development.md#replacing-libavoid) gives the steps.

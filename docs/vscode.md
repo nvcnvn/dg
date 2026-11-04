@@ -23,16 +23,35 @@ from the Extensions view's "Install from VSIX…" menu item.
 Each package holds its own `dg` binary, so the extension needs nothing else on the machine, and
 it never uses the network.
 
-## When it starts
+## Which files it handles
 
-The extension starts in a workspace with a folder that has `dg.hcl` at its top. For each such
-folder it runs `dg lsp` on the folder's `.hcl` files, which it highlights as HCL. A project
-without `dg.hcl` works with the command line but not with the extension: add one, even an empty
-`project "name" {}`.
+A folder is a dg project when it holds `dg.hcl`, or when the setting `dg.projectFolders` lists it.
+When a `.hcl` file of a project opens as plain text or as HCL, the extension gives it the language
+dg, highlighted with HashiCorp's HCL grammar, and starts `dg lsp` for the project if it is not
+running yet. Every other file keeps its language, and dg's language server never sees it: `.hcl`
+files outside projects, and files of a project that another extension gave a language of its own,
+such as a Terraform test (`.tftest.hcl`) or a Packer template (`.pkr.hcl`).
 
-Open the project's folder itself (File > Open Folder…), not a folder above it: the extension does
-not start for the repository of dg, whose `dg.hcl` files are in `examples/`. To try it on an
-example, open `examples/c4`, or any other folder of `examples/`, which each have a `dg.hcl`.
+- Projects are found at any depth in the workspace's folders, so you can open a project's folder
+  or a repository that holds several, such as the repository of dg, whose `examples/` each have
+  a `dg.hcl`. A file belongs to the nearest project above it, as `dg -C` would load it: the
+  files of a project inside another go to the inner project's server only.
+- A project without `dg.hcl`, which the command line allows, is listed in the workspace's or the
+  folder's settings, by its path from the workspace folder; on macOS and Windows the letter case
+  of the path does not matter:
+
+  ```json
+  { "dg.projectFolders": ["diagrams", "docs/architecture"] }
+  ```
+
+- When a folder stops being a project, because its `dg.hcl` is deleted or the setting no longer
+  lists it, its server stops and its open files get back the language they had.
+- To read a file of a project as another language, pick it with **Change Language Mode**. The
+  extension does not change it back while VS Code keeps the file loaded, which it does after its
+  editor closes too; once VS Code is reloaded, the file opens as dg again.
+
+The extension starts when the workspace holds a `dg.hcl`, and otherwise once VS Code has
+started, so that it finds the folders of `dg.projectFolders`.
 
 ## Writing HCL
 

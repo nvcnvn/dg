@@ -1,5 +1,6 @@
 {
-  "scopeName": "source.hcl",
+  "scopeName": "source.dg",
+  "comment": "Modified by dg from github.com/hashicorp/syntax v0.7.1: scopeName changed from source.hcl to source.dg. MPL-2.0, see LICENSE.",
   "name": "HashiCorp HCL",
   "uuid": "a14187be-98d8-42c1-ac89-bb5eaccf911e",
   "fileTypes": [

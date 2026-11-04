@@ -37,6 +37,10 @@ lint: web vscode/node_modules
 notices: web/node_modules vscode/node_modules
 	@$(NOTICES) > THIRD_PARTY_NOTICES
 
+# The adaptagrams tag from which tools/generate.py of the libavoid-js version in
+# web/package-lock.json builds libavoid (its ADAPTAGRAMS_VERSION).
+ADAPTAGRAMS_TAG = v1.0.4 (commit dd3236536399e5297b353d02c0b751eeaaf63aee)
+
 define NOTICES
 { \
 	notice() { printf '\n%s\n%s\n\n' '--------------------------------------------------------------------------------' "$$1"; for f in $$2; do cat "$$f"; done; }; \
@@ -50,12 +54,20 @@ define NOTICES
 		while read -r mod version dir; do notice "$$mod $$version" "$$(licenses "$$dir")"; done; \
 	for dir in $$(cd web && npm ls --omit=dev --all --parseable | tail -n +2 | LC_ALL=C sort) $$(cd vscode && npm ls --omit=dev --all --parseable | tail -n +2 | LC_ALL=C sort); do \
 		notice "$$(node -p "const p = require('$$dir/package.json'); p.name + ' ' + p.version")" "$$(licenses "$$dir")"; done; \
-	notice 'HCL TextMate grammar, github.com/hashicorp/syntax v0.7.1 (vscode/syntaxes)' vscode/syntaxes/LICENSE; \
+	printf '\n%s\n%s\n\n' '--------------------------------------------------------------------------------' "libavoid from adaptagrams $(ADAPTAGRAMS_TAG), in libavoid-js $$(node -p "require('./web/node_modules/libavoid-js/package.json').version")"; \
+	echo 'Copyright (C) 2004-2015 Monash University. Author: Michael Wybrow.'; \
+	echo "Parts of geometry.cpp: Copyright (C) 1998 Joseph O'Rourke."; \
+	echo; \
+	echo 'Licensed under the GNU Lesser General Public License 2.1 or later, whose text is under'; \
+	echo 'libavoid-js above. The corresponding source is the adaptagrams fork at'; \
+	echo 'https://github.com/Aksem/adaptagrams at that tag, with the patch and build scripts of'; \
+	echo 'https://github.com/Aksem/libavoid-js at the tag of its version.'; \
+	notice 'HCL TextMate grammar, github.com/hashicorp/syntax v0.7.1 (vscode/syntaxes), modified by dg: scopeName source.dg' vscode/syntaxes/LICENSE; \
 }
 endef
 
 # The VS Code extension test starts VS Code (Insiders where macOS installs it, else DG_VSCODE,
-# else a build it downloads) on a copy of examples/c4, with the extension from vscode/.
+# else a build it downloads) on copies of examples, with the extension from vscode/.
 test-vscode: web vscode/node_modules
 	mkdir -p vscode/bin
 	go build -o vscode/bin/dg ./cmd/dg

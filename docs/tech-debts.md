@@ -73,9 +73,14 @@ to remove it.
   whitespace as written, inserts an attribute where it is asked to, and removes blocks and sets
   labels without disturbing their neighbors.
 
-## HCL grammar vendored
+## HCL grammar vendored and modified
 
 - **Where:** `vscode/syntaxes/hcl.tmGrammar.json` and its `LICENSE`, from release v0.7.1 of
-  `github.com/hashicorp/syntax`, unmodified.
-- **Why:** the grammar is published as a release file only, with no package to depend on.
-- **Remove when:** `hashicorp/syntax` publishes the grammar as a package; then depend on it.
+  `github.com/hashicorp/syntax`, with `scopeName` changed from `source.hcl` to `source.dg` and a
+  `comment` saying so.
+- **Why:** the grammar is published as a release file only, with no package to depend on; and VS
+  Code registers a grammar under the scope name inside the file, so the grammar of the language
+  `dg` must not be `source.hcl`, which HashiCorp's extension also contributes.
+- **Remove when:** `hashicorp/syntax` publishes the grammar as a package; then depend on it and
+  write the `source.dg` copy at `make vsix`. Until then, a new release is copied by hand and the
+  two changes made again.

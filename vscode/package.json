@@ -17,29 +17,41 @@
     "Visualization"
   ],
   "activationEvents": [
-    "workspaceContains:dg.hcl"
+    "workspaceContains:**/dg.hcl",
+    "onStartupFinished"
   ],
   "main": "./out/src/extension.js",
   "contributes": {
     "languages": [
       {
-        "id": "hcl",
+        "id": "dg",
         "aliases": [
-          "HCL"
-        ],
-        "extensions": [
-          ".hcl"
+          "dg"
         ],
         "configuration": "./language-configuration.json"
       }
     ],
     "grammars": [
       {
-        "language": "hcl",
-        "scopeName": "source.hcl",
+        "language": "dg",
+        "scopeName": "source.dg",
         "path": "./syntaxes/hcl.tmGrammar.json"
       }
     ],
+    "configuration": {
+      "title": "dg",
+      "properties": {
+        "dg.projectFolders": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "scope": "resource",
+          "markdownDescription": "Folders that are dg projects although they hold no `dg.hcl`, relative to the workspace folder. A `.hcl` file in a dg project that opens as plain text or HCL gets the language dg and dg's language server."
+        }
+      }
+    },
     "commands": [
       {
         "command": "dg.openDiagram",
