@@ -5,13 +5,20 @@ it as a picture.
 
 ## Install
 
-dg has no binary releases yet, so you build it from source. You need:
+Download the archive for your platform from the
+[releases page](https://github.com/nvcnvn/dg/releases), unpack it, and copy `dg` to a directory
+on your `PATH`. It is a single binary that holds everything it needs at run time: dg never uses
+the network. To draw pictures, `dg export` also needs Google Chrome or Chromium, which it drives
+headless.
+
+### Build from source
+
+You need:
 
 - Go 1.27 or newer,
 - Node.js 20.19 or newer (on Node.js 22, 22.12 or newer) with npm, which builds the web app that
   dg embeds,
-- `git` and `make`,
-- Google Chrome or Chromium, which `dg export` drives headless to draw pictures.
+- `git` and `make`.
 
 ```sh
 git clone https://github.com/nvcnvn/dg.git
@@ -21,9 +28,8 @@ export PATH="$PWD/bin:$PATH"
 dg --help
 ```
 
-`make build` builds the web app and then `bin/dg`, a single binary that holds everything it
-needs at run time: dg never uses the network. Add `bin` to your `PATH` in your shell's profile,
-or copy `bin/dg` to a directory already on it.
+`make build` builds the web app and then `bin/dg`. Add `bin` to your `PATH` in your shell's
+profile, or copy `bin/dg` to a directory already on it.
 
 `go install github.com/nvcnvn/dg/cmd/dg@latest` does not work: the web app the binary embeds is
 built output that the repository does not hold.

@@ -6,8 +6,18 @@ panel beside them that you arrange and edit as in the browser.
 
 ## Install
 
-The extension is not on the Marketplace. Build a package for your platform from a clone of the
-repository, as in [Getting started](getting-started.md#install), and install it:
+Install [dg Diagrams](https://marketplace.visualstudio.com/items?itemName=nvcnvn.dg-diagrams) from
+the Marketplace: search for it in the Extensions view, or use VS Code's command line:
+
+```sh
+code --install-extension nvcnvn.dg-diagrams
+```
+
+The Marketplace gives you the package for your platform. Each package holds its own `dg` binary,
+so the extension needs nothing else on the machine, and it never uses the network.
+
+To build a package yourself, set up a clone of the repository as in
+[Getting started](getting-started.md#build-from-source) and install what it builds:
 
 ```sh
 make vsix
@@ -19,9 +29,6 @@ code --install-extension bin/dg-darwin-arm64.vsix
 the second command. `make vsix-linux-x64` and the like build a package for another platform, and
 `make vsix-all` builds them all. `code` is VS Code's command line; you can also install the file
 from the Extensions view's "Install from VSIX…" menu item.
-
-Each package holds its own `dg` binary, so the extension needs nothing else on the machine, and
-it never uses the network.
 
 ## Which files it handles
 

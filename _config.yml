@@ -24,6 +24,7 @@ exclude:
   - vscode
   - packs
   - examples
+  - docs/media
   - docs/open-decisions.md
   - docs/tech-debts.md
   - testdata/check

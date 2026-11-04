@@ -1,14 +1,23 @@
 {
   "name": "dg-diagrams",
   "displayName": "dg Diagrams",
-  "description": "Language server and diagram panel for dg projects.",
+  "description": "Diagrams as code: write HCL, arrange by dragging, and let arrows route themselves. Built for reviews and coding agents.",
   "version": "0.0.1",
   "publisher": "nvcnvn",
   "license": "Apache-2.0",
   "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#1E3A8A",
+    "theme": "dark"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/nvcnvn/dg"
+    "url": "https://github.com/nvcnvn/dg",
+    "directory": "vscode"
+  },
+  "homepage": "https://nvcnvn.github.io/dg/",
+  "bugs": {
+    "url": "https://github.com/nvcnvn/dg/issues"
   },
   "engines": {
     "vscode": "^1.91.0"
@@ -16,6 +25,18 @@
   "categories": [
     "Programming Languages",
     "Visualization"
+  ],
+  "keywords": [
+    "diagram",
+    "diagram-as-code",
+    "hcl",
+    "architecture",
+    "c4",
+    "flowchart",
+    "er-diagram",
+    "state-machine",
+    "mcp",
+    "ai-agents"
   ],
   "activationEvents": [
     "workspaceContains:**/dg.hcl",

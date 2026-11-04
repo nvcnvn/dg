@@ -45,9 +45,12 @@ flowcharts and swimlanes, entity-relationship and class diagrams, state machines
 diagrams where position is data, such as sequence diagrams, Gantt charts and timelines, charts,
 or Venn diagrams.
 
-## Status
+## Install
 
-dg has no releases yet: [build it from source](docs/getting-started.md#install).
+Download `dg` from the [releases page](https://github.com/nvcnvn/dg/releases), or
+[build it from source](docs/getting-started.md#build-from-source). For VS Code, install
+[dg Diagrams](https://marketplace.visualstudio.com/items?itemName=nvcnvn.dg-diagrams) from the
+Marketplace.
 
 ## Licensing
 
