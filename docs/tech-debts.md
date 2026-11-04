@@ -59,16 +59,6 @@ to remove it.
   machine. It runs on developers' machines, where the 60 frames per second of section 11 hold.
 - **Remove when:** CI has runners with a GPU and dedicated CPUs, where the test passes.
 
-## Export goldens are generated on macOS Chrome
-
-- **Where:** `testdata/export/*.svg` and `*.json`, whose SVG files are also the pictures of the
-  documentation site.
-- **Why:** sizes depend on Chromium's text shaping of the bundled font. Sizes snap to the grid,
-  label boxes to the grid and every emitted coordinate is a whole pixel, but whether that hides
-  every difference between platforms and Chromium versions is unproven.
-- **Remove when:** the goldens pass unchanged on Linux CI and macOS; otherwise keep per-platform
-  goldens.
-
 ## End labels where several edges converge on one side
 
 - **Where:** `examples/class` leaves out a `customer-address` dependency edge.
