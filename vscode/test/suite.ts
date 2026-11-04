@@ -58,6 +58,8 @@ export async function run(): Promise<void> {
   });
   const page = await (await fetch(url)).text();
   assert.match(page, /id="paper"/);
+  await vscode.commands.executeCommand("dg.openDiagram", model);
+  assert.equal(api.diagramURL(), url, "the editor title button on a file of the same project keeps its panel");
 
   // Saving the model file sends the panel a new drawing within 300 milliseconds (FR-18).
   const ws = new WebSocket(url.replace(/^http/, "ws") + "ws");

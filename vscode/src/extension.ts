@@ -18,6 +18,7 @@ interface Diagram {
   panel: vscode.WebviewPanel;
   serve: cp.ChildProcess;
   url: string;
+  root: string;
 }
 
 let diagram: Diagram | undefined;
@@ -31,7 +32,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<API> {
   const dg = context.asAbsolutePath(path.join("bin", process.platform === "win32" ? "dg.exe" : "dg"));
   const projectFiles = vscode.workspace.createFileSystemWatcher("**/dg.hcl", false, true, false);
   context.subscriptions.push(
-    vscode.commands.registerCommand("dg.openDiagram", () => openDiagram(dg)),
+    vscode.commands.registerCommand("dg.openDiagram", (uri?: vscode.Uri) => openDiagram(dg, uri)),
     vscode.workspace.onDidOpenTextDocument((d) => opened(dg, d)),
     vscode.workspace.onDidCloseTextDocument((d) => {
       // A change of language closes and reopens a document that stays in textDocuments.
@@ -156,13 +157,9 @@ export async function deactivate(): Promise<void> {
   await Promise.all([...projects.values()].map((p) => p.client.stop()));
 }
 
-async function openDiagram(dg: string): Promise<void> {
-  if (diagram) {
-    diagram.panel.reveal(vscode.ViewColumn.Beside);
-    return;
-  }
-  const active = vscode.window.activeTextEditor?.document.uri;
-  let root = active && projectRoot(active);
+async function openDiagram(dg: string, uri?: vscode.Uri): Promise<void> {
+  const file = uri ?? vscode.window.activeTextEditor?.document.uri;
+  let root = file && projectRoot(file);
   if (!root) {
     const [project] = await vscode.workspace.findFiles("**/dg.hcl", undefined, 1);
     root = project && projectRoot(project);
@@ -171,6 +168,11 @@ async function openDiagram(dg: string): Promise<void> {
     void vscode.window.showErrorMessage("dg: no dg project in the workspace: open a file of one first.");
     return;
   }
+  if (diagram && samePath(diagram.root, root)) {
+    diagram.panel.reveal(undefined, true);
+    return;
+  }
+  diagram?.panel.dispose();
   // With -stdin, dg serve stops when the pipe to its standard input closes, which happens
   // however the extension host ends.
   const serve = cp.spawn(dg, ["serve", "-C", root, "-open=false", "-stdin"], { stdio: ["pipe", "pipe", "pipe"] });
@@ -198,10 +200,10 @@ async function openDiagram(dg: string): Promise<void> {
 </head>
 <body><iframe src="${external}" title="Diagram"></iframe></body>
 </html>`;
-  diagram = { panel, serve, url };
+  diagram = { panel, serve, url, root };
   panel.onDidDispose(() => {
     serve.kill();
-    diagram = undefined;
+    if (diagram?.panel === panel) diagram = undefined;
   });
 }
 

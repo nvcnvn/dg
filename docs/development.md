@@ -68,6 +68,16 @@ make test-vsix            # the same test on the package for this platform, inst
 make notices              # regenerate THIRD_PARTY_NOTICES after a dependency changes
 ```
 
+The extension's icon, `vscode/images/icon.png`, is rendered from `icon.svg` beside it; after
+changing the SVG, render it again with Chrome from the repository's root:
+
+```sh
+printf '<body style="margin:0"><img src="icon.svg" width="128" height="128" style="display:block">' > vscode/images/icon.html
+google-chrome --headless --hide-scrollbars --default-background-color=00000000 \
+  --window-size=128,128 --screenshot=vscode/images/icon.png vscode/images/icon.html
+rm vscode/images/icon.html
+```
+
 Each package holds `LICENSE` and `THIRD_PARTY_NOTICES`, the licenses of the Go modules, npm
 packages and grammar that the binary and the extension hold; `make lint` fails while the file is
 out of date.

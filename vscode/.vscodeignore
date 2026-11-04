@@ -9,3 +9,4 @@ node_modules/**/*.md
 !node_modules/**/LICENSE.md
 node_modules/**/.eslintrc*
 node_modules/**/tsconfig*.json
+images/icon.svg

@@ -5,6 +5,7 @@
   "version": "0.0.1",
   "publisher": "nvcnvn",
   "license": "Apache-2.0",
+  "icon": "images/icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/nvcnvn/dg"
@@ -56,9 +57,33 @@
       {
         "command": "dg.openDiagram",
         "title": "Open diagram",
-        "category": "dg"
+        "category": "dg",
+        "icon": "$(open-preview)"
       }
-    ]
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "dg.openDiagram",
+          "when": "editorLangId == dg",
+          "group": "navigation"
+        }
+      ],
+      "editor/title/context": [
+        {
+          "command": "dg.openDiagram",
+          "when": "resourceLangId == dg",
+          "group": "1_open"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "dg.openDiagram",
+          "when": "resourceFilename == dg.hcl",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
     "compile": "tsc -p .",

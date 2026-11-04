@@ -76,9 +76,13 @@ after each change:
 
 ## The diagram panel
 
-Run **dg: Open diagram** from the Command Palette. A panel opens beside the text with the
-diagram of the project of the file you are editing (or of the first project in the workspace). It
-is the same editor as `dg serve`, with every [gesture](reference/editor.md): drag to arrange,
+Click the **Open diagram** button at the top right of a dg file's editor, as you open Markdown's
+preview, or run **dg: Open diagram** from the Command Palette; it is also in the context menu of
+the editor's tab and of `dg.hcl` in the Explorer. A panel opens beside the text with the diagram of
+that file's project (from the Command Palette, of the file you are editing, else of the first
+project in the workspace). One panel is open at a time: opening another project's diagram
+replaces it. The button shows only for dg files, so Terraform and other HCL files never have
+it. It is the same editor as `dg serve`, with every [gesture](reference/editor.md): drag to arrange,
 switch views, create and connect nodes, edit labels and the inspector.
 
 Everything the panel changes is written to the project's files, which the text editors show at
