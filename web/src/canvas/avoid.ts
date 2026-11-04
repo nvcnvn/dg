@@ -1,5 +1,5 @@
 import { AvoidLib } from 'libavoid-js';
-import { cmp, type Box, type Point } from '../geometry/geometry';
+import { center, cmp, type Box, type Point } from '../geometry/geometry';
 import { BUFFER, joinLegs, type RouteEnd, type RouteRequest, type Router } from '../route/edges';
 
 interface Handle {
@@ -51,6 +51,21 @@ type Conn = Handle & {
 
 const CENTER_PIN = 1;
 
+// seesPin reports whether a leg to the free point to, from the pin at the center of from, can
+// abort libavoid: on one of the pin's center lines, the point can see the pin, which the search
+// for the target's directions takes for the target's own (see docs/tech-debts.md). How far it sees
+// depends on the lines the sweep draws, so a leg to any such point runs the other way around.
+function seesPin(from: Box, to: Point): boolean {
+  const c = center(from);
+  return (to.x === c.x) !== (to.y === c.y);
+}
+
+// pinToFree returns the free point the first leg of an orthogonal request goes to from a pin.
+function pinToFree(e: RouteRequest): Point | undefined {
+  if (e.type !== 'orthogonal' || e.from.obstacle === undefined) return undefined;
+  return e.via[0] ?? (e.to.obstacle === undefined ? e.to.at : undefined);
+}
+
 // UNIFY_MAX_EDGES bounds the views libavoid's unifying nudging step runs for. The step keeps
 // parallel segments of different edges apart, but its cost grows steeply: about 20 ms at 50
 // edges, 3 seconds at 100 and minutes at 400.
@@ -69,13 +84,27 @@ let loaded: Promise<void> | undefined;
 export function avoidRouter(wasmUrl: string): Router {
   return async (obstacles, edges) => {
     await (loaded ??= AvoidLib.load(wasmUrl));
-    const r = session(obstacles, edges);
+    const r = session(obstacles, edges, (e) => {
+      const to = pinToFree(e);
+      return to !== undefined && seesPin(obstacles.get(e.from.obstacle!)!, to);
+    });
     try {
-      return r.routes();
-    } finally {
+      const routes = r.routes();
       r.destroy();
+      return routes;
+    } catch (err) {
+      throw restart(err, edges);
     }
   };
+}
+
+// restart gives up on the libavoid module after an abort, which leaves it unusable, so that the
+// next route loads it again, and returns the error to report.
+function restart(err: unknown, edges: RouteRequest[]): Error {
+  loaded = undefined;
+  (AvoidLib as unknown as { avoidLib?: unknown }).avoidLib = undefined;
+  const vias = edges.filter((e) => e.via.length).map((e) => `${e.id} via ${e.via.map((p) => `[${p.x},${p.y}]`).join(' ')}`);
+  return new Error(`libavoid failed routing this view (${vias.length ? `edges with a via: ${vias.join(', ')}` : 'no edge has a via'}): ${err}`);
 }
 
 // LiveRouter keeps libavoid's obstacles and connectors between calls, so a drag routes only
@@ -89,35 +118,55 @@ export interface LiveRouter {
 }
 
 // liveRouter returns a live router for the obstacles and requests, or undefined while libavoid
-// is not loaded yet.
+// is not loaded yet. Obstacles and free ends move every frame, so each leg from a pin to a free
+// point runs the other way around. After a failure the router routes nothing, which draws the
+// rest of the drag as lines; the drawing after the drop reports it.
 export function liveRouter(obstacles: Map<string, Box>, moving: Set<string>, requests: RouteRequest[]): LiveRouter | undefined {
   if (!loaded) return undefined;
-  const r = session(obstacles, requests);
+  const r = session(obstacles, requests, (e) => pinToFree(e) !== undefined);
   let applied = { x: 0, y: 0 };
   let last = requests;
+  let failed = false;
+  const move = (next: RouteRequest[], d: Point) => {
+    for (const id of [...moving].sort(cmp)) {
+      const shape = r.shapes.get(id);
+      if (shape) r.router.moveShape(shape, d.x - applied.x, d.y - applied.y);
+    }
+    applied = d;
+    next.forEach((e, i) => {
+      const legs = r.legs.get(e.id)!;
+      const was = last[i];
+      if (!e.from.obstacle && (e.from.at.x !== was.from.at.x || e.from.at.y !== was.from.at.y)) legs[0].setSourceEndpoint(r.end(e.from));
+      if (!e.to.obstacle && (e.to.at.x !== was.to.at.x || e.to.at.y !== was.to.at.y)) {
+        const leg = legs[legs.length - 1];
+        if (r.reversed.has(leg)) leg.setSourceEndpoint(r.end(e.to));
+        else leg.setDestEndpoint(r.end(e.to));
+      }
+    });
+    last = next;
+  };
   return {
     route(next, d) {
-      for (const id of [...moving].sort(cmp)) {
-        const shape = r.shapes.get(id);
-        if (shape) r.router.moveShape(shape, d.x - applied.x, d.y - applied.y);
+      if (failed) return new Map();
+      try {
+        move(next, d);
+        return r.routes();
+      } catch (err) {
+        failed = true;
+        console.error(restart(err, next));
+        return new Map();
       }
-      applied = d;
-      next.forEach((e, i) => {
-        const legs = r.legs.get(e.id)!;
-        const was = last[i];
-        if (!e.from.obstacle && (e.from.at.x !== was.from.at.x || e.from.at.y !== was.from.at.y)) legs[0].setSourceEndpoint(r.end(e.from));
-        if (!e.to.obstacle && (e.to.at.x !== was.to.at.x || e.to.at.y !== was.to.at.y)) legs[legs.length - 1].setDestEndpoint(r.end(e.to));
-      });
-      last = next;
-      return r.routes();
     },
-    destroy: r.destroy,
+    destroy() {
+      if (!failed) r.destroy();
+    },
   };
 }
 
 // session builds a libavoid router holding the obstacles and one connector per leg of each
-// request, all added in sorted ID order so the result depends only on the input.
-function session(obstacles: Map<string, Box>, edges: RouteRequest[]) {
+// request, all added in sorted ID order so the result depends only on the input. The first leg of
+// a request reverse holds for is routed from its far end.
+function session(obstacles: Map<string, Box>, edges: RouteRequest[], reverse: (e: RouteRequest) => boolean) {
   const A = AvoidLib.getInstance() as unknown as Avoid;
   const polyline = edges.some((e) => e.type === 'polyline');
   const router = new A.Router(A.OrthogonalRouting | (polyline ? A.PolyLineRouting : 0));
@@ -147,11 +196,14 @@ function session(obstacles: Map<string, Box>, edges: RouteRequest[]) {
   };
 
   const legs = new Map<string, Conn[]>();
+  const reversed = new Set<Conn>();
   for (const e of edges) {
     const stops = [end(e.from), ...e.via.map((p) => tmp(new A.ConnEnd(point(p)))), end(e.to)];
     const conns = [];
     for (let i = 0; i + 1 < stops.length; i++) {
-      const c = new A.ConnRef(router, stops[i], stops[i + 1]);
+      const back = i === 0 && reverse(e);
+      const c = new A.ConnRef(router, stops[back ? 1 : i], stops[back ? 0 : i + 1]);
+      if (back) reversed.add(c);
       c.setRoutingType(e.type === 'polyline' ? A.ConnType_PolyLine : A.ConnType_Orthogonal);
       conns.push(c);
     }
@@ -164,10 +216,11 @@ function session(obstacles: Map<string, Box>, edges: RouteRequest[]) {
     for (const e of edges) {
       const points = legs.get(e.id)!.map((c) => {
         const route = c.displayRoute();
-        return Array.from({ length: route.size() }, (_, i) => {
+        const pts = Array.from({ length: route.size() }, (_, i) => {
           const p = route.get_ps(i);
           return { x: p.x, y: p.y };
         });
+        return reversed.has(c) ? pts.reverse() : pts;
       });
       out.set(e.id, joinLegs(points, e.via));
     }
@@ -177,5 +230,5 @@ function session(obstacles: Map<string, Box>, edges: RouteRequest[]) {
     for (const o of temporaries) A.destroy(o);
     A.destroy(router);
   };
-  return { router, shapes, legs, end, routes, destroy };
+  return { router, shapes, legs, reversed, end, routes, destroy };
 }

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { node } from '../fixtures';
+import type { Point } from '../geometry/geometry';
 import { outline } from '../geometry/shapes';
-import { clip, placeEndLabel, placeLabel, portPositions, rowSide, segmentHitsBox, sideFacing } from './route';
+import { clip, keepsVia, passed, placeEndLabel, placeLabel, portPositions, rowSide, segmentHitsBox, sideFacing } from './route';
 
 describe('clip', () => {
   const a = { x: 0, y: 0, w: 100, h: 40 };
@@ -104,5 +105,32 @@ describe('placeEndLabel', () => {
   it('keeps away from another route, moving further out if it must', () => {
     const others = [[{ x: -20, y: 0 }, { x: -20, y: 100 }], [{ x: 30, y: 0 }, { x: 30, y: 24 }]];
     expect(placeEndLabel(route, { w: 20, h: 17 }, [], others)).toEqual({ x: 8, y: 46, w: 20, h: 17 });
+  });
+});
+
+describe('passed', () => {
+  const route = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 50 }, { x: 0, y: 50 }];
+  const a = { x: 50, y: 0 };
+  const b = { x: 100, y: 25 };
+  const c = { x: 50, y: 50 };
+  it.each<[string, Point[], Point[]]>([
+    ['the points on it, in order', [a, b, c], [a, b, c]],
+    ['a point given twice once where it is passed once', [a, a], [a, a]],
+    ['only those after the last one passed', [b, a, c], [b, c]],
+    ['none of the points off it', [{ x: 1, y: 1 }], []],
+  ])('returns %s', (_, via, want) => {
+    expect(passed(route, via)).toEqual(want);
+  });
+});
+
+describe('keepsVia', () => {
+  const via = [{ x: 10, y: 0 }, { x: 20, y: 0 }];
+  it.each<[string, Point[], Point[], Point[], boolean]>([
+    ['a route that still passes them', [{ x: 0, y: 0 }, { x: 30, y: 0 }], [{ x: 0, y: 0 }, { x: 50, y: 0 }], via, true],
+    ['a route that loses one', [{ x: 0, y: 0 }, { x: 30, y: 0 }], [{ x: 0, y: 0 }, { x: 15, y: 0 }], via, false],
+    ['a route that passes them the other way around', [{ x: 0, y: 0 }, { x: 30, y: 0 }], [{ x: 30, y: 0 }, { x: 0, y: 0 }], via, false],
+    ['a point the route before did not pass either', [{ x: 0, y: 5 }, { x: 30, y: 5 }], [{ x: 0, y: 6 }, { x: 30, y: 6 }], via, true],
+  ])('holds for %s', (_, before, after, v, want) => {
+    expect(keepsVia(before, after, v)).toBe(want);
   });
 });

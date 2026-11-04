@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { edge, node, text } from '../fixtures';
 import { elkLayout } from '../place/elk';
 import { placeSpiral } from '../place/spiral';
-import type { Policy, ResolvedView } from '../protocol/view';
+import type { Policy, ResolvedView, ViewNode } from '../protocol/view';
 import { contentLayout, measureNode } from './geometry';
-import { alignHeaders, arrange, stretchedAxes, withBlock } from './policy';
+import { alignHeaders, arrange, stretchedAxes, stretchedSizes, withBlock } from './policy';
 
 const stack = (over: Partial<Policy> = {}): Policy => ({ layout: 'stack', direction: 'vertical', gap: 10, columns: 3, align: 'start', order: [], ...over });
 
@@ -133,9 +133,9 @@ describe('elkLayout', () => {
 
 describe('stretchedAxes', () => {
   const axes = (p: Policy) => stretchedAxes({ view: 'v', grid: 10, edges: [], nodes: [node('s', { container: true, policy: p }), node('a', { frame: 's' })] });
-  it.each<[string, Partial<Policy>, [string, string][]]>([
-    ['the width across a vertical stack', { stretch: true }, [['a', 'w']]],
-    ['the height across a horizontal stack', { stretch: true, direction: 'horizontal' }, [['a', 'h']]],
+  it.each<[string, Partial<Policy>, [string, { axis: string }][]]>([
+    ['the width across a vertical stack', { stretch: true }, [['a', { axis: 'w' }]]],
+    ['the height across a horizontal stack', { stretch: true, direction: 'horizontal' }, [['a', { axis: 'h' }]]],
     ['nothing in a stack that does not stretch', {}, []],
     ['nothing in a grid', { stretch: true, layout: 'grid' }, []],
   ])('gives %s', (_, p, want) => {
@@ -144,7 +144,38 @@ describe('stretchedAxes', () => {
   it('sees the children of the of of a view through its block', () => {
     const inside: ResolvedView = { view: 'v', grid: 10, edges: [], nodes: [node('a')], policy: stack({ container: 'of', stretch: true, order: ['a'] }) };
     expect(stretchedAxes(inside)).toEqual(new Map());
-    expect([...stretchedAxes(withBlock(inside))]).toEqual([['a', 'w']]);
+    expect([...stretchedAxes(withBlock(inside))]).toEqual([['a', { axis: 'w' }]]);
+  });
+});
+
+describe('stretchedSizes', () => {
+  const pin = (w: number) => ({ pin: { x: 0, y: 0, w } });
+  const vertical = (order: string[]) => stack({ stretch: true, order });
+  const box = (id: string, frame: string | undefined, order: string[], over = {}) => node(id, { container: true, frame, policy: vertical(order), ...over }, { padding: 10, min_w: 0 });
+  const sizes = (nodes: ViewNode[]) => {
+    const v: ResolvedView = { view: 'v', grid: 10, edges: [], nodes };
+    return Object.fromEntries([...stretchedSizes(v, new Map(nodes.map((n) => [n.id, measureNode(n, text, 10)])), 10)].map(([id, s]) => [id, s.size]));
+  };
+  const leaf = (id: string, frame: string, over = {}) => node(id, { frame, label: 'x', ...over });
+  it.each<[string, ViewNode[], Record<string, number | undefined>]>([
+    ['the inside of a pinned stack to every child', [box('s', undefined, ['a', 'b'], pin(150)), leaf('a', 's', pin(300)), leaf('b', 's')], { a: 130, b: 130 }],
+    ['the widest pinned child to the pinned children only', [box('s', undefined, ['a', 'b']), leaf('a', 's', pin(100)), leaf('b', 's', pin(300))], { a: 300, b: 300 }],
+    ['the widest measured child to a pinned child', [box('s', undefined, ['a', 'b']), leaf('a', 's', pin(50)), node('b', { frame: 's', label: 'y'.repeat(20) })], { a: 180, b: undefined }],
+    ['nothing to children without a pin in a stack without one', [box('s', undefined, ['a', 'b']), leaf('a', 's'), leaf('b', 's')], { a: undefined, b: undefined }],
+    ['nothing to a pinned child beside a child placement sizes', [box('s', undefined, ['a', 'g']), leaf('a', 's', pin(100)), node('g', { frame: 's', container: true }), leaf('i', 'g')], { a: undefined, g: undefined }],
+    ['an outer pin through an inner stack, outermost first', [box('s', undefined, ['t'], pin(200)), box('t', 's', ['a', 'b']), leaf('a', 't', pin(50)), leaf('b', 't')], { t: 180, a: 160, b: 160 }],
+    ['the widest of an inner stack, innermost first', [box('s', undefined, ['t', 'c']), box('t', 's', ['a']), leaf('a', 't', pin(300)), leaf('c', 's', pin(100))], { t: undefined, a: 300, c: 320 }],
+    ['the widest of an outer stack to a pinned child of an inner one', [box('s', undefined, ['t', 'c']), box('t', 's', ['a']), leaf('a', 't', pin(100)), leaf('c', 's', pin(300))], { t: undefined, a: 280, c: 300 }],
+    ['nothing to a child without a pin of an inner stack without one', [box('s', undefined, ['t', 'c']), box('t', 's', ['a', 'b']), leaf('a', 't', pin(100)), leaf('b', 't'), leaf('c', 's', pin(300))], { t: undefined, a: 280, b: undefined, c: 300 }],
+    ['nothing inside an inner stack when placement sizes the outer one', [box('s', undefined, ['g', 'k']), node('g', { frame: 's', container: true }), leaf('i', 'g'), box('k', 's', ['c']), leaf('c', 'k', pin(60))], { g: undefined, k: undefined, c: undefined }],
+    ['nothing inside a pinned inner stack when placement sizes the outer one', [box('s', undefined, ['g', 'k']), node('g', { frame: 's', container: true }), leaf('i', 'g'), box('k', 's', ['c'], pin(300)), leaf('c', 'k', pin(60))], { g: undefined, k: undefined, c: undefined }],
+    ['an outer stack through a pinned inner one, whose children all take it', [box('s', undefined, ['t', 'c']), box('t', 's', ['a'], pin(100)), leaf('a', 't'), leaf('c', 's', pin(300))], { t: 300, a: 280, c: 300 }],
+  ])('gives %s', (_, nodes, want) => {
+    expect(sizes(nodes)).toEqual(want);
+  });
+  it('gives the height across a horizontal stack, past a left label', () => {
+    const lanes = node('s', { container: true, policy: stack({ stretch: true, direction: 'horizontal', order: ['a'] }), pin: { x: 0, y: 0, h: 200 } }, { padding: 10 });
+    expect(sizes([lanes, node('a', { frame: 's', container: true, pin: { x: 0, y: 0, h: 80 } }, { label_side: 'left' })]).a).toBe(200 - measureNode(lanes, text, 10).origin.y - 10);
   });
 });
 

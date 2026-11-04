@@ -1,5 +1,5 @@
 import type { NodeStyle, Policy, ResolvedView, ViewNode } from '../protocol/view';
-import type { Axis, NodeMeasure, Point, Size } from './geometry';
+import { ceilTo, type Axis, type NodeMeasure, type Point, type Size, type Stretched } from './geometry';
 
 const ALIGN = { start: 0, center: 0.5, end: 1 };
 
@@ -66,14 +66,68 @@ export function arrangeFrame(byId: Map<string, ViewNode>, measures: Map<string, 
   });
 }
 
+// crossAxis returns the axis of the size of its children a container's policy sets, if it does.
+function crossAxis(p: Policy | undefined): Axis | undefined {
+  if (!p?.stretch || p.layout !== 'stack') return undefined;
+  return p.direction === 'vertical' ? 'w' : 'h';
+}
+
 // stretchedAxes returns, for each child of a stretched stack, the axis of its size arrange sets.
-export function stretchedAxes(view: ResolvedView): Map<string, Axis> {
-  const axes = new Map<string, Axis>();
+export function stretchedAxes(view: ResolvedView): Map<string, Stretched> {
+  const axes = new Map<string, Stretched>();
   for (const { policy: p } of view.nodes) {
-    if (!p?.stretch || p.layout !== 'stack') continue;
-    for (const id of p.order) axes.set(id, p.direction === 'vertical' ? 'w' : 'h');
+    const axis = crossAxis(p);
+    if (axis) for (const id of p!.order) axes.set(id, { axis });
   }
   return axes;
+}
+
+// stretchedSizes adds to stretchedAxes the size arrange will set (spec 7.2 rule 1), given measures
+// in which no child is wrapped at it: for each child of a stack a pin sets the size of, directly
+// or through outer stacks, and for each pinned child of a stack that takes the widest of children
+// whose sizes are all known before placement. Only a child with a pin wraps differently where no
+// pin sets the stack's size, and a pin gives its size whatever the wrapping, so no size here
+// depends on itself.
+export function stretchedSizes(view: ResolvedView, measures: Map<string, NodeMeasure>, grid: number): Map<string, Stretched> {
+  const byId = new Map(view.nodes.map((n) => [n.id, n]));
+  const out = stretchedAxes(view);
+  const framed = new Set(view.nodes.map((n) => n.frame));
+  const inside = (s: ViewNode, axis: Axis, size: number) => {
+    const m = measures.get(s.id)!;
+    return Math.max(0, size - (axis === 'w' ? m.origin.x : m.origin.y) - s.style.padding);
+  };
+  const widest = (s: ViewNode, axis: Axis): number | undefined => {
+    const kids = s.policy!.order.map((id) => natural(byId.get(id)!, axis));
+    if (kids.includes(undefined)) return undefined;
+    return Math.max(inside(s, axis, measures.get(s.id)!.size[axis]), ...(kids as number[]));
+  };
+  // natural returns a node's size along axis with nothing stretching it, if that is known before
+  // placement, the sizes of a stack's children first.
+  const natural = (n: ViewNode, axis: Axis): number | undefined => {
+    if (n.pin?.[axis] !== undefined) return n.pin[axis];
+    const m = measures.get(n.id)!;
+    if (!framed.has(n.id)) return m.size[axis];
+    if (crossAxis(n.policy) !== axis) return undefined;
+    const room = widest(n, axis);
+    return room === undefined ? undefined : Math.max(m.size[axis], ceilTo(room + (axis === 'w' ? m.origin.x : m.origin.y) + n.style.padding, grid));
+  };
+  // set gives the children of stack s the room its size leaves them, outermost first, as arrange
+  // does: all of them when that size is held by a pin, else the pinned ones.
+  const set = (s: ViewNode, axis: Axis, size: number | undefined, held: boolean) => {
+    const room = size === undefined ? widest(s, axis) : inside(s, axis, size);
+    if (room === undefined) return;
+    for (const id of s.policy!.order) {
+      const kid = byId.get(id)!;
+      const kidHeld = held || kid.pin?.[axis] !== undefined;
+      if (kidHeld) out.set(id, { axis, size: room });
+      if (crossAxis(kid.policy) === axis) set(kid, axis, room, kidHeld);
+    }
+  };
+  for (const s of view.nodes) {
+    const axis = crossAxis(s.policy);
+    if (axis && crossAxis(byId.get(s.frame ?? '')?.policy) !== axis) set(s, axis, s.pin?.[axis], s.pin?.[axis] !== undefined);
+  }
+  return out;
 }
 
 // alignHeaders gives the container children of a stretched stack one header: in a vertical

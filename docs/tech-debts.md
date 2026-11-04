@@ -41,6 +41,27 @@ to remove it.
 - **Remove when:** `libavoid-js` ships matching typings and binds the calls above, and directional
   pins and the unifying step are fast at 400 edges.
 
+## libavoid aborts on a leg from a pin to a free point it sees
+
+- **Where:** `seesPin`, `pinToFree`, `restart` and the reversed legs of `session` in
+  `web/src/canvas/avoid.ts`, including `restart` clearing the `avoidLib` field that `AvoidLib.load`
+  guards on, which is not public.
+- **Why:** `AStarPathPrivate::search` in libavoid's `makepath.cpp` follows an edge from an
+  orthogonal connector's free target to a connection pin as if the pin were the target's own, and
+  for the connector whose source is that pin it reaches the zero-length edge to the source, so the
+  assertion at line 938 fails. A free point sees a pin only along the pin's center lines, as far
+  as the first line the sweep draws across them: usually the edge of the buffer, but further where
+  neighbors leave a side of the shape without its line. The assertion kills the module for good.
+  So a leg from a pin to any point on those lines runs from the point instead, which keeps the
+  point exactly, unlike moving it off the line. The live router reverses every leg from a pin to a
+  free point, since what is on a center line changes each frame. One other assertion is known, in
+  `CmpLineOrder` (`orthogonal.cpp` line 2313), reached with a node lying over another: about once in
+  160,000 fuzzed drag frames, and never in fuzzed views without overlapping nodes. `restart` cannot
+  prevent that one; it reports it and loads the module again.
+- **Remove when:** libavoid skips a pin that is not the target's own there and no longer asserts
+  in `CmpLineOrder`, `libavoid-js` ships that build, and the package offers a way to load the module
+  again.
+
 ## Chrome's sandbox on Ubuntu CI runners
 
 - **Where:** the step that runs `sysctl -w kernel.apparmor_restrict_unprivileged_userns=0` in

@@ -3,9 +3,9 @@ import { avoidRouter } from '../canvas/avoid';
 import { edge, libavoidWasm, node, text } from '../fixtures';
 import type { Box, Point } from '../geometry/geometry';
 import type { ResolvedView, ViewEdge } from '../protocol/view';
-import { awayFromBorders, cornerLoop, joinLegs, keepStub, placeLabels, planPorts, routeEdges, type Router } from './edges';
+import { awayFromBorders, BUFFER, clearStub, cornerLoop, joinLegs, keepStub, placeLabels, planPorts, routeEdges, STUB, type Router } from './edges';
 import { liveRoute, type LiveEdge } from './live';
-import { onRoute, segmentHitsBox, simplify } from './route';
+import { passed, segmentHitsBox, simplify } from './route';
 
 const avoid = avoidRouter(libavoidWasm);
 
@@ -35,6 +35,24 @@ describe('joinLegs', () => {
       pts([0, 0], [90, 0], [90, 60], [200, 60]),
     ],
     ['diagonal legs', [pts([0, 0], [10, 10]), pts([10, 10], [30, 0])], pts([10, 10]), pts([0, 0], [10, 10], [30, 0])],
+    [
+      'a straight leg nudged off the next via, without moving the via before',
+      [pts([0, 0], [0, 50], [100, 50]), pts([100, 50], [190, 50]), pts([200, 60], [200, 100])],
+      pts([100, 50], [200, 60]),
+      pts([0, 0], [0, 50], [100, 50], [200, 50], [200, 60], [200, 100]),
+    ],
+    [
+      'a straight leg moved past the via before, which stays on the route',
+      [pts([0, 100], [0, 50]), pts([0, 50], [40, 50]), pts([40, 30], [100, 30])],
+      pts([0, 50], [40, 30]),
+      pts([0, 100], [0, 30], [40, 30], [100, 30]),
+    ],
+    [
+      'legs that double back with the end nudged both ways',
+      [pts([0, 0], [100, 0], [100, 90]), pts([110, 100], [110, 0])],
+      pts([104, 100]),
+      pts([0, 0], [100, 0], [100, 100], [104, 100], [104, 0]),
+    ],
   ])('joins %s', (_, legs, via, want) => {
     expect(joinLegs(legs, via)).toEqual(want);
   });
@@ -192,6 +210,26 @@ describe('self-loops', () => {
   });
 });
 
+describe('clearStub', () => {
+  const at = { x: 50, y: 40 };
+  const below = (y: number): Box => ({ x: 0, y, w: 100, h: 40 });
+  it.each<[string, number, Box[], number]>([
+    ['keeps a stub with nothing in its way', 30, [], 30],
+    ['keeps a stub that ends before a buffer', 30, [below(80)], 30],
+    ['cuts a stub at the buffer in its way', 40, [below(70)], 20],
+    ['never cuts a stub below the shortest', 40, [below(55)], STUB],
+    ['ignores a buffer that holds the end', 60, [{ x: 0, y: 0, w: 100, h: 40 }], 60],
+    ['ignores a buffer that holds the end, with another in the way', 40, [{ x: 0, y: 0, w: 100, h: 40 }, below(70)], 20],
+    ['cuts at the nearest of two buffers, the nearest first', 60, [below(70), below(85)], 20],
+    ['cuts at the nearest of two buffers, the nearest last', 60, [below(85), below(70)], 20],
+  ])('%s', (_, stub, obstacles, want) => {
+    expect(clearStub(at, 'bottom', stub, obstacles)).toBe(want);
+  });
+  it('measures from the near side of a buffer upward', () => {
+    expect(clearStub({ x: 50, y: 100 }, 'top', 40, [{ x: 0, y: 40, w: 100, h: 30 }])).toBe(100 - 70 - BUFFER);
+  });
+});
+
 describe('keepStub', () => {
   it('moves the segment after a short first one out to the stub', () => {
     const route = [{ x: 130, y: 260 }, { x: 140, y: 260 }, { x: 140, y: 76 }, { x: 200, y: 76 }];
@@ -213,6 +251,41 @@ describe('keepStub', () => {
   });
 });
 
+
+describe('keepStub, where the route does not leave the end straight', () => {
+  const own = { x: 240, y: 240, w: 100, h: 40 };
+  const behind = pts([290, 240], [290, 498], [80, 498], [80, 510]);
+  it('moves a stub left behind the end out past its own box', () => {
+    expect(keepStub(behind, 'top', 12, [own])).toEqual(pts([290, 240], [290, 228], [80, 228], [80, 510]));
+  });
+  it('moves the stub of an end on the outline inside its own bounding box', () => {
+    const inside = pts([50, 10], [50, 5], [200, 5], [200, 100]);
+    expect(keepStub(inside, 'top', 12, [{ x: 0, y: 0, w: 100, h: 40 }])).toEqual(pts([50, 10], [50, -2], [200, -2], [200, 100]));
+  });
+  it.each<[string, Box]>([
+    ['a label on the stub', { x: 280, y: 230, w: 20, h: 4 }],
+    ['the end of the moved segment', { x: 60, y: 220, w: 40, h: 20 }],
+  ])('leaves a route behind the end whose move would cross %s', (_, label) => {
+    expect(keepStub(behind, 'top', 12, [own, label])).toEqual(behind);
+  });
+  it('still may not move a segment across its own box', () => {
+    const wraps = pts([290, 240], [290, 498], [300, 498], [300, 600]);
+    expect(keepStub(wraps, 'top', 12, [own])).toEqual(wraps);
+  });
+  it('leaves a route that turns back after the moved segment, which would become a diagonal', () => {
+    const back = pts([0, 0], [10, 0], [10, 50], [10, 20], [90, 20]);
+    expect(keepStub(back, 'right', 20, [])).toEqual(back);
+  });
+  it('leaves a segment with the first visit of a via given twice, though the route passes it again', () => {
+    const a: [number, number] = [10, 50];
+    const again = pts([0, 0], [10, 0], [10, 100], [200, 100], [200, 50], a, [10, 40], [300, 40]);
+    expect(keepStub(again, 'right', 20, [], [], 10, pts(a, [200, 50], a))).toEqual(again);
+  });
+  it('moves a segment that only touches a via passed later', () => {
+    const later = pts([0, 0], [10, 0], [10, 100], [200, 100], [200, 50], [10, 50], [10, 40], [300, 40]);
+    expect(keepStub(later, 'right', 20, [], [], 10, pts([200, 50], [10, 50]))[1]).toEqual({ x: 20, y: 0 });
+  });
+});
 
 describe('a long marker by a container label', () => {
   const crow = { ...edge('x', 'a', 'b').style, arrow_start: 'crow-zero-many', arrow_end: 'crow-zero-many' };
@@ -245,6 +318,35 @@ describe('awayFromBorders', () => {
   });
 });
 
+describe('awayFromBorders, among turn-backs and repeated vias', () => {
+  const container = { x: 330, y: 150, w: 470, h: 240 };
+  it.each<[string, Point[], Point[]]>([
+    ['a segment turning back on the one after it', pts([200, 290], [326, 290], [326, 210], [326, 292], [500, 292]), pts([326, 290], [326, 210])],
+    ['a segment turning back on the one before it', pts([500, 292], [326, 292], [326, 210], [326, 290], [200, 290]), pts([326, 210], [326, 290])],
+    ['a segment after a diagonal', pts([200, 200], [326, 250], [326, 300], [500, 300]), []],
+    ['a segment before a diagonal', pts([200, 200], [326, 200], [326, 250], [500, 300]), []],
+  ])('leaves %s', (_, route, via) => {
+    expect(awayFromBorders(route, [container], [], 10, via)).toEqual(route);
+  });
+  it.each<[string, Point[]]>([
+    ['the one after it', pts([200, 290], [326, 290], [326, 210], [326, 292], [500, 292])],
+    ['the one before it', pts([500, 292], [326, 292], [326, 210], [326, 290], [200, 290])],
+  ])('makes no diagonal of a segment turning back on %s', (_, route) => {
+    expect(axisAligned(awayFromBorders(route, [container], [], 10))).toBe(true);
+  });
+  it('keeps both visits of a via given twice, though the route passes it again', () => {
+    const a: [number, number] = [326, 250];
+    const route = pts([200, 200], [326, 200], [326, 300], [500, 300], [500, 250], a, [326, 240], [100, 240]);
+    const via = pts(a, [500, 250], a);
+    expect(passed(awayFromBorders(route, [container], [], 10, via), via)).toEqual(via);
+  });
+  it('moves a segment left of a zero-length one by the move before it', () => {
+    const route = pts([200, 60], [326, 60], [326, 220], [320, 220], [320, 220], [500, 220], [500, 400]);
+    const c = { x: 330, y: 60, w: 300, h: 160 };
+    expect(awayFromBorders(route, [c], [], 10)).toContainEqual({ x: 500, y: 230 });
+  });
+});
+
 describe('simplify', () => {
   it.each<[string, Point[], Point[], Point[]]>([
     ['drops a corner-free point', pts([0, 0], [10, 0], [20, 0]), [], pts([0, 0], [20, 0])],
@@ -256,23 +358,6 @@ describe('simplify', () => {
     expect(simplify(route, via)).toEqual(want);
   });
 });
-
-function passesInOrder(route: Point[], via: Point[]): boolean {
-  let from = 0;
-  for (const v of via) {
-    let done = 0;
-    let found = false;
-    for (let i = 0; i + 1 < route.length && !found; i++) {
-      const [a, b] = [route[i], route[i + 1]];
-      const len = Math.hypot(b.x - a.x, b.y - a.y);
-      const at = done + Math.hypot(v.x - a.x, v.y - a.y);
-      if (onRoute([a, b], v) && at >= from) [from, found] = [at, true];
-      done += len;
-    }
-    if (!found) return false;
-  }
-  return true;
-}
 
 const axisAligned = (route: Point[]) => route.slice(1).every((p, i) => p.x === route[i].x || p.y === route[i].y);
 
@@ -294,12 +379,37 @@ describe('a via', () => {
     ['in the stub at the end', 'b', {}, { ...right, via: [[110, 20], [110, 100], [390, 100], [390, 20]] }],
     ['in the stub of a long marker', 'b', { style: crow }, { ...right, via: [[108, 20], [108, 100], [392, 100], [392, 20]] }],
     ['beside the stub of a long marker', 'b', { style: crow }, { ...right, via: [[108, 60], [392, 60]] }],
+    ['doubling back beside a container border', 'x', {}, { to_side: 'bottom', via: [[696, 290], [696, 210]] }],
+    ['given twice beside a container border', 'x', {}, { to_side: 'bottom', via: [[696, 290], [760, 200], [696, 290]] }],
+    ['nudged apart by the leg between two vias', 'b', {}, { via: [[200, 100], [300, 110], [200, 130]] }],
+    ['on the center line of its own node, in its buffer', 'b', {}, { via: [[105, 20]] }],
+    ['on the edge of the buffer of its own node', 'b', {}, { via: [[110, 20]] }],
+    ['inside its own node', 'b', {}, { via: [[70, 20]] }],
+    ['at the center of its own node', 'b', {}, { via: [[50, 20]] }],
+    ['on a stub point', 'b', {}, { ...right, via: [[112, 20]] }],
+    ['on the stub point at the far end', 'b', {}, { ...right, via: [[388, 20]] }],
   ])('stays on an orthogonal or polyline route %s', async (_, to, over, hint) => {
     const e = { ...edge('e', 'a', to), ...over, hint };
     const r = (await routes({ view: 'v', grid: 10, nodes, edges: [e] }, boxes)).get('e')!;
-    expect(passesInOrder(r, hint!.via!.map(([x, y]) => ({ x, y })))).toBe(true);
+    const via = hint!.via!.map(([x, y]) => ({ x, y }));
+    expect(passed(r, via)).toEqual(via);
     if (e.style.routing === 'orthogonal') expect(axisAligned(r)).toBe(true);
   });
+});
+
+it.each<[string, ViewEdge['hint'], Point[]]>([
+  ['the end of a plain end at a via on the edge of the buffer', { via: [[110, 20]] }, pts([100, 20], [400, 20])],
+  ['the end of a side hint at a via on its stub', { from_side: 'right', via: [[105, 20]] }, pts([100, 20], [400, 20])],
+  ['the far end at a via on its stub', { to_side: 'left', via: [[390, 20]] }, pts([100, 20], [400, 20])],
+])('moves %s', async (_, hint, want) => {
+  const view: ResolvedView = { view: 'v', grid: 10, nodes: [node('a'), node('b')], edges: [{ ...edge('e', 'a', 'b'), hint }] };
+  expect((await routes(view, { a: box(0, 0), b: box(400, 0) })).get('e')).toEqual(want);
+});
+
+it('enters an end by its side when the first route ends past the box', async () => {
+  const boxes = { a: { x: 220, y: 180, w: 100, h: 40 }, d: { x: 240, y: 240, w: 100, h: 40 }, f: { x: 30, y: 510, w: 100, h: 40 } };
+  const view: ResolvedView = { view: 'v', grid: 10, nodes: [node('a'), node('d'), node('f')], edges: [{ ...edge('e', 'f', 'd'), hint: { from_side: 'top', to_side: 'top' } }] };
+  expect((await routes(view, boxes)).get('e')).toEqual(pts([80, 510], [80, 228], [290, 228], [290, 240]));
 });
 
 describe('liveRoute', () => {

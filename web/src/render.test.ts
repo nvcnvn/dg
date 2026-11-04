@@ -58,8 +58,8 @@ describe('a pinned size a stretched stack overrides', () => {
   it.each<[string, Policy | undefined, Partial<ViewNode>, object, number]>([
     ['a leaf across a vertical stack', vertical, { pin: { x: 0, y: 0, w: 100 } }, {}, 220],
     ['a container across a vertical stack', vertical, { container: true, pin: { x: 0, y: 0, w: 100 } }, {}, 220],
-    ['a left label across a horizontal stack', horizontal, { container: true, pin: { x: 0, y: 0, h: 100 } }, left, 220],
-    ['the height of a leaf across a horizontal stack, in its text area', horizontal, { pin: { x: 0, y: 0, w: 200, h: 100 } }, { shape: 'hexagon' }, 160],
+    ['a left label across a horizontal stack', horizontal, { container: true, pin: { x: 0, y: 0, h: 100 } }, left, 80],
+    ['the height of a leaf across a horizontal stack, in its text area', horizontal, { pin: { x: 0, y: 0, w: 200, h: 100 } }, { shape: 'hexagon' }, 130],
     ['a leaf along a horizontal stack', horizontal, { pin: { x: 0, y: 0, w: 100 } }, {}, 80],
     ['a container along a horizontal stack', horizontal, { container: true, pin: { x: 0, y: 0, w: 100 } }, {}, 80],
     ['a left label along a vertical stack', vertical, { container: true, pin: { x: 0, y: 0, h: 100 } }, left, 80],
@@ -69,6 +69,55 @@ describe('a pinned size a stretched stack overrides', () => {
   ])('wraps %s', async (_, policy, a, style, width) => {
     const d = await drawn(inStack(policy, a, style));
     expect(d.nodes.find((n) => n.id === 'a')!.text).toEqual(textBlock(label, width, font, text));
+  });
+  const child = (id: string, a: Partial<ViewNode>) => node(id, { frame: 's', label, ...a }, { padding: 10 });
+  const lanes = (s: Partial<ViewNode>, ...kids: ViewNode[]) => drawn([node('s', { container: true, policy: { ...vertical, order: kids.map((k) => k.id) }, pin: { x: 0, y: 0 }, ...s }, { padding: 10, min_w: 0 }), ...kids]);
+  const width = (w: number) => ({ pin: { x: 0, y: 0, w } });
+  it.each<[string, Partial<ViewNode>, number, number]>([
+    ['narrower than the stack', width(100), 130, 110],
+    ['wider than the stack', width(300), 130, 110],
+  ])('wraps a child pinned %s at the inside of a pinned stack', async (_, a, w, wrap) => {
+    const d = await lanes(width(150), child('a', a));
+    const n = d.nodes.find((x) => x.id === 'a')!;
+    expect(n.box.w).toBe(w);
+    expect(n.text).toEqual(textBlock(label, wrap, font, text));
+    expect(n.overflows).toBe(false);
+  });
+  it('wraps a child without a pin at the inside of a pinned stack', async () => {
+    const n = (await lanes(width(150), child('a', {}))).nodes.find((x) => x.id === 'a')!;
+    expect(n.box.w).toBe(130);
+    expect(n.text).toEqual(textBlock(label, 110, font, text));
+  });
+  it('wraps children all pinned to one width at that width', async () => {
+    const d = await lanes({}, child('a', width(100)), child('b', width(100)));
+    for (const n of d.nodes.filter((x) => x.id !== 's')) {
+      expect(n.box.w).toBe(100);
+      expect(n.text).toEqual(textBlock(label, 80, font, text));
+      expect(n.overflows).toBe(false);
+    }
+  });
+  it('wraps lanes pinned to one width with no max_w at that width', async () => {
+    const lane = (id: string) => node(id, { frame: 's', label: 'x '.repeat(100).trim(), ...width(200) }, { padding: 10, max_w: 0 });
+    const d = await lanes({}, lane('a'), lane('b'));
+    const a = d.nodes.find((x) => x.id === 'a')!;
+    expect(a.box.w).toBe(200);
+    expect(a.text!.w).toBeLessThanOrEqual(180);
+  });
+  it('keeps wrapping children without a pin in a stack without one at max_w', async () => {
+    const d = await lanes({}, child('a', {}), child('b', width(400)));
+    expect(d.nodes.find((x) => x.id === 'a')!.text).toEqual(textBlock(label, 220, font, text));
+    expect(d.nodes.find((x) => x.id === 'b')!.text).toEqual(textBlock(label, 380, font, text));
+  });
+  it('wraps a child of a lane at the room left by the label strip of a wider lane', async () => {
+    const lane = { label_side: 'left' as const, padding: 10, min_w: 0 };
+    const d = await drawn([
+      node('s', { container: true, policy: { ...vertical, order: ['wide', 't'] }, pin: { x: 0, y: 0, w: 300 } }, { padding: 0, min_w: 0 }),
+      node('wide', { frame: 's', container: true, label: 'two\nlines' }, lane),
+      node('t', { frame: 's', container: true, label: 'x', policy: { ...vertical, order: ['a'] } }, lane),
+      child('a', { frame: 't' }),
+    ]);
+    const a = d.nodes.find((n) => n.id === 'a')!;
+    expect(a.text).toEqual(textBlock(label, a.box.w - 20, font, text));
   });
   it('wraps a child in the stack of the of of a view the same way', async () => {
     const nodes = [node('a', { label, pin: { x: 0, y: 0, w: 100 } }), node('wide', { label: 'x'.repeat(100) })];
@@ -87,12 +136,13 @@ describe('a pinned size a stretched stack overrides', () => {
     ['a left label height the stack overrides', horizontal, { container: true, label: 'word '.repeat(9), pin: { x: 0, y: 0, h: 60 } }, left, false],
     ['a height along the stack too short for the label', vertical, { pin: { x: 0, y: 0, w: 100, h: 20 } }, {}, true],
     ['a width along the stack too narrow for the label', horizontal, { pin: { x: 0, y: 0, w: 10, h: 300 } }, {}, true],
-  ])('warns only about a size the box has: %s', async (_, policy, a, style, want) => {
+  ])('warns only when the label overflows: %s', async (_, policy, a, style, want) => {
     const d = await drawn(inStack(policy, a, style));
     expect(d.nodes.find((n) => n.id === 'a')!.overflows).toBe(want);
   });
-  it('warns when the pin is the widest child, so that the stack draws it and the label is past it', async () => {
-    const d = await drawn([node('s', { container: true, policy: { ...vertical, order: ['a'] }, pin: { x: 0, y: 0 } }, { min_w: 0 }), node('a', { frame: 's', label, pin: { x: 0, y: 0, w: 100 } })]);
+  it('warns about a label that overflows where the width is known only after placement', async () => {
+    const free = node('g', { frame: 's', container: true, label: '' }, { padding: 0, min_w: 0 });
+    const d = await drawn([node('s', { container: true, policy: { ...vertical, order: ['a', 'g'] }, pin: { x: 0, y: 0 } }, { min_w: 0, padding: 0 }), node('a', { frame: 's', label, pin: { x: 0, y: 0, w: 100 } }), free, node('i', { frame: 'g', label: 'x', pin: { x: 0, y: 0, w: 100 } })]);
     const a = d.nodes.find((n) => n.id === 'a')!;
     expect(a.box.w).toBe(100);
     expect(a.text).toEqual(textBlock(label, 220, font, text));

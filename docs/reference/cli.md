@@ -83,7 +83,8 @@ exits with 1 if there are any.
 <!-- end dg-export -->
 
 Draws a view in headless Chrome or Chromium, which must be installed, exactly as the editor draws
-it, without the editor's selection, fading or drill-down badges.
+it, without the editor's selection, fading or drill-down badges. On Windows it falls back to
+Edge. No other browser works: with none of these installed, the command fails and says so.
 
 | Format | Output |
 |---|---|

@@ -3,7 +3,7 @@ import { outline } from '../geometry/shapes';
 import { lineHeight, textBlock, type TextBlock, type TextMeasure } from '../geometry/text';
 import type { End, ResolvedView, Side, ViewEdge } from '../protocol/view';
 import { MARKER_HALF, markerLength, type MarkerPart } from './markers';
-import { clip, insidePolygon, onRoute, onSide, overlapScore, placeEndLabel, placeLabel, portPositions, rowSide, segmentHitsBox, sideFacing, simplify, type PortPos } from './route';
+import { clip, insidePolygon, keepsVia, onSegment, onSide, overlapScore, placeEndLabel, placeLabel, portPositions, rowSide, segmentHitsBox, sideFacing, simplify, type PortPos } from './route';
 
 // BUFFER is the clearance the router keeps around every obstacle.
 export const BUFFER = 10;
@@ -121,8 +121,9 @@ export async function routeEdges(g: EdgeGeometry, ports: Map<string, Map<string,
   const markerAt = (e: ViewEdge, i: number) => (i === 0 ? e.style.arrow_start : e.style.arrow_end);
 
   // Ends at one row end with the same marker share its point; ends with different markers are
-  // spread along the side, ordered by their other ends. Every row end runs straight until a grid
-  // unit past the longest marker at its side of the table, so no line turns among the markers.
+  // spread along the side, ordered by their other ends. A row end's stub reaches a grid unit past
+  // the longest marker at its side of the table, so no line turns among the markers, unless
+  // clearStub or keepStub keep it shorter.
   const atRow = new Map<string, { plan: Plan; marker: string; key: number }[]>();
   const longest = new Map<string, number>();
   for (const e of routed) {
@@ -163,7 +164,13 @@ export async function routeEdges(g: EdgeGeometry, ports: Map<string, Map<string,
       .map((e) => {
         const [from, to] = plans.get(e.id)!;
         const type = e.style.routing === 'polyline' ? 'polyline' : 'orthogonal';
-        return { id: e.id, type, from: request(from, markerAt(e, 0), blocks), to: request(to, markerAt(e, 1), blocks), via: viaOf(e) };
+        const via = viaOf(e);
+        // A via on a stub ends it: past the via, the legs on either side of it would overlap.
+        const end = (p: Plan, marker: string, v: Point | undefined) => {
+          const r = request(p, marker, blocks);
+          return v && p.dir !== 'all' && onSegment(v, p.at, r.at) ? { at: v } : r;
+        };
+        return { id: e.id, type, from: end(from, markerAt(e, 0), via[0]), to: end(to, markerAt(e, 1), via[via.length - 1]), via };
       });
     const routes = requests.length ? await router(obstacles, requests) : new Map<string, Point[]>();
     return new Map(
@@ -255,15 +262,14 @@ export async function routeEdges(g: EdgeGeometry, ports: Map<string, Map<string,
     const via = viaOf(e);
     pts = simplify(pts.map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) })), via);
     if (e.style.routing === 'orthogonal') {
-      const held = via.filter((v) => onRoute(pts, v));
-      pts = awayFromBorders(pts, containers, solid, grid, held);
+      pts = awayFromBorders(pts, containers, solid, grid, via);
       [from, to].forEach((p, i) => {
         const marker = markerAt(e, i);
         const label = i === 0 ? e.labels.start : e.labels.end;
         if (p.dir === 'all' || (marker === 'none' && p.stub === undefined && !label)) return;
         const len = Math.max(p.stub ?? stubLength(marker), label ? 2 * LABEL_PAD + lineHeight(e.style.font_size) : 0);
         const done = routed.filter((o) => o.id !== e.id).map((o) => out.get(o.id) ?? second.get(o.id)!);
-        pts = i === 0 ? keepStub(pts, p.dir, len, solid, done, grid, held) : keepStub([...pts].reverse(), p.dir, len, solid, done, grid, held).reverse();
+        pts = i === 0 ? keepStub(pts, p.dir, len, solid, done, grid, via) : keepStub([...pts].reverse(), p.dir, len, solid, done, grid, [...via].reverse()).reverse();
       });
     }
     out.set(e.id, pts);
@@ -289,42 +295,46 @@ export async function routeEdges(g: EdgeGeometry, ports: Map<string, Map<string,
 // keepStub moves the segment after a route's first one so that the first, which leaves an end with
 // direction dir, runs at least len, and a further gap at a time while the moved segment would lie
 // on a segment of another route in others, unless that would cross a box of solid or take the
-// route off a point of via: libavoid's nudging can pull a stub's free point back toward the box.
+// route off a point of via: libavoid's nudging can pull a stub's free point back toward the box,
+// or past its end. A box holding the end is the end's own, which only the stub may leave.
 export function keepStub(route: Point[], dir: Side, len: number, solid: Box[], others: Point[][] = [], gap = 10, via: Point[] = []): Point[] {
   if (route.length < 4) return route;
   const k = dir === 'left' || dir === 'right' ? 'x' : 'y';
   const o = k === 'x' ? 'y' : 'x';
   const s = step[dir][k];
-  const [a, b, c] = route;
-  if (a[o] !== b[o] || b[k] !== c[k] || (b[k] - a[k]) * s >= len) return route;
+  const [a, b, c, d] = route;
+  if (a[o] !== b[o] || b[k] !== c[k] || c[o] !== d[o] || (b[k] - a[k]) * s >= len) return route;
   const [lo, hi] = [Math.min(b[o], c[o]), Math.max(b[o], c[o])];
   const onOther = (v: number) =>
     others.some((r) => r.slice(1).some((q, i) => Math.abs(q[k] - v) < gap / 2 && Math.abs(r[i][k] - v) < gap / 2 && Math.min(q[o], r[i][o]) < hi && Math.max(q[o], r[i][o]) > lo));
   let v = a[k] + s * len;
   for (let n = 0; n < 10 && onOther(v); n++) v += s * gap;
   const moved = route.map((p, i) => (i === 1 || i === 2 ? { ...p, [k]: v } : p));
-  if (solid.some((l) => segmentHitsBox(b, moved[1], l) || segmentHitsBox(moved[1], moved[2], l) || segmentHitsBox(moved[2], moved[3], l))) return route;
-  const out = simplify(moved, via);
-  return via.every((p) => onRoute(out, p)) ? out : route;
+  if (solid.some((l) => (!holds(l, a) && segmentHitsBox(a, moved[1], l)) || segmentHitsBox(moved[1], moved[2], l) || segmentHitsBox(moved[2], moved[3], l))) return route;
+  return keepsVia(route, moved, via) ? simplify(moved, via) : route;
 }
 
 // joinLegs joins the legs of a route at the via points between them, so the route passes through
 // each exactly. libavoid moves a leg's end when it nudges the leg's first or last segment. The
 // first segment of each leg goes back onto its via; so does the last segment of the leg before,
-// unless the route doubles back there, where nudging keeps the two apart: that one stays beside
-// the next and is joined to the via by a short segment.
+// unless the route doubles back there, where nudging keeps the two apart, or that would take the
+// route off the via before: that one stays and is joined to the via by a short segment.
 export function joinLegs(legs: Point[][], via: Point[]): Point[] {
   const out = [...legs[0]];
+  let placed = -1;
   via.forEach((v, i) => {
     const [start, second, ...rest] = legs[i + 1];
     const end = out[out.length - 1];
     const before = out[out.length - 2];
     const moved = end.x !== v.x || end.y !== v.y;
     const doublesBack = moved && (end.x - before.x) * (second.x - start.x) + (end.y - before.y) * (second.y - start.y) < 0;
-    if (!doublesBack) {
-      out[out.length - 2] = slide(before, end, v);
+    const slid = slide(before, end, v);
+    if (doublesBack || (placed === out.length - 2 && !onSegment(before, out[placed - 1], slid))) out[out.length - 1] = extend(end, before, v);
+    else {
+      out[out.length - 2] = slid;
       out.pop();
     }
+    placed = out.length;
     out.push(v, slide(second, start, v), ...rest);
   });
   return out;
@@ -335,6 +345,13 @@ export function joinLegs(legs: Point[][], via: Point[]): Point[] {
 function slide(p: Point, end: Point, v: Point): Point {
   if (p.x === end.x) return { ...p, x: v.x };
   return p.y === end.y ? { ...p, y: v.y } : p;
+}
+
+// extend returns p, the far point of a segment from end, once the segment runs on to the line of v
+// across it, so that p and v are in line.
+function extend(p: Point, end: Point, v: Point): Point {
+  if (p.x === end.x) return { ...p, y: v.y };
+  return p.y === end.y ? { ...p, x: v.x } : p;
 }
 
 // join returns the points from an end with a direction to the first point of its route: the end,
@@ -365,18 +382,21 @@ function request(p: Plan, marker: string, obstacles: Box[]): RouteEnd {
 // than STUB: libavoid routes straight through an obstacle from a free point in its buffer, and a
 // long stub reaches past the gap between a child and its container's label. A buffer the end is
 // already in, like that of its own node, does not count.
-function clearStub(at: Point, dir: Side, stub: number, obstacles: Box[]): number {
+export function clearStub(at: Point, dir: Side, stub: number, obstacles: Box[]): number {
   const k = dir === 'left' || dir === 'right' ? 'x' : 'y';
   const tip = { ...at, [k]: at[k] + step[dir][k] * stub };
   let clear = stub;
   for (const o of obstacles) {
     const b = { x: o.x - BUFFER, y: o.y - BUFFER, w: o.w + 2 * BUFFER, h: o.h + 2 * BUFFER };
-    const holdsEnd = at.x >= b.x && at.x <= b.x + b.w && at.y >= b.y && at.y <= b.y + b.h;
-    if (holdsEnd || !segmentHitsBox(at, tip, b)) continue;
+    if (holds(b, at) || !segmentHitsBox(at, tip, b)) continue;
     const near = step[dir][k] > 0 ? b[k] : b[k] + (k === 'x' ? b.w : b.h);
     clear = Math.min(clear, Math.abs(near - at[k]));
   }
   return Math.max(STUB, clear);
+}
+
+function holds(b: Box, p: Point): boolean {
+  return p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h;
 }
 
 // isCornerLoop reports whether an edge is a self-loop between two plain ends of a node, which is
@@ -437,9 +457,9 @@ function straighten(a: Plan, b: Plan, boxes: Map<string, Box>, grid: number) {
 }
 
 // awayFromBorders moves each inner segment of an orthogonal route that runs along a container's
-// border, closer to it than gap, to gap from it, unless that would cross a box of solid or take
-// the route off a point of via, so an edge is drawn on top of a border only to pass a via. The
-// first and last segments stay, so the ends do not move.
+// border, closer to it than gap and between two turns, to gap from it, unless that would cross a
+// box of solid or take the route off a point of via. The first and last segments stay, so the ends
+// do not move.
 export function awayFromBorders(route: Point[], containers: Box[], solid: Box[], gap: number, via: Point[] = []): Point[] {
   const pts = route.map((p) => ({ ...p }));
   for (let i = 1; i + 2 < pts.length; i++) {
@@ -448,6 +468,7 @@ export function awayFromBorders(route: Point[], containers: Box[], solid: Box[],
     const k = a.x === b.x ? 'x' : a.y === b.y ? 'y' : undefined;
     if (!k) continue;
     const o = k === 'x' ? 'y' : 'x';
+    if (pts[i - 1][o] !== a[o] || pts[i + 2][o] !== b[o]) continue;
     for (const c of containers) {
       const lo = k === 'x' ? c.y : c.x;
       const hi = k === 'x' ? c.y + c.h : c.x + c.w;
@@ -460,7 +481,7 @@ export function awayFromBorders(route: Point[], containers: Box[], solid: Box[],
       const trial = pts.map((p, j) => (j === i || j === i + 1 ? { ...p, [k]: moved } : p));
       const touched = [trial[i - 1], trial[i], trial[i + 1], trial[i + 2]];
       if (solid.some((l) => touched.slice(1).some((p, j) => segmentHitsBox(touched[j], p, l)))) continue;
-      if (!via.every((p) => onRoute(trial, p))) continue;
+      if (!keepsVia(pts, trial, via)) continue;
       pts[i] = trial[i];
       pts[i + 1] = trial[i + 1];
       break;

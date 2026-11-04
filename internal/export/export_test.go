@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"image"
@@ -293,6 +294,13 @@ func TestBrokenPicture(t *testing.T) {
 	_, err = Render(context.Background(), v, "png")
 	if want := fmt.Sprintf("the picture of node %q did not load", v.Nodes[0].ID); err == nil || !strings.Contains(err.Error(), want) {
 		t.Errorf("export error %v, want one containing %q", err, want)
+	}
+}
+
+func TestNoBrowser(t *testing.T) {
+	_, _, err := openApp(context.Background(), chromedp.ExecPath("dg-no-such-browser"))
+	if !errors.Is(err, errNoBrowser) {
+		t.Errorf("export error %v, want %v", err, errNoBrowser)
 	}
 }
 

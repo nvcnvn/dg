@@ -1,8 +1,8 @@
 import type { Drawing } from './canvas/export';
 import type { DrawnDecoration, DrawnEdge, DrawnNode, DrawnOverlay, DrawnTable } from './canvas/markup';
 import { placeDecorations } from './geometry/decoration';
-import { absoluteBoxes, ceilTo, cmp, contentLayout, depth, drillBadge, measureNode, overflows, type Box, type Layout, type NodeMeasure, type Point } from './geometry/geometry';
-import { alignHeaders, stretchedAxes, withBlock } from './geometry/policy';
+import { absoluteBoxes, ceilTo, cmp, contentLayout, depth, drillBadge, measureNode, overflows, type Box, type Layout, type NodeMeasure, type Point, type Stretched } from './geometry/geometry';
+import { alignHeaders, stretchedAxes, stretchedSizes, withBlock } from './geometry/policy';
 import { hull } from './geometry/overlay';
 import { rowLines } from './geometry/table';
 import { svgSize } from './geometry/shapes';
@@ -23,9 +23,12 @@ export async function draw(view: ResolvedView, text: TextMeasure, family: string
   const shapes = view.shapes ?? {};
   const byId = new Map(view.nodes.map((n) => [n.id, n]));
   const placed = withBlock(view);
-  const stretched = stretchedAxes(placed);
-  const measures = new Map(placed.nodes.map((n) => [n.id, measureNode(n, text, grid, shapes[n.style.shape], stretched.get(n.id))]));
-  alignHeaders(placed, measures);
+  const measureAll = (stretched: Map<string, Stretched>) => {
+    const all = new Map(placed.nodes.map((n) => [n.id, measureNode(n, text, grid, shapes[n.style.shape], stretched.get(n.id))]));
+    alignHeaders(placed, all);
+    return all;
+  };
+  const measures = measureAll(stretchedSizes(placed, measureAll(stretchedAxes(placed)), grid));
   const layout = await place(placed, measures, text, elk);
   const boxes = absoluteBoxes(placed, measures, layout);
   if (view.policy) {

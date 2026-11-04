@@ -15,6 +15,7 @@ export interface Size {
 
 export interface Box extends Point, Size {}
 
+// Axis names a dimension of a size.
 export type Axis = keyof Size;
 
 // GAP separates an icon or picture from the label under it, and a label from the collapse badge
@@ -64,13 +65,20 @@ function subStyle(s: NodeStyle): SubStyle | undefined {
   return { font, color: s.sub_text_color };
 }
 
-// wrapWidth returns the width a node's label wraps at (0: no wrapping): the room a pinned size
-// gives it, else max_w. A pin on the stretched axis gives none.
-function wrapWidth(n: ViewNode, custom?: CustomShape, stretched?: Axis): number {
+// Stretched is the axis of a node's size a stretching stack sets, and that size once it is known
+// before placement.
+export interface Stretched {
+  axis: Axis;
+  size?: number;
+}
+
+// wrapWidth returns the width a node's label wraps at (0: no wrapping): the room its size gives it
+// where a stack sets that size or a pin does, else max_w.
+function wrapWidth(n: ViewNode, custom?: CustomShape, stretched?: Stretched): number {
   const s = n.style;
   const pad = s.padding;
-  const w = stretched === 'w' ? undefined : n.pin?.w;
-  const h = stretched === 'h' ? undefined : n.pin?.h;
+  const w = stretched?.axis === 'w' ? stretched.size : n.pin?.w;
+  const h = stretched?.axis === 'h' ? stretched.size : n.pin?.h;
   const left = n.container && s.label_side === 'left';
   const room = n.container ? (left ? h : w) : w && innerBox(s.shape, { x: 0, y: 0, w, h: h ?? s.min_h }, custom).w;
   if (room !== undefined) return Math.max(1, room - 2 * pad);
@@ -78,9 +86,9 @@ function wrapWidth(n: ViewNode, custom?: CustomShape, stretched?: Axis): number 
 }
 
 // measureNode sizes a node by spec 7.2 rules 1–3; a container's size is completed by
-// containerSize once its children are placed. stretched is the axis of its size a stretching
-// stack sets, if any.
-export function measureNode(n: ViewNode, m: TextMeasure, grid: number, custom?: CustomShape, stretched?: Axis): NodeMeasure {
+// containerSize once its children are placed. stretched says what a stretching stack sets of its
+// size, if anything.
+export function measureNode(n: ViewNode, m: TextMeasure, grid: number, custom?: CustomShape, stretched?: Stretched): NodeMeasure {
   const s = n.style;
   const pad = s.padding;
   const font = { size: s.font_size, weight: drawnWeight(s.font_weight) };
@@ -140,10 +148,9 @@ export function drillBadge(n: ViewNode, b: Box, custom?: CustomShape): Box {
   return { x: Math.round(area.x + area.w - BADGE - inset), y: Math.round(area.y + inset), w: BADGE, h: BADGE };
 }
 
-// overflows reports whether a node's pinned size leaves its label, icon or rows outside its box.
-// A pin a stretching stack overrode, so that the box does not have it, is no pinned size.
+// overflows reports whether a node with a pinned size has its label, icon or rows outside its box.
 export function overflows(n: ViewNode, m: NodeMeasure, b: Box, custom?: CustomShape): boolean {
-  if (n.pin?.w !== b.w && n.pin?.h !== b.h) return false;
+  if (n.pin?.w === undefined && n.pin?.h === undefined) return false;
   if (m.table) return b.w < m.table.size.w || b.h < m.table.size.h;
   if (n.container) {
     const [along, across] = n.style.label_side === 'left' ? [b.h, b.w] : [b.w, b.h];

@@ -127,7 +127,7 @@ export function simplify(pts: Point[], via: Point[] = []): Point[] {
     if (last && last.x === p.x && last.y === p.y) continue;
     const prev = out[out.length - 2];
     if (prev && last && (prev.x - last.x) * (last.y - p.y) === (prev.y - last.y) * (last.x - p.x)) {
-      const needed = via.some((v) => (onSegment(v, prev, last) || onSegment(v, last, p)) && !onSegment(v, prev, p));
+      const needed = via.some((v) => onSegment(v, prev, last) && !onSegment(v, prev, p));
       if (!needed) {
         out[out.length - 1] = p;
         continue;
@@ -138,14 +138,33 @@ export function simplify(pts: Point[], via: Point[] = []): Point[] {
   return out;
 }
 
-function onSegment(p: Point, a: Point, b: Point): boolean {
+// onSegment reports whether p lies on the segment from a to b.
+export function onSegment(p: Point, a: Point, b: Point): boolean {
   const inLine = (b.x - a.x) * (p.y - a.y) === (b.y - a.y) * (p.x - a.x);
   return inLine && p.x >= Math.min(a.x, b.x) && p.x <= Math.max(a.x, b.x) && p.y >= Math.min(a.y, b.y) && p.y <= Math.max(a.y, b.y);
 }
 
-// onRoute reports whether p lies on the route.
-export function onRoute(route: Point[], p: Point): boolean {
-  return route.slice(1).some((q, i) => onSegment(p, route[i], q));
+// passed returns the points of via the route passes, in order, leaving out each one it does not
+// pass after those before it.
+export function passed(route: Point[], via: Point[]): Point[] {
+  const out: Point[] = [];
+  let i = 0;
+  let from = route[0];
+  for (const v of via) {
+    let j = i;
+    let f = from;
+    while (j + 1 < route.length && !onSegment(v, f, route[j + 1])) f = route[++j];
+    if (j + 1 === route.length) continue;
+    [i, from] = [j, v];
+    out.push(v);
+  }
+  return out;
+}
+
+// keepsVia reports whether the route after passes all that the route before passes of via.
+export function keepsVia(before: Point[], after: Point[], via: Point[]): boolean {
+  const held = passed(before, via);
+  return passed(after, held).length === held.length;
 }
 
 // pointAlong returns the point at fraction t of the route's length, and whether the segment it

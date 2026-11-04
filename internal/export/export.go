@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	goruntime "runtime"
 	"time"
 
@@ -29,6 +30,8 @@ const (
 	GIFFrames = 10
 	GIFDelay  = 50 * time.Millisecond
 )
+
+var errNoBrowser = errors.New("no Chrome or Chromium found: drawing needs one of them, and other browsers such as Firefox will not do (dg check needs no browser)")
 
 // Result is a drawn view, TooSmall the containers too small for their children and Overflowing
 // the nodes too small for their labels (spec 7.2).
@@ -112,7 +115,7 @@ func captureGIF(ctx context.Context) ([]byte, error) {
 // mode in headless Chromium. Chromium resolves no host name, and the app's content
 // security policy allows only the embedded files, so the app never reaches
 // the network. stop closes both.
-func openApp(ctx context.Context) (_ context.Context, stop func(), err error) {
+func openApp(ctx context.Context, extra ...chromedp.ExecAllocatorOption) (_ context.Context, stop func(), err error) {
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, nil, err
@@ -130,7 +133,7 @@ func openApp(ctx context.Context) (_ context.Context, stop func(), err error) {
 		// Chromium refuses to start its sandbox as root, as in most CI containers.
 		opts = append(opts, chromedp.NoSandbox)
 	}
-	ctx, cancelAlloc := chromedp.NewExecAllocator(ctx, opts...)
+	ctx, cancelAlloc := chromedp.NewExecAllocator(ctx, append(opts, extra...)...)
 	ctx, cancelTab := chromedp.NewContext(ctx)
 	stop = func() {
 		cancelTab()
@@ -143,6 +146,9 @@ func openApp(ctx context.Context) (_ context.Context, stop func(), err error) {
 	)
 	if err != nil {
 		stop()
+		if errors.Is(err, exec.ErrNotFound) {
+			return nil, nil, errNoBrowser
+		}
 		return nil, nil, fmt.Errorf("open app: %w", err)
 	}
 	return ctx, stop, nil

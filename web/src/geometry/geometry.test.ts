@@ -97,19 +97,27 @@ describe('measureNode', () => {
     expect(t).toEqual(textBlock(label, width, font, text));
   });
   it.each([
-    ['leaf width', {}, { w: 100 }, 'w', {}, 220],
-    ['leaf width along the stack', {}, { w: 100, h: 60 }, 'h', {}, 80],
-    ['container width', { container: true }, { w: 100 }, 'w', {}, 220],
-    ['left label height', { container: true }, { h: 100 }, 'h', { label_side: 'left' }, 220],
-    ['left label height along the stack', { container: true }, { h: 100 }, 'w', { label_side: 'left' }, 80],
-  ] as const)('wraps by a pin only off the stretched axis: %s', (_, over, pin, axis, style, width) => {
+    ['leaf width', {}, { w: 100 }, { axis: 'w' }, {}, 220],
+    ['leaf width along the stack', {}, { w: 100, h: 60 }, { axis: 'h' }, {}, 80],
+    ['container width', { container: true }, { w: 100 }, { axis: 'w' }, {}, 220],
+    ['left label height', { container: true }, { h: 100 }, { axis: 'h' }, { label_side: 'left' }, 220],
+    ['left label height along the stack', { container: true }, { h: 100 }, { axis: 'w' }, { label_side: 'left' }, 80],
+    ['leaf width the stack gives', {}, { w: 100 }, { axis: 'w', size: 130 }, {}, 110],
+    ['leaf width the stack gives past max_w', {}, { w: 100 }, { axis: 'w', size: 400 }, {}, 380],
+    ['container width the stack gives', { container: true }, { w: 100 }, { axis: 'w', size: 130 }, {}, 110],
+    ['left label height the stack gives', { container: true }, { h: 100 }, { axis: 'h', size: 130 }, { label_side: 'left' }, 110],
+  ] as const)('wraps by a pin only off the stretched axis, or at the size given: %s', (_, over, pin, stretched, style, width) => {
     const label = 'a long label that wraps on a line of any width up to about here and beyond';
     const n = node('a', { label, pin: { x: 0, y: 0, ...pin }, ...over }, style);
-    const m = measureNode(n, text, 10, undefined, axis);
+    const m = measureNode(n, text, 10, undefined, stretched);
     expect(m.text).toEqual(textBlock(label, width, font, text));
   });
+  it('wraps a node without a pin at the size a stack gives it', () => {
+    const label = 'a long label that wraps on a line of any width up to about here and beyond';
+    expect(measureNode(node('a', { label }), text, 10, undefined, { axis: 'w', size: 130 }).text).toEqual(textBlock(label, 110, font, text));
+  });
   it('keeps a pin on the stretched axis as the measured size', () => {
-    expect(measureNode(node('a', { pin: { x: 0, y: 0, w: 120 } }), text, 10, undefined, 'w').size.w).toBe(120);
+    expect(measureNode(node('a', { pin: { x: 0, y: 0, w: 120 } }), text, 10, undefined, { axis: 'w', size: 300 }).size.w).toBe(120);
   });
   it('wraps a container label at its pinned size', () => {
     const label = 'a label that needs more than one line here';
@@ -172,12 +180,13 @@ describe('overflows', () => {
   it('is true when the wrapped label is taller than the box', () => {
     expect(at({ w: 100, h: 20 }, { w: 100, h: 20 })).toBe(true);
   });
-  it('is false for a pin the box does not have', () => {
-    expect(at({ w: 240, h: 20 }, { w: 100 })).toBe(false);
-    expect(at({ w: 100, h: 300 }, { w: 90, h: 20 })).toBe(false);
-  });
-  it('is true when the box has one of two pins and does not hold the label', () => {
+  it('is true however the box of a node with a pin got too small for the label', () => {
+    expect(at({ w: 240, h: 20 }, { w: 100 })).toBe(true);
+    expect(at({ w: 100, h: 20 }, { w: 90, h: 300 })).toBe(true);
     expect(at({ w: 240, h: 20 }, { w: 100, h: 20 })).toBe(true);
+  });
+  it('is false when a stack gave the box more room than the pin', () => {
+    expect(at({ w: 240, h: 200 }, { w: 100, h: 20 })).toBe(false);
   });
   it('is true when a container is shorter than its label', () => {
     const n = node('g', { container: true, label, pin: { x: 0, y: 0, w: 100, h: 20 } });

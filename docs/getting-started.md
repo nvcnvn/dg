@@ -9,7 +9,7 @@ Download the archive for your platform from the
 [releases page](https://github.com/nvcnvn/dg/releases), unpack it, and copy `dg` to a directory
 on your `PATH`. It is a single binary that holds everything it needs at run time: dg never uses
 the network. To draw pictures, `dg export` also needs Google Chrome or Chromium, which it drives
-headless.
+headless (on Windows, Edge will do). Firefox and Safari do not work.
 
 ### Build from source
 
