@@ -3,6 +3,7 @@ package ops
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -28,7 +29,8 @@ func TestWriteFilesKeepsModeAndLinks(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if info.Mode().Perm() != want {
+		// Windows keeps no permission bits: Go reports every writable file as 0666.
+		if runtime.GOOS != "windows" && info.Mode().Perm() != want {
 			t.Errorf("%s has mode %v, want %v", filepath.Base(path), info.Mode().Perm(), want)
 		}
 	}

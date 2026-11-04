@@ -1,0 +1,5 @@
+# Text files are checked out with LF on every platform: the goldens and generated files are
+# compared byte for byte.
+* text=auto eol=lf
+# Keeps CRLF line endings, which the language server test of it covers.
+testdata/lsp/unicode/model.hcl -text
