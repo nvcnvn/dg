@@ -100,19 +100,39 @@ export async function run(): Promise<void> {
   await waitFor("the drawing in the panel", () =>
     evaluate<boolean>(frame, `document.body.classList.contains('editable') && document.querySelector('[data-node="customer"]') !== null`),
   );
-  const node = await evaluate<[number, number]>(
-    frame,
-    `(() => { const el = document.querySelector('[data-node="customer"]'); el.scrollIntoView({ block: 'center', inline: 'center' }); const r = el.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; })()`,
-  );
-  const panel = await evaluate<[number, number]>(
-    win,
-    `(() => { const f = [...document.querySelectorAll('iframe.webview')].find((f) => f.getBoundingClientRect().width > 0); const r = f.getBoundingClientRect(); return [r.x, r.y]; })()`,
-  );
-  const [x, y] = [panel[0] + node[0], panel[1] + node[1]];
+  // Chromium sends no input into the panel's frame while the window is behind another one, and
+  // VS Code goes on laying out its window for a while after the panel opens, so the window is
+  // brought to the front, the frame is measured once it holds still, and a press the frame did
+  // not receive is tried again from a new measurement.
+  await win.send("Page.bringToFront", {});
+  await evaluate<number>(frame, `window.pressed = 0; document.addEventListener('pointerdown', () => window.pressed++, true); 0`);
+  const panelAt = () =>
+    evaluate<[number, number]>(
+      win,
+      `(() => { const f = [...document.querySelectorAll('iframe.webview')].find((f) => f.getBoundingClientRect().width > 0); const r = f.getBoundingClientRect(); return [r.x, r.y]; })()`,
+    );
+  let [x, y] = [0, 0];
   const mouse = (type: string, dx: number, buttons: number) =>
     win.send("Input.dispatchMouseEvent", { type, x: x + dx, y, button: type === "mouseMoved" && !buttons ? "none" : "left", buttons, clickCount: 1 });
-  await mouse("mouseMoved", 0, 0);
-  await mouse("mousePressed", 0, 1);
+  for (let attempt = 1; ; attempt++) {
+    let panel = await panelAt();
+    for (let still = 0; still < 3; ) {
+      await new Promise((r) => setTimeout(r, 200));
+      const now = await panelAt();
+      still = now[0] === panel[0] && now[1] === panel[1] ? still + 1 : 0;
+      panel = now;
+    }
+    const node = await evaluate<[number, number]>(
+      frame,
+      `(() => { const el = document.querySelector('[data-node="customer"]'); el.scrollIntoView({ block: 'center', inline: 'center' }); const r = el.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; })()`,
+    );
+    [x, y] = [panel[0] + node[0], panel[1] + node[1]];
+    await mouse("mouseMoved", 0, 0);
+    await mouse("mousePressed", 0, 1);
+    if (await evaluate<number>(frame, "window.pressed")) break;
+    await mouse("mouseReleased", 0, 0);
+    if (attempt === 5) throw new Error("the panel's frame never received the press");
+  }
   for (let dx = 10; dx <= 60; dx += 10) await mouse("mouseMoved", dx, 1);
   await mouse("mouseReleased", 60, 0);
   await waitFor("the text editor to show the moved node", () => layoutDoc.getText() !== original && layoutDoc.getText().includes("customer: {x: 310,"));
@@ -130,6 +150,7 @@ export async function run(): Promise<void> {
     frame,
     `(() => { const r = document.querySelector('[data-node="customer"]').getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; })()`,
   );
+  const panel = await panelAt();
   const [cx, cy] = [panel[0] + box[0], panel[1] + box[1]];
   for (const clickCount of [1, 2]) {
     for (const type of ["mousePressed", "mouseReleased"]) await win.send("Input.dispatchMouseEvent", { type, x: cx, y: cy, button: "left", buttons: type === "mousePressed" ? 1 : 0, clickCount });

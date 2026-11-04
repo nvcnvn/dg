@@ -32,6 +32,12 @@ async function main(): Promise<void> {
   let extensionDevelopmentPath = root;
   // The DevTools port lets the test send input to the diagram panel's frame as a user would.
   const userData = path.join(tmp, "user");
+  // VS Code's chat and agents views open beside the editors and move them while the test runs.
+  fs.mkdirSync(path.join(userData, "User"), { recursive: true });
+  fs.writeFileSync(
+    path.join(userData, "User", "settings.json"),
+    JSON.stringify({ "chat.disableAIFeatures": true, "workbench.secondarySideBar.defaultVisibility": "hidden", "workbench.startupEditor": "none" }),
+  );
   const launchArgs = [workspace, "--user-data-dir", userData, "--extensions-dir", extensionsDir, "--remote-debugging-port=0"];
   const vsix = process.env.DG_VSIX;
   if (vsix) {
