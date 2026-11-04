@@ -1,5 +1,5 @@
 import type { Op } from './ops';
-import type { Compartment, End, Labels, Port, ResolvedView } from './view';
+import type { Compartment, CustomShape, End, Labels, NodeStyle, Port, ResolvedView } from './view';
 
 // Messages of the dg serve WebSocket protocol (internal/server).
 
@@ -28,18 +28,25 @@ export interface Result {
   h?: number;
 }
 
-// ModelInfo is what the editor knows of the whole project to edit the model: the kinds and edge
-// kinds of the loaded packs, the tags in use, and every node and edge, drawn or not.
+// ModelInfo is what the editor knows of the whole project to edit the model: the loaded packs in
+// load order, the kinds and edge kinds they define, the tags in use, the custom shapes kinds use
+// by default, and every node and edge, drawn or not.
 export interface ModelInfo {
+  packs?: string[];
   kinds: KindInfo[];
   edge_kinds: string[];
   tags: string[];
+  shapes?: Record<string, CustomShape>;
   nodes: ModelNode[];
   edges: ModelEdge[];
 }
 
 export interface KindInfo {
   name: string;
+  // pack names the pack that defines the kind; the project's own spec.hcl has none.
+  pack?: string;
+  // style is what a node of the kind looks like by default; only the model message has it.
+  style?: NodeStyle;
   extends?: string;
   container?: boolean;
   layout?: string;

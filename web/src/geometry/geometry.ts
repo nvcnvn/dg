@@ -224,3 +224,19 @@ export function contentLayout(n: ViewNode, m: NodeMeasure, b: Box, custom?: Cust
   const badge = n.collapsed ? { x: Math.round(area.x + (area.w - BADGE) / 2), y: Math.round(textBox.y + th + (th ? GAP : 0)), w: BADGE, h: BADGE } : undefined;
   return { textBox, align: 'center', icon, ...(badge ? { badge } : {}) };
 }
+
+const MAX_FIT = 1;
+export const MIN_ZOOM = 0.1;
+
+// fitZoom is the largest zoom up to 100% at which box shows whole in room.
+export function fitZoom(box: Size, room: Size): number {
+  if (box.w <= 0 || box.h <= 0) return MAX_FIT;
+  return Math.max(MIN_ZOOM, Math.min(MAX_FIT, room.w / box.w, room.h / box.h));
+}
+
+// union is the box around boxes.
+export function union(boxes: Box[]): Box {
+  const x = Math.min(...boxes.map((b) => b.x));
+  const y = Math.min(...boxes.map((b) => b.y));
+  return { x, y, w: Math.max(...boxes.map((b) => b.x + b.w)) - x, h: Math.max(...boxes.map((b) => b.y + b.h)) - y };
+}

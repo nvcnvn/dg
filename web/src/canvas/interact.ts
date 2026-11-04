@@ -27,7 +27,7 @@ import {
   type Scene,
 } from '../edit/edit';
 import { connectOp, copy, dropTarget, endAt, pasteOps, reparentOps, type Clip } from '../edit/model';
-import { roundTo, type Box, type Point } from '../geometry/geometry';
+import { fitZoom, MIN_ZOOM, roundTo, union, type Box, type Point } from '../geometry/geometry';
 import type { Result } from '../protocol/client';
 import type { End, Labels } from '../protocol/view';
 import { liveEdges, liveRequest, liveRoute, type LiveEdge } from '../route/live';
@@ -60,6 +60,8 @@ export interface Host {
   // edgeKind is the kind of new edges.
   edgeKind(): string;
   selectView(id: string): void;
+  // help shows the sheet of keyboard shortcuts.
+  help(): void;
 }
 
 // DRAG starts a drag after the pointer moved this many screen pixels.
@@ -72,6 +74,7 @@ const BUDGET = 8;
 // DRAGGED_OPACITY lets the siblings a dragged child of a stack or grid passes over show through.
 const DRAGGED_OPACITY = 0.6;
 const SVG = 'http://www.w3.org/2000/svg';
+const MAX_ZOOM = 4;
 
 type Gesture =
   | { kind: 'move'; ids: string[]; moved: Set<string>; d: Point; live: Live; room: Set<string>; alt: boolean }
@@ -129,9 +132,15 @@ export interface Interaction {
   zoom(): number;
   // can reports whether the unpin, align (2) and distribute (3) actions apply to the selection.
   can(action: 'unpin' | 2 | 3): boolean;
+  // movable counts the selected nodes that can move.
+  movable(): number;
   arrange(how: Align | 'x' | 'y'): void;
   unpin(): void;
   setZoom(z: number): void;
+  // fit shows box, by default the whole drawing, centered at the largest zoom up to 100%.
+  fit(box?: Box): void;
+  // selectionBox is the box of what is selected, if anything is.
+  selectionBox(): Box | undefined;
 }
 
 // interact handles the gestures on the paper (FR-11): selection by click, shift-click and box;
@@ -156,6 +165,8 @@ export function interact(paper: dia.Paper, scroller: HTMLElement, menu: HTMLElem
   let pasted: (Point & { n: number }) | undefined;
   // hover is the drawing's point last under the pointer, while it is over the canvas.
   let hover: Point | undefined;
+  // reach is the end a drag in connect mode can start or finish at, under the pointer.
+  let reach: End | undefined;
   let press: Press | undefined;
   let gesture: Gesture | undefined;
   let pointer: Point = { x: 0, y: 0 };
@@ -216,6 +227,17 @@ export function interact(paper: dia.Paper, scroller: HTMLElement, menu: HTMLElem
       (ve.hint?.via ?? []).forEach(([x, y], i) => dot({ x, y }, 'via:' + i, 'dg-handle dg-via'));
       if (ve.labels.mid && e.labels[0]) rect(e.labels[0].box, 'dg-handle dg-label', { 'data-handle': 'label', 'stroke-width': 1.5 / zoom });
     }
+    if (connecting && reach) drawReach(s, reach);
+  };
+
+  // drawReach highlights the node, port or row at end e.
+  const drawReach = (s: Scene, e: End) => {
+    const n = s.nodes.get(e.node);
+    if (!n) return;
+    const row = e.row && n.table?.rows.find((r) => r.name === e.row);
+    const port = e.port && n.ports.find((p) => p.name === e.port);
+    const box = port ? { x: port.x - 6 / zoom, y: port.y - 6 / zoom, w: 12 / zoom, h: 12 / zoom } : row ? { x: n.box.x, y: row.y - n.style.font_size, w: n.box.w, h: 2 * n.style.font_size } : n.box;
+    rect(box, 'dg-target', { 'stroke-width': 2 / zoom, 'data-target': e.node, 'data-reach': e.port ? 'port' : e.row ? 'row' : 'node' });
   };
 
   const select = (ids: Iterable<string>, e?: string, d?: string) => {
@@ -241,10 +263,10 @@ export function interact(paper: dia.Paper, scroller: HTMLElement, menu: HTMLElem
     for (const n of s.view.nodes) {
       const b = n.read_only && s.nodes.get(n.id)?.box;
       if (!b) continue;
-      const g = el('g', { 'data-lock': n.id, transform: `translate(${b.x + b.w - 16},${b.y + 3})`, fill: '#5F6368' }, locks);
+      const g = el('g', { 'data-lock': n.id, transform: `translate(${b.x + b.w - 16},${b.y + 3})` }, locks);
       el('title', {}, g).textContent = 'Read-only: only the layout can change';
-      el('rect', { x: 1, y: 6, width: 10, height: 7, rx: 1 }, g);
-      el('path', { d: 'M3 6 V4 a3 3 0 0 1 6 0 V6', fill: 'none', stroke: '#5F6368', 'stroke-width': 1.5 }, g);
+      el('rect', { x: 1, y: 6, width: 10, height: 7, rx: 1, 'stroke-width': 0 }, g);
+      el('path', { d: 'M3 6 V4 a3 3 0 0 1 6 0 V6', fill: 'none', 'stroke-width': 1.5 }, g);
     }
   };
 
@@ -442,11 +464,10 @@ export function interact(paper: dia.Paper, scroller: HTMLElement, menu: HTMLElem
       }
       case 'connect': {
         g.p = p;
+        reach = endAt(s, p, HIT / zoom);
         drawChrome();
         const a = endPoint(s, g.from);
         el('path', { d: `M${a.x} ${a.y} L${p.x} ${p.y}`, class: 'dg-rubber', 'stroke-width': 1.5 / zoom });
-        const to = endAt(s, p, HIT / zoom);
-        if (to) rect(s.nodes.get(to.node)!.box, 'dg-target', { 'stroke-width': 2 / zoom, 'data-target': to.node });
         break;
       }
       case 'decoration': {
@@ -708,9 +729,18 @@ export function interact(paper: dia.Paper, scroller: HTMLElement, menu: HTMLElem
   });
   scroller.addEventListener('pointermove', (ev) => {
     hover = local({ x: ev.clientX, y: ev.clientY });
+    const s = sc();
+    if (!connecting || gesture || !s) return;
+    const next = endAt(s, hover, HIT / zoom);
+    if (JSON.stringify(next) === JSON.stringify(reach)) return;
+    reach = next;
+    drawChrome();
   });
   scroller.addEventListener('pointerleave', () => {
     hover = undefined;
+    if (!reach) return;
+    reach = undefined;
+    drawChrome();
   });
   paper.el.addEventListener('pointermove', (ev) => {
     if (!press) return;
@@ -814,6 +844,7 @@ export function interact(paper: dia.Paper, scroller: HTMLElement, menu: HTMLElem
     connecting(on?: boolean) {
       if (on !== undefined && on !== connecting) {
         connecting = on;
+        reach = undefined;
         document.body.classList.toggle('connecting', on);
         drawChrome();
         onSelect();
@@ -835,6 +866,10 @@ export function interact(paper: dia.Paper, scroller: HTMLElement, menu: HTMLElem
       if (!s) return false;
       return action === 'unpin' ? unpinOps(s, selected).length > 0 : movable(s, selected).length >= action;
     },
+    movable() {
+      const s = sc();
+      return s ? movable(s, selected).length : 0;
+    },
     arrange(how: Align | 'x' | 'y') {
       const s = sc();
       if (!s || !host.editable()) return;
@@ -845,7 +880,7 @@ export function interact(paper: dia.Paper, scroller: HTMLElement, menu: HTMLElem
       if (s && host.editable()) send(unpinOps(s, selected));
     },
     setZoom(z: number, at?: Point) {
-      const next = Math.min(4, Math.max(0.25, z));
+      const next = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z));
       if (next === zoom) return;
       const r = scroller.getBoundingClientRect();
       const c = at ?? { x: r.left + r.width / 2, y: r.top + r.height / 2 };
@@ -856,6 +891,29 @@ export function interact(paper: dia.Paper, scroller: HTMLElement, menu: HTMLElem
       scroller.scrollLeft += moved.x - c.x;
       scroller.scrollTop += moved.y - c.y;
       drawChrome();
+    },
+    fit(box?: Box) {
+      const s = sc();
+      if (!s) return;
+      const b = box ?? s.drawing.bounds;
+      const pad = getComputedStyle(scroller);
+      zoom = fitZoom(b, { w: scroller.clientWidth - parseFloat(pad.paddingLeft) - parseFloat(pad.paddingRight), h: scroller.clientHeight - parseFloat(pad.paddingTop) - parseFloat(pad.paddingBottom) });
+      onZoom();
+      const r = scroller.getBoundingClientRect();
+      const c = paper.localToClientPoint(b.x + b.w / 2, b.y + b.h / 2);
+      scroller.scrollLeft += c.x - (r.left + scroller.clientWidth / 2);
+      scroller.scrollTop += c.y - (r.top + scroller.clientHeight / 2);
+      drawChrome();
+    },
+    selectionBox(): Box | undefined {
+      const s = sc();
+      if (!s) return undefined;
+      const boxes = [...selected].map((id) => s.nodes.get(id)!.box);
+      const d = deco && s.drawing.decorations.find((x) => x.id === deco);
+      if (d) boxes.push(d.box);
+      const e = edge && s.drawing.edges.find((x) => x.id === edge);
+      if (e) boxes.push(...e.points.map((p) => ({ ...p, w: 0, h: 0 })));
+      return boxes.length ? union(boxes) : undefined;
     },
   };
   const menuCtl = menuAndKeys(menu, {
@@ -883,6 +941,12 @@ export function interact(paper: dia.Paper, scroller: HTMLElement, menu: HTMLElem
     },
     zoom: () => zoom,
     setZoom: (z) => api.setZoom(z),
+    fit: () => api.fit(),
+    zoomToSelection: () => {
+      const b = api.selectionBox();
+      if (b) api.fit(b);
+    },
+    help: () => host.help(),
     center: api.center,
     pagePoint: (p) => paper.localToPagePoint(p.x, p.y),
     selectView: host.selectView,

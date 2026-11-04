@@ -1,7 +1,15 @@
+import { createElement, type IconNode } from 'lucide';
+
 // Small DOM helpers and the editor's modal dialogs, built on the native <dialog> element, which
 // keeps the focus inside, closes on Escape and gives the focus back when it closes.
 
 type Child = Node | string | null | undefined | false;
+
+// icon draws a Lucide icon at the theme's size, hidden from assistive technology unless attrs
+// names it.
+export function icon(node: IconNode, attrs: Record<string, string> = { 'aria-hidden': 'true' }): SVGElement {
+  return createElement(node, { class: 'icon', ...attrs });
+}
 
 // h makes an element with attributes (a function for on… handlers, true for a bare attribute)
 // and children.
@@ -107,6 +115,13 @@ export function choose(title: string, label: string, items: { value: string; tex
   const form = h('form', { method: 'dialog' }, heading(d, title), ...labeled(label, search), list, h('div', { class: 'buttons' }, h('button', { type: 'submit', value: 'cancel' }, 'Cancel')));
   d.replaceChildren(form);
   return open(d, () => picked);
+}
+
+// sheet shows content in a dialog with a Close button.
+export function sheet(title: string, content: Node): Promise<void> {
+  const d = dialog();
+  d.replaceChildren(h('form', { method: 'dialog' }, heading(d, title), content, h('div', { class: 'buttons' }, h('button', { type: 'submit', value: 'cancel' }, 'Close'))));
+  return open(d, () => undefined);
 }
 
 // heading returns the title of dialog d, which names it.

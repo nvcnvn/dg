@@ -137,8 +137,9 @@ one's flags.
 
 <!-- end dg-vocabulary -->
 
-Prints, as JSON, what a project can be built from: its kinds (with their ports, properties and
-whether they are containers or hold rows, inherited ones included), edge kinds, tags and views.
+Prints, as JSON, what a project can be built from: its packs in load order, its kinds (with the
+pack that defines each, their ports, properties and whether they are containers or hold rows,
+inherited ones included), edge kinds, tags and views.
 Agents read it before writing a model.
 
 ## dg mcp

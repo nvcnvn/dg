@@ -25,6 +25,7 @@ import (
 	"github.com/nvcnvn/dg/internal/model"
 	"github.com/nvcnvn/dg/internal/ops"
 	"github.com/nvcnvn/dg/internal/project"
+	"github.com/nvcnvn/dg/internal/style"
 	"github.com/nvcnvn/dg/internal/view"
 	"github.com/nvcnvn/dg/web"
 )
@@ -414,13 +415,22 @@ type modelMessage struct {
 }
 
 // modelInfo is what the editor needs of the whole project to edit the model: the vocabulary
-// for its palette and inspector, and every node and edge, drawn in the view or not.
+// for its palette and inspector, the custom shapes kinds use by default, and every node and
+// edge, drawn in the view or not.
 type modelInfo struct {
-	Kinds     []project.KindInfo `json:"kinds"`
-	EdgeKinds []string           `json:"edge_kinds"`
-	Tags      []string           `json:"tags"`
-	Nodes     []nodeInfo         `json:"nodes"`
-	Edges     []edgeInfo         `json:"edges"`
+	Packs     []string                `json:"packs"`
+	Kinds     []kindInfo              `json:"kinds"`
+	EdgeKinds []string                `json:"edge_kinds"`
+	Tags      []string                `json:"tags"`
+	Shapes    map[string]*style.Shape `json:"shapes,omitempty"`
+	Nodes     []nodeInfo              `json:"nodes"`
+	Edges     []edgeInfo              `json:"edges"`
+}
+
+// kindInfo is a kind with the style a node of it has by default, which the palette draws.
+type kindInfo struct {
+	project.KindInfo
+	Style style.Node `json:"style"`
 }
 
 type nodeInfo struct {
@@ -449,7 +459,17 @@ type edgeInfo struct {
 // instance ports.
 func modelOf(p *project.Project) modelInfo {
 	v := p.Vocabulary()
-	out := modelInfo{Kinds: v.Kinds, EdgeKinds: v.EdgeKinds, Tags: v.Tags, Nodes: []nodeInfo{}, Edges: []edgeInfo{}}
+	out := modelInfo{Packs: v.Packs, Kinds: []kindInfo{}, EdgeKinds: v.EdgeKinds, Tags: v.Tags, Nodes: []nodeInfo{}, Edges: []edgeInfo{}}
+	for _, k := range v.Kinds {
+		info := kindInfo{KindInfo: k, Style: style.DrawnNode(p.Styles.ForNode(p.Spec, k.Name, nil))}
+		if sh := p.Styles.Shapes[info.Style.Shape]; sh != nil {
+			if out.Shapes == nil {
+				out.Shapes = map[string]*style.Shape{}
+			}
+			out.Shapes[sh.Name] = sh
+		}
+		out.Kinds = append(out.Kinds, info)
+	}
 	for _, id := range slices.Sorted(maps.Keys(p.Model.Nodes)) {
 		n := p.Model.Nodes[id]
 		info := nodeInfo{ID: id, Kind: n.Kind, Label: n.Label, Tags: n.Tags, ReadOnly: p.IsReadOnly(n.Range.Filename)}

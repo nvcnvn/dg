@@ -100,7 +100,7 @@ func menu(sel, item string) chromedp.Action[chromedp.Void] {
 	return chromedp.Steps(
 		click(sel, chromedp.ButtonRight),
 		chromedp.Poll[chromedp.Void](`!document.getElementById('context-menu').hidden`),
-		js(`(() => { const items = [...document.querySelectorAll('#context-menu button')]; const b = items.find((b) => b.textContent === `+jsString(item)+`); if (!b) throw new Error('the menu holds ' + items.map((b) => b.textContent).join(', ')); b.click(); })()`),
+		js(`(() => { const items = [...document.querySelectorAll('#context-menu button')]; const b = items.find((b) => b.querySelector('.text').textContent === `+jsString(item)+`); if (!b) throw new Error('the menu holds ' + items.map((b) => b.innerText).join(', ')); b.click(); })()`),
 	)
 }
 
@@ -182,21 +182,21 @@ func TestEditorModel(t *testing.T) {
 			files{"model.hcl": {"label = \"Bravo\""}}, nil},
 		{"edge label in place", []chromedp.Action[chromedp.Void]{dblclick(`[data-edge="ab"] text`), edit("invokes")}, "set_edge_labels",
 			files{"model.hcl": {"label = \"invokes\""}}, files{"model.hcl": {"\"calls\""}}},
-		{"connect two nodes", []chromedp.Action[chromedp.Void]{chromedp.Click(chromedp.CSS(`#connect`)), js(`(() => { const s = document.getElementById('edge-kind'); s.value = 'async'; s.dispatchEvent(new Event('change')); })()`), dragOnto(`[data-node="a"]`, `[data-node="c"]`, 0.5, 0.5, 0, 0)}, "connect",
+		{"connect two nodes", []chromedp.Action[chromedp.Void]{chromedp.Click(chromedp.CSS(`#connect`)), toolMenu("edge-kind", "async"), dragOnto(`[data-node="a"]`, `[data-node="c"]`, 0.5, 0.5, 0, 0)}, "connect",
 			files{"model.hcl": {"edge \"a-c\" {\n  from = node.a\n  to   = node.c\n  kind = \"async\"\n}"}}, nil},
-		{"connect from a port", []chromedp.Action[chromedp.Void]{js(`(() => { const s = document.getElementById('edge-kind'); s.value = 'default'; s.dispatchEvent(new Event('change')); })()`), pointAt(`[data-node="c"]`, 0.5, 0, 0, 0, func(x, y float64) chromedp.Action[chromedp.Void] {
+		{"connect from a port", []chromedp.Action[chromedp.Void]{toolMenu("edge-kind", "default"), pointAt(`[data-node="c"]`, 0.5, 0, 0, 0, func(x, y float64) chromedp.Action[chromedp.Void] {
 			return pointAt(`[data-node="b"]`, 0.5, 0.5, 0, 0, func(x1, y1 float64) chromedp.Action[chromedp.Void] { return dragFrom(x, y, x1-x, y1-y) })
 		})}, "connect", files{"model.hcl": {"edge \"c-b\" {\n  from = node.c.port.in\n  to   = node.b\n}"}}, nil},
 		{"connect from a row", []chromedp.Action[chromedp.Void]{rowText("t", "total", func(x, y float64) chromedp.Action[chromedp.Void] {
 			return pointAt(`[data-node="srv"]`, 0.5, 0.5, 0, 0, func(x1, y1 float64) chromedp.Action[chromedp.Void] { return dragFrom(x, y, x1-x, y1-y) })
 		})}, "connect", files{"model.hcl": {"edge \"t-srv\" {\n  from = node.t.row.total\n  to   = node.srv\n}"}}, nil},
-		{"rows in the inspector", []chromedp.Action[chromedp.Void]{chromedp.Click(chromedp.CSS(`#connect`)), click(`[data-node="t"]`), chromedp.Poll[chromedp.Void](`document.querySelector('#inspector h2')?.textContent === 'Node t'`), js(`(() => { const r = document.querySelectorAll('#inspector input[aria-label="Row name"]')[0]; r.value = 'order_id'; r.dispatchEvent(new Event('input')); [...document.querySelectorAll('#inspector button')].find((b) => b.textContent === 'Apply rows').click(); })()`)}, "set_rows",
+		{"rows in the inspector", []chromedp.Action[chromedp.Void]{chromedp.Click(chromedp.CSS(`#connect`)), click(`[data-node="t"]`), chromedp.Poll[chromedp.Void](`document.querySelector('#inspector .id')?.textContent === 't'`), js(`(() => { const r = document.querySelectorAll('#inspector input[aria-label="Row name"]')[0]; r.value = 'order_id'; r.dispatchEvent(new Event('input')); [...document.querySelectorAll('#inspector button')].find((b) => b.textContent === 'Apply rows').click(); })()`)}, "set_rows",
 			files{"model.hcl": {"row \"order_id\" {\n    type = \"uuid\"\n    key  = \"pk\"\n  }"}}, nil},
-		{"kind in the inspector", []chromedp.Action[chromedp.Void]{click(`[data-node="b"]`), chromedp.Poll[chromedp.Void](`document.querySelector('#inspector h2')?.textContent === 'Node b'`), inspect(`select`, "database")}, "set_kind",
+		{"kind in the inspector", []chromedp.Action[chromedp.Void]{click(`[data-node="b"]`), chromedp.Poll[chromedp.Void](`document.querySelector('#inspector .id')?.textContent === 'b'`), inspect(`select`, "database")}, "set_kind",
 			files{"model.hcl": {"kind  = \"database\""}}, nil},
 		{"tags in the inspector", []chromedp.Action[chromedp.Void]{inspect(`input[list="dg-tags"]`, "hot new")}, "set_tags",
 			files{"model.hcl": {"tags  = [\"hot\", \"new\"]"}}, nil},
-		{"properties typed by the kind", []chromedp.Action[chromedp.Void]{click(`[data-node="srv"]`), chromedp.Poll[chromedp.Void](`document.querySelector('#inspector h2')?.textContent === 'Node srv'`), inspect(`input[type="number"]`, "3")}, "set_props",
+		{"properties typed by the kind", []chromedp.Action[chromedp.Void]{click(`[data-node="srv"]`), chromedp.Poll[chromedp.Void](`document.querySelector('#inspector .id')?.textContent === 'srv'`), inspect(`input[type="number"]`, "3")}, "set_props",
 			files{"model.hcl": {"props = {\n    replicas = 3\n  }"}}, nil},
 		{"copy and paste", []chromedp.Action[chromedp.Void]{click(`[data-node="a"]`), click(`[data-node="b"]`, chromedp.ButtonModifiers(chromedp.ModifierShift)), chromedp.KeyEvent("c", cmd),
 			pointAt(`[data-node="ext"]`, 1, 0, 120, 0, func(x, y float64) chromedp.Action[chromedp.Void] {
@@ -221,11 +221,11 @@ func TestEditorModel(t *testing.T) {
 			files{"views/main.layout.yaml": {"\n  ext: {x: 540, y: 400}"}}, nil},
 		{"delete from the model", []chromedp.Action[chromedp.Void]{click(`[data-node="srv"]`), chromedp.KeyEvent(kb.Delete)}, "delete_node",
 			files{}, files{"model.hcl": {"node \"srv\"", "edge \"t-srv\""}, "views/main.layout.yaml": {"\n  srv:"}}},
-		{"add a decoration", []chromedp.Action[chromedp.Void]{chromedp.KeyEvent(kbEscape), js(`(() => { const s = document.getElementById('add-decoration'); s.value = 'text'; s.dispatchEvent(new Event('change')); })()`), fill(map[string]string{"text": "Note"})}, "add_decoration",
+		{"add a decoration", []chromedp.Action[chromedp.Void]{chromedp.KeyEvent(kbEscape), toolMenu("add-decoration", "Text"), fill(map[string]string{"text": "Note"})}, "add_decoration",
 			files{"views/main.layout.yaml": {"decorations:\n  - {id: text, type: text, x: "}}, nil},
 		{"promote a decoration", []chromedp.Action[chromedp.Void]{menu(`[data-decoration="text"] text`, "Promote to node…"), fill(map[string]string{"kind": "note"})}, "promote_decoration",
 			files{"model.hcl": {"node \"note\" {\n  kind  = \"note\"\n  label = \"Note\"\n}"}, "views/main.layout.yaml": {"\n  note: {x: "}}, files{"views/main.layout.yaml": {"decorations:"}}},
-		{"decoration attached to the selected node", []chromedp.Action[chromedp.Void]{click(`[data-node="t"]`), js(`(() => { const s = document.getElementById('add-decoration'); s.value = 'rect'; s.dispatchEvent(new Event('change')); })()`)}, "add_decoration",
+		{"decoration attached to the selected node", []chromedp.Action[chromedp.Void]{click(`[data-node="t"]`), toolMenu("add-decoration", "Rectangle")}, "add_decoration",
 			files{"views/main.layout.yaml": {"{id: rect, type: rect, attach: t, dx: 0, dy: "}}, nil},
 		{"detach a decoration", []chromedp.Action[chromedp.Void]{menu(`[data-decoration="rect"] rect`, "Detach from node")}, "update_decoration",
 			files{"views/main.layout.yaml": {"{id: rect, type: rect, x: "}}, files{"views/main.layout.yaml": {"attach"}}},
@@ -264,7 +264,7 @@ func TestEditorModel(t *testing.T) {
 		if got := tree(t, e.dir); !reflect.DeepEqual(got, before) {
 			t.Fatalf("%s: one undo left %v, want %v", g.name, got, before)
 		}
-		if err := chromedp.Do(ctx, chromedp.Poll[chromedp.Void](`!document.getElementById('redo').disabled`), chromedp.Click(chromedp.CSS(`#redo`)), e.idle()); err != nil {
+		if err := chromedp.Do(ctx, chromedp.Poll[chromedp.Void](`document.getElementById('redo').ariaDisabled === 'false'`), chromedp.Click(chromedp.CSS(`#redo`)), e.idle()); err != nil {
 			t.Fatal(err)
 		}
 		if got := tree(t, e.dir); !reflect.DeepEqual(got, after) {
@@ -306,7 +306,7 @@ func TestEditorModelRefusals(t *testing.T) {
 		{chromedp.KeyEvent(kb.Delete), status("cannot be deleted")},
 		{dragOnto(`[data-node="ext"]`, `[data-node="g"]`, 0.5, 0.85, 0, 0, chromedp.ModifierAlt), status("its parent cannot change")},
 		{click(`[data-node="ext"]`, chromedp.ButtonRight), chromedp.Poll[chromedp.Void](`!document.getElementById('context-menu').hidden`),
-			chromedp.Poll[chromedp.Void](`(() => { const b = [...document.querySelectorAll('#context-menu button')]; const by = (t) => b.find((x) => x.textContent === t); return by('Delete from model').disabled && by('Rename ID…').disabled && !by('Hide from view').disabled && !by('Copy').disabled; })()`),
+			chromedp.Poll[chromedp.Void](`(() => { const b = [...document.querySelectorAll('#context-menu button')]; const by = (t) => b.find((x) => x.querySelector('.text').textContent === t); return by('Delete from model').disabled && by('Rename ID…').disabled && !by('Hide from view').disabled && !by('Copy').disabled; })()`),
 			chromedp.KeyEvent(kbEscape)},
 		{chromedp.Poll[chromedp.Void](`document.querySelector('#inspector textarea')?.disabled && document.querySelector('#inspector .lock') !== null`), e.idle()},
 	} {
@@ -326,9 +326,9 @@ func TestEditorModelRefusals(t *testing.T) {
 	err := chromedp.Do(ctx,
 		click(`[data-node="c"]`),
 		chromedp.KeyEvent(kb.F10, chromedp.KeyModifiers(chromedp.ModifierShift)),
-		chromedp.Poll[chromedp.Void](`document.activeElement?.textContent === 'Edit label'`),
+		chromedp.Poll[chromedp.Void](`document.activeElement?.querySelector('.text')?.textContent === 'Edit label'`),
 		chromedp.KeyEvent(kb.ArrowDown), chromedp.KeyEvent(kb.ArrowDown),
-		chromedp.Poll[chromedp.Void](`document.activeElement?.textContent === 'Hide from view'`),
+		chromedp.Poll[chromedp.Void](`document.activeElement?.querySelector('.text')?.textContent === 'Hide from view'`),
 		chromedp.KeyEvent("\r"),
 		e.idle(),
 	)
@@ -416,7 +416,7 @@ func TestEditorFromScratch(t *testing.T) {
 	}
 	// create drops kind at (x, y) in the canvas and labels the new node.
 	create := func(kind string, x, y float64, label string) chromedp.Action[chromedp.Void] {
-		return chromedp.Steps(dragOnto(`[data-kind=`+jsString(kind)+`]`, `#canvas`, 0, 0, x, y), edit(label), ready)
+		return chromedp.Steps(js(`document.querySelector('[data-kind=`+kind+`]').scrollIntoView({ block: 'nearest' })`), dragOnto(`[data-kind=`+jsString(kind)+`]`, `#canvas`, 0, 0, x, y), edit(label), ready)
 	}
 	steps := []struct {
 		name    string
@@ -425,7 +425,7 @@ func TestEditorFromScratch(t *testing.T) {
 		{"service", []chromedp.Action[chromedp.Void]{create("service", 140, 100, "API")}},
 		{"database", []chromedp.Action[chromedp.Void]{create("database", 460, 100, "Orders DB")}},
 		{"table", []chromedp.Action[chromedp.Void]{create("table", 460, 320, "Orders")}},
-		{"rows", []chromedp.Action[chromedp.Void]{click(`[data-node="orders"]`), chromedp.Poll[chromedp.Void](`document.querySelector('#inspector h2')?.textContent === 'Node orders'`),
+		{"rows", []chromedp.Action[chromedp.Void]{click(`[data-node="orders"]`), chromedp.Poll[chromedp.Void](`document.querySelector('#inspector .id')?.textContent === 'orders'`),
 			js(`[...document.querySelectorAll('#inspector button')].find((b) => b.textContent === 'Add row').click()`),
 			js(`[...document.querySelectorAll('#inspector button')].find((b) => b.textContent === 'Add row').click()`),
 			js(`(() => { const r = document.querySelectorAll('#inspector input[aria-label="Row name"]'); r[0].value = 'id'; r[0].dispatchEvent(new Event('input')); r[1].value = 'total'; r[1].dispatchEvent(new Event('input')); const k = document.querySelectorAll('#inspector input[aria-label="Key"]')[0]; k.value = 'pk'; k.dispatchEvent(new Event('input')); [...document.querySelectorAll('#inspector button')].find((b) => b.textContent === 'Apply rows').click(); })()`),
@@ -465,7 +465,7 @@ func TestEditorFromScratch(t *testing.T) {
 // TestEditorKeyboard drives the editor from the keyboard alone: Enter on a toolbar button runs
 // it rather than the canvas's keys, a dialog is filled by typing and submitted by Enter, a field
 // of the inspector committed by Tab keeps the focus on the next field, and a narrow window keeps
-// every toolbar control on screen.
+// the toolbar in one row, what does not fit in its overflow menu.
 func TestEditorKeyboard(t *testing.T) {
 	e := newEditor(t, modelFiles)
 	ctx := e.tab()
@@ -501,9 +501,9 @@ func TestEditorKeyboard(t *testing.T) {
 		e.idle(), chromedp.Poll[chromedp.Void](`document.querySelector('[data-node="b"]') !== null`),
 		click(`[data-node="b"]`),
 		chromedp.KeyEvent(kb.F10, chromedp.KeyModifiers(chromedp.ModifierShift)),
-		chromedp.Poll[chromedp.Void](`document.activeElement?.textContent === 'Edit label'`),
-		chromedp.KeyEvent(kb.ArrowDown), chromedp.KeyEvent(kb.ArrowDown), chromedp.KeyEvent(kb.ArrowDown), chromedp.KeyEvent(kb.ArrowDown),
-		chromedp.Poll[chromedp.Void](`document.activeElement?.textContent === 'Rename ID…'`),
+		chromedp.Poll[chromedp.Void](`document.activeElement?.querySelector('.text')?.textContent === 'Edit label'`),
+		chromedp.KeyEvent(kb.ArrowDown), chromedp.KeyEvent(kb.ArrowDown), chromedp.KeyEvent(kb.ArrowDown),
+		chromedp.Poll[chromedp.Void](`document.activeElement?.querySelector('.text')?.textContent === 'Rename ID…'`),
 		chromedp.KeyEvent("\r"),
 		chromedp.Poll[chromedp.Void](`document.getElementById('dialog').open && document.activeElement?.name === 'id'`),
 		chromedp.KeyEvent("x\r"),
@@ -516,7 +516,7 @@ func TestEditorKeyboard(t *testing.T) {
 
 	err = chromedp.Do(ctx,
 		click(`[data-node="c"]`),
-		chromedp.Poll[chromedp.Void](`document.querySelector('#inspector h2')?.textContent === 'Node c'`),
+		chromedp.Poll[chromedp.Void](`document.querySelector('#inspector .id')?.textContent === 'c'`),
 		chromedp.Focus(chromedp.CSS(`#inspector textarea`)),
 		chromedp.KeyEvent("!"),
 		chromedp.KeyEvent(kb.Tab),
@@ -533,7 +533,11 @@ func TestEditorKeyboard(t *testing.T) {
 
 	err = chromedp.Do(ctx,
 		chromedp.EmulateViewport(700, 800),
-		chromedp.Poll[chromedp.Void](`(() => { const b = document.getElementById('bar'); return b.scrollWidth <= b.clientWidth && [...b.querySelectorAll('button, select')].every((c) => c.getBoundingClientRect().right <= 700); })()`),
+		chromedp.Poll[chromedp.Void](`(() => { const b = document.getElementById('bar'); return b.scrollWidth <= b.clientWidth && !document.getElementById('more').hidden && [...b.querySelectorAll('button:not([hidden]), select')].every((c) => c.getBoundingClientRect().right <= 700); })()`),
+		chromedp.Click(chromedp.CSS(`#more`)),
+		chromedp.Poll[chromedp.Void](`document.activeElement?.closest('#overflow-menu') !== null && document.querySelector('#overflow-menu #help') !== null`),
+		chromedp.KeyEvent(kbEscape),
+		chromedp.Poll[chromedp.Void](`document.getElementById('overflow-menu').hidden && document.activeElement?.id === 'more'`),
 	)
 	if err != nil {
 		t.Fatalf("the toolbar at 700 pixels: %v", err)

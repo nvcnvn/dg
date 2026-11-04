@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { node, text } from '../fixtures';
 import type { ResolvedView } from '../protocol/view';
-import { absoluteBoxes, BADGE, containerSize, contentLayout, drillBadge, GAP, measureNode } from './geometry';
+import { absoluteBoxes, BADGE, containerSize, contentLayout, drillBadge, GAP, measureNode, fitZoom, MIN_ZOOM, union } from './geometry';
 import { innerBox, outerSize, svgSize } from './shapes';
 import { lineHeight, textBlock } from './text';
 
@@ -166,5 +166,23 @@ describe('tables', () => {
   });
   it('draws a table without rows as a rectangle', () => {
     expect(measureNode(node('t', {}, { shape: 'table' }), text, 10).table).toBeUndefined();
+  });
+});
+
+describe('fitZoom', () => {
+  it.each([
+    ['small: 100%', { w: 100, h: 100 }, { w: 800, h: 600 }, 1],
+    ['too wide', { w: 1600, h: 100 }, { w: 800, h: 600 }, 0.5],
+    ['too tall', { w: 100, h: 1200 }, { w: 800, h: 600 }, 0.5],
+    ['nothing drawn', { w: 0, h: 0 }, { w: 800, h: 600 }, 1],
+    ['larger than the lowest zoom shows', { w: 100000, h: 100 }, { w: 800, h: 600 }, MIN_ZOOM],
+  ])('%s', (_, box, room, want) => {
+    expect(fitZoom(box, room)).toBe(want);
+  });
+});
+
+describe('union', () => {
+  it('is the box around boxes', () => {
+    expect(union([{ x: 10, y: 20, w: 5, h: 5 }, { x: -10, y: 30, w: 1, h: 1 }])).toEqual({ x: -10, y: 20, w: 25, h: 11 });
   });
 });

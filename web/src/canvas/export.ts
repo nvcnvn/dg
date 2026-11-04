@@ -39,6 +39,12 @@ export function layerMarkup(l: Layer, d: Drawing, periods: number[]): string[] {
   return edgeMarkup(l.edge, d, periods);
 }
 
+// picture is d as an export shows it: a drill-down badge is a control of the editor, so a picture
+// keeps only the collapse badge.
+export function picture(d: Drawing): Drawing {
+  return { ...d, nodes: d.nodes.map(({ drill: _, ...n }) => n) };
+}
+
 export function toSVG(d: Drawing): string {
   const b = d.bounds;
   const root = attrs({
@@ -82,6 +88,50 @@ export function toJSON(d: Drawing): string {
 // checkStyle throws unless the page applied style, which a content security policy can refuse.
 export function checkStyle(style: HTMLStyleElement | SVGStyleElement | null) {
   if (style && !style.sheet) throw new Error('the page refused the edge animation style');
+}
+
+// fontFaces is CSS giving the SVG of a drawing, drawn as a picture, which sees none of the page's
+// fonts, the font of its text: the project's, or every @font-face of the bundled family.
+async function fontFaces(family: string, font?: { family: string; data: string }): Promise<string> {
+  if (font) return `@font-face { font-family: "${font.family}"; src: url(data:font/ttf;base64,${font.data}); }`;
+  const rules: string[] = [];
+  for (const sheet of document.styleSheets) {
+    for (const rule of sheet.cssRules) {
+      if (!(rule instanceof CSSFontFaceRule) || !rule.style.getPropertyValue('font-family').includes(family)) continue;
+      const at = /url\("?([^")]+)"?\)/.exec(rule.cssText);
+      if (!at) continue;
+      const bytes = await fetch(new URL(at[1], sheet.href ?? location.href));
+      rules.push(rule.cssText.replace(at[0], `url(${await dataURL(await bytes.blob())})`));
+    }
+  }
+  return rules.join('\n');
+}
+
+function dataURL(b: Blob): Promise<string> {
+  return new Promise((done, fail) => {
+    const r = new FileReader();
+    r.onload = () => done(r.result as string);
+    r.onerror = () => fail(r.error);
+    r.readAsDataURL(b);
+  });
+}
+
+// toPNG draws d, one pixel per unit on white, as dg export --format png does (spec 15).
+export async function toPNG(d: Drawing, font?: { family: string; data: string }): Promise<Blob> {
+  const css = await fontFaces(d.family, font);
+  const svg = toSVG(d).replace(/^(<svg[^>]*>)/, `$1\n<style>\n${css}\n</style>`);
+  const image = new Image();
+  image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  await image.decode();
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.ceil(d.bounds.w);
+  canvas.height = Math.ceil(d.bounds.h);
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('no 2D canvas context');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+  return new Promise((done, fail) => canvas.toBlob((b) => (b ? done(b) : fail(new Error('the canvas gave no PNG'))), 'image/png'));
 }
 
 // mountSVG shows svg alone on white at the page's top left, text in family, paused at time 0, once its pictures load.

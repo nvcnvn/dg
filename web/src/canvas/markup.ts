@@ -1,5 +1,5 @@
 import type { Box, Point } from '../geometry/geometry';
-import { CYLINDER_RY, DOCUMENT_WAVE, outline, personBodyTop, personHead, svgSize } from '../geometry/shapes';
+import { CYLINDER_RY, DOCUMENT_WAVE, LABELLESS, outline, personBodyTop, personHead, svgSize } from '../geometry/shapes';
 import { lineHeight, type Font, type TextBlock } from '../geometry/text';
 import type { CustomShape, EdgeStyle, NodeStyle, OverlayStyle, Side, ViewDecoration } from '../protocol/view';
 import type { PlacedLabel } from '../route/edges';
@@ -279,7 +279,7 @@ export function defsMarkup(nodes: DrawnNode[], s: Shapes): string[] {
 
 export function nodeMarkup(n: DrawnNode, m: FontMetrics, s: Shapes): string[] {
   const st = n.style;
-  const out = [`<g${attrs({ 'data-node': n.id, opacity: st.opacity < 1 ? dec(st.opacity) : undefined })}>`, ...outlineMarkup(n, s)];
+  const out = [`<g${attrs({ 'data-node': n.id || undefined, opacity: st.opacity < 1 ? dec(st.opacity) : undefined })}>`, ...outlineMarkup(n, s)];
   if (n.divider !== undefined) out.push(`<path${attrs({ d: path([{ x: n.divider, y: n.box.y }, { x: n.divider, y: n.box.y + n.box.h }]), stroke: st.stroke, 'stroke-width': dec(st.stroke_width) })}/>`);
   if (n.picture && st.image) out.push(picture(st.image, n.picture, 'meet'));
   if (n.rotate) out.push(`<g transform="rotate(-90 ${num(n.rotate.x)} ${num(n.rotate.y)})">`);
@@ -432,4 +432,34 @@ export function shiftNode(n: DrawnNode, dx: number, dy: number): DrawnNode {
       typeX: n.table.typeX + dx,
     },
   };
+}
+
+const PICTURE = { w: 44, h: 32, inset: 4 };
+
+// kindPicture is a small SVG of a node of a kind in style, with no label: the palette's picture
+// of it, drawn by nodeMarkup like the canvas.
+export function kindPicture(style: NodeStyle, shapes: Record<string, CustomShape>): string {
+  const { w, h, inset } = PICTURE;
+  const round = !!shapes[style.shape] || LABELLESS.has(style.shape);
+  const bw = round ? h - 2 * inset : w - 2 * inset;
+  const box = { x: (w - bw) / 2, y: inset, w: bw, h: h - 2 * inset };
+  const icon = style.icon ? { x: w / 2 - 7, y: h / 2 - 7, w: 14, h: 14 } : undefined;
+  const n: DrawnNode = {
+    id: '',
+    box,
+    container: false,
+    pinned: false,
+    tooSmall: false,
+    style: { ...style, stroke_width: Math.min(style.stroke_width, 1.5), corner_radius: Math.min(style.corner_radius, 4), opacity: 1 },
+    custom: shapes[style.shape] ? style.shape : undefined,
+    text: null,
+    textBox: box,
+    align: 'center',
+    icon,
+    picture: style.image ? box : undefined,
+    ports: [],
+  };
+  const s = { shapes };
+  const defs = defsMarkup([n], s);
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="picture" viewBox="0 0 ${w} ${h}" aria-hidden="true">${defs.length ? `<defs>${defs.join('')}</defs>` : ''}${nodeMarkup(n, { ascent: 1, descent: 0 }, s).join('')}</svg>`;
 }

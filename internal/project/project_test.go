@@ -3,6 +3,7 @@ package project
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 	"testing/fstest"
 
@@ -78,5 +79,29 @@ func TestLoadDoesNotFollowLinksOut(t *testing.T) {
 	}
 	if !diags.HasErrors() || p.Model.Nodes["a"].Label == "secret" {
 		t.Errorf("file() read through a link out of the project: %v", diags)
+	}
+}
+
+func TestVocabularyPacks(t *testing.T) {
+	fsys := fstest.MapFS{
+		"dg.hcl":              {Data: []byte("project \"p\" {\n  packs = [\"packs/zeta\", \"packs/acme\"]\n}\n")},
+		"packs/zeta/spec.hcl": {Data: []byte("kind \"zed\" {}\n")},
+		"packs/acme/spec.hcl": {Data: []byte("kind \"gear\" {}\nkind \"moved\" {}\n")},
+		"spec.hcl":            {Data: []byte("kind \"mine\" {}\nkind \"moved\" {}\n")},
+		"model.hcl":           {},
+	}
+	p, diags, err := load(fsys, ".")
+	if err != nil || diags.HasErrors() {
+		t.Fatal(err, diags)
+	}
+	v := p.Vocabulary()
+	if want := []string{"generic", "zeta", "acme"}; !slices.Equal(v.Packs, want) {
+		t.Errorf("packs %v, want %v", v.Packs, want)
+	}
+	want := map[string]string{"service": "generic", "zed": "zeta", "gear": "acme", "mine": "", "moved": ""}
+	for _, k := range v.Kinds {
+		if pack, ok := want[k.Name]; ok && k.Pack != pack {
+			t.Errorf("kind %s in pack %q, want %q", k.Name, k.Pack, pack)
+		}
 	}
 }

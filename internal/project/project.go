@@ -40,10 +40,12 @@ type File struct {
 
 // Project is a loaded project.
 type Project struct {
-	Dir       string
-	Name      string
-	Files     []File
-	ReadOnly  []string
+	Dir      string
+	Name     string
+	Files    []File
+	ReadOnly []string
+	// PackDirs holds the project's pack directories in load order.
+	PackDirs  []string
 	ViewsFile string
 	LayoutDir string
 	Font      string
@@ -169,6 +171,7 @@ func load(fsys fs.FS, dir string) (*Project, diag.Diagnostics, error) {
 			return nil, nil, err
 		}
 	}
+	p.PackDirs = packs
 	p.ConfigInvalid = slices.ContainsFunc(l.diags, func(d *hcl.Diagnostic) bool {
 		return d.Severity == hcl.DiagError && d.Subject != nil && d.Subject.Filename == ProjectFile
 	})

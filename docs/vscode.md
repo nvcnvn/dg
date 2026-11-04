@@ -89,5 +89,6 @@ Everything the panel changes is written to the project's files, which the text e
 once; Ctrl+Z (⌘Z) in the panel undoes it. Saving a file in a text editor redraws the panel. Click
 in the panel before using its keyboard shortcuts, so they reach the diagram rather than VS Code.
 
-The palette and inspector start hidden in a narrow panel; the toolbar's Palette and Inspector
-buttons show them. Closing the panel stops its server.
+The panel follows VS Code's theme. A click on a diagnostic in the panel's diagnostics bar opens its
+file at its position. The palette and inspector start hidden in a narrow panel; the toolbar's
+Palette and Inspector buttons show them. Closing the panel stops its server.

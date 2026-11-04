@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { edgeStyle, nodeStyle } from '../fixtures';
 import type { NodeStyle } from '../protocol/view';
 import { layers, toJSON, toSVG, type Drawing } from './export';
-import { flowDash, nodeMarkup, type DrawnDecoration, type DrawnNode } from './markup';
+import type { CustomShape } from '../protocol/view';
+import { flowDash, kindPicture, nodeMarkup, type DrawnDecoration, type DrawnNode } from './markup';
 
 const font = { size: 14, weight: 400 };
 
@@ -158,5 +159,19 @@ describe('animated edges', () => {
     expect(svg).toContain('@keyframes dg-flow-0 { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -4.5px; } }');
     expect(svg).toMatch(/@keyframes dg-flow-1 \{ from \{ stroke-dashoffset: 0; \} to \{ stroke-dashoffset: -\d+px; \} \}\n\.dg-flow-1 \{/);
     expect(svg).toMatch(/class="dg-flow-1"[^>]*stroke-dasharray="\d+ 1"/);
+  });
+});
+
+describe('kindPicture', () => {
+  const style = drawn('n').style;
+  it('draws the shape with no label and no node ID', () => {
+    const svg = kindPicture({ ...style, shape: 'diamond' }, {});
+    expect(svg).toContain('<path');
+    expect(svg).not.toContain('data-node');
+    expect(svg).not.toContain('<text');
+  });
+  it('draws a custom shape, whose stretching needs its definition', () => {
+    const shapes = { gpu: { svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"/>', stretch: 'nine-slice', slice: [1, 1, 1, 1], anchors: {}, text_box: [0, 0, 1, 1] } as unknown as CustomShape };
+    expect(kindPicture({ ...style, shape: 'gpu' }, shapes)).toContain('<defs>');
   });
 });

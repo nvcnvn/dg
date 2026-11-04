@@ -1,0 +1,96 @@
+/* The editor's tokens. Each color is light-dark(light, dark), so color-scheme alone picks the
+   theme: the system's by default, or data-theme's, which the VS Code panel sets.
+   theme.test.ts checks by name: every --text… on every --bg… and every --on-x on --x meets 4.5:1. */
+:root {
+  color-scheme: light dark;
+
+  --bg-canvas: light-dark(#eceef1, #17181a);
+  --bg-panel: light-dark(#ffffff, #202124);
+  --bg-control: light-dark(#f1f3f4, #2d2e31);
+  --bg-hover: light-dark(#e3e6ea, #3a3b3f);
+  --bg-selected: light-dark(#d9e6fb, #2c3f5e);
+
+  --text: light-dark(#202124, #e8eaed);
+  --text-muted: light-dark(#555a60, #b8bcc2);
+  --text-accent: light-dark(#1554ad, #9cc0fa);
+  --text-error: light-dark(#a8201a, #f7b4ad);
+  --text-warning: light-dark(#7a5000, #f2c766);
+  --text-info: light-dark(#35587f, #a8c7e8);
+
+  --border: light-dark(#d3d6db, #3f4145);
+  --border-strong: light-dark(#7c8187, #85898f);
+  --focus: light-dark(#1a73e8, #8ab4f8);
+
+  --accent: light-dark(#1557b0, #8ab4f8);
+  --on-accent: light-dark(#ffffff, #14213a);
+  --tip: light-dark(#2b2c30, #e8eaed);
+  --on-tip: light-dark(#ffffff, #202124);
+
+  /* The drawing's colors are the project's styles, meant for white, so the paper is white in
+     every theme, and what the editor draws on it is colored for white. */
+  --paper: #ffffff;
+  --on-paper: #202124;
+  --on-paper-muted: #5f6368;
+  --paper-select: #1a73e8;
+  --paper-select-soft: rgba(26, 115, 232, 0.1);
+  --paper-select-edge: rgba(26, 115, 232, 0.45);
+  --paper-target: #188038;
+  --paper-target-soft: rgba(24, 128, 56, 0.1);
+  --paper-stale: #b3261e;
+
+  --shadow-low: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-high: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --opacity-disabled: 0.45;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+
+  --type-s: 12px;
+  --type-m: 13px;
+  --type-l: 15px;
+  --weight-strong: 700;
+
+  --radius-s: 4px;
+  --radius-m: 6px;
+
+  --control: 28px;
+  --icon: 16px;
+  --panel-left: 200px;
+  --panel-right: 264px;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+:root[data-theme='high-contrast'] {
+  color-scheme: dark;
+
+  --bg-canvas: #000000;
+  --bg-panel: #000000;
+  --bg-control: #000000;
+  --bg-hover: #1a1a1a;
+  --bg-selected: #06324f;
+
+  --text: #ffffff;
+  --text-muted: #e0e0e0;
+  --text-accent: #9cd0ff;
+  --text-error: #ffb3ad;
+  --text-warning: #ffd479;
+  --text-info: #b8dcff;
+
+  --border: #ffffff;
+  --border-strong: #ffffff;
+  --focus: #f38518;
+
+  --accent: #9cd0ff;
+  --on-accent: #000000;
+  --tip: #ffffff;
+  --on-tip: #000000;
+}

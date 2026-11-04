@@ -7,24 +7,37 @@ model edits write the model files and `views.hcl`.
 
 ## The window
 
-- The **toolbar** holds the view switcher, New view…, Undo and Redo, Unpin, Arrange (align and
-  distribute), Add node…, Connect with the edge kind it draws, Decoration…, buttons that show or
-  hide the palette and the inspector, and zoom.
-- The **palette** on the left lists the kinds of the loaded packs, with a filter.
+- The **toolbar** is one row of groups: the view switcher, breadcrumbs and New view…; Undo and
+  Redo; Add node…, Connect with the edge kind it draws, and Decoration…; Unpin and Arrange (align
+  and distribute); zoom; the palette and inspector buttons; Export; and `?`. Rest the pointer on a
+  button, or move the focus to it, to read what it does and its shortcut, or what enables it.
+  Groups that do not fit go into the menu at the end of the row.
+- The **palette** on the left lists the kinds of the loaded packs with a picture of each, under
+  their pack's name, with a filter.
 - The **inspector** on the right edits the selection.
 - **Breadcrumbs** in a view with `of` lead back to the views that show its container.
 
 The palette and inspector start hidden in a window under 1,000 pixels wide, such as a VS Code
-panel. When the project has errors, the editor lists them and shows the last good drawing,
-read-only, until the files are fixed. In a view with nothing pinned it says the layout is not
-saved; in a view with some nodes pinned, unpinned nodes are faded.
+panel. The editor follows the system's light or dark theme, and in VS Code the editor's theme; the
+drawing itself keeps the project's colors on white.
+
+A view opens fitted to the window. A view with no nodes says how to add one. In a view with nothing
+pinned, a message says the arrangement is automatic and that dragging a node keeps it; in a view
+with some nodes pinned, unpinned nodes are faded.
+
+When the project has warnings or errors, a bar under the toolbar counts them; click it to list
+them, and in VS Code click one to open its file. While there are errors the editor shows the last
+good drawing, read-only, until the files are fixed; with no good drawing to show, it lists the
+errors in the middle of the canvas.
 
 ## Selecting and viewing
 
 - Click a node or edge to select it; Shift-click adds or removes a node; drag a box on empty
   canvas to select the nodes inside it (Shift adds them); Ctrl/⌘+A selects every node.
 - Pan with the scroll bars, the middle mouse button, or Space and drag. Zoom with Ctrl/⌘ and the
-  wheel, `+` (or `=`), `-` and `0` (actual size), or the toolbar.
+  wheel, `+` (or `=`), `-` and `0` (actual size), or the toolbar. Shift+1 fits the view and
+  Shift+2 zooms to the selection; the zoom level in the toolbar opens a menu of both and of 50%,
+  100% and 200%.
 - Switch views with the view switcher, a node's drill-down badge, or the breadcrumbs.
 
 ## Arranging
@@ -92,6 +105,11 @@ session's changes, from whichever browser window made them. An undo keeps edits 
 editor since, in the same files; it fails, and drops the change from the history, when such an
 edit touched the same lines.
 
+## Exporting
+
+Export in the toolbar saves the current view as SVG, the same file `dg export --format svg` writes,
+or as PNG, one pixel per unit on white.
+
 ## Keyboard shortcuts
 
 The canvas's keys apply while the focus is on the canvas, not in the toolbar, panels, menus or
@@ -107,6 +125,8 @@ dialogs; click the canvas to bring it back.
 | C | connect mode |
 | U | unpin the selection |
 | `+` or `=`, `-`, `0` | zoom in, zoom out, actual size |
+| Shift+1, Shift+2 | fit, zoom to selection |
 | Space+drag | pan |
 | Shift+F10, menu key | context menu |
+| `?` | this list of shortcuts |
 | Escape | cancel a drag, leave connect mode, close a menu, or else clear the selection |

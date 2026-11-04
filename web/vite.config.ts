@@ -1,7 +1,9 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   base: './',
+  // theme.test.ts reads the style sheets, which tests get empty by default.
+  test: { css: true },
   build: {
     outDir: 'dist',
     emptyOutDir: true,

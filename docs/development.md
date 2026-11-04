@@ -39,6 +39,11 @@ Golden files are rewritten with `-update`:
   `testdata/lsp/*.jsonl` names a project on its first line and holds the client's messages, and
   its `.golden` file what the server answered.
 
+The editor's look is checked by tasks that find controls by their accessible names, contrast
+computed from `web/src/theme.css`, axe-core and screenshots a person looks at, which are not
+goldens: `DG_SCREENSHOTS=<dir> go test ./internal/server -run Screenshots` writes each example and
+editor state, in both themes at both widths, to a directory that must exist.
+
 Benchmarks and performance tests: `go test ./internal/project -bench Load1000` times `dg check`
 at 1,000 nodes, `go test ./internal/lsp -bench Keystroke` one keystroke in the language server at
 1,000 nodes, and `go test ./internal/server -run DragPerformance -v` reads a Chromium performance

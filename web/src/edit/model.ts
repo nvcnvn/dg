@@ -112,6 +112,19 @@ export function createOps(s: Scene, kind: string, p: Point): Op | undefined {
   return batch(withPins(s, [{ op: 'create_node', kind, view: s.view.view, ...at }], new Set()));
 }
 
+// clearOf returns p, or the first point to its right where a new node covers no drawn node, so a
+// kind chosen twice does not hide the first.
+export function clearOf(s: Scene, p: Point): Point {
+  const covers = (c: Point) => s.drawing.nodes.some((n) => !n.container && overlap(n.box, { x: c.x - NEW_NODE.x, y: c.y - NEW_NODE.y, w: 2 * NEW_NODE.x, h: 2 * NEW_NODE.y }));
+  let c = p;
+  while (covers(c)) c = { x: c.x + 2 * NEW_NODE.x + 2 * s.view.grid, y: c.y };
+  return c;
+}
+
+function overlap(a: Box, b: Box): boolean {
+  return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+}
+
 // Clip is what copy keeps: nodes with where they were drawn, and the edges among them.
 export interface Clip {
   nodes: ClipNode[];

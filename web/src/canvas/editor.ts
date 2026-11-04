@@ -1,16 +1,22 @@
 import { dia } from '@joint/core';
 import { scene, type Op, type Scene } from '../edit/edit';
-import { createOps, nodeSelector, type DecorationType } from '../edit/model';
+import { clearOf, createOps, nodeSelector, type DecorationType } from '../edit/model';
 import type { Point } from '../geometry/geometry';
 import type { Diagnostic, ModelInfo, Result, ServerMessage, ViewInfo } from '../protocol/client';
 import { connect } from '../protocol/client';
 import type { ResolvedView } from '../protocol/view';
 import { actions, type Selection } from './actions';
-import { h } from './dialog';
-import { checkStyle, layerMarkup, layers, type Drawing } from './export';
+import { diagnosticList, diagnosticsBar } from './diagnostics';
+import { h, sheet } from './dialog';
+import { checkStyle, layerMarkup, layers, toPNG, toSVG, picture, type Drawing } from './export';
+import { inPanel, openDiagnostic } from './host';
 import { interact } from './interact';
+import { arrangeItems, bindMenu, closeMenu, openerOf, showMenu, type Entry } from './menu';
 import { inspector, palette } from './panels';
 import { defsMarkup, flowCSS, flowPeriods, nodeMarkup, shiftNode } from './markup';
+import { shortcutSheet } from './shortcuts';
+import { tooltips } from './tip';
+import { toolbar } from './toolbar';
 
 const UNPINNED_OPACITY = 0.55;
 
@@ -19,6 +25,8 @@ const namespace = { dg: { Markup } };
 
 // WIDE is the narrowest window, in pixels, that shows the palette and the inspector at first.
 const WIDE = 1000;
+// MENU_GAP is the space, in pixels, between a toolbar button and its menu.
+const MENU_GAP = 4;
 
 // startEditor runs the editor: it draws each snapshot the server sends on a JointJS paper, with
 // the markup the SVG export uses, fading unpinned nodes in a view with pinned ones, and lists
@@ -27,24 +35,23 @@ const WIDE = 1000;
 // history the clients share (FR-10). While the project has errors the last good drawing stays,
 // read-only. The view switcher, the breadcrumbs and the drill-down badges select views (spec 8.2).
 export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: Drawing; family: string }>) {
-  const select = document.getElementById('views') as HTMLSelectElement;
-  const crumbs = document.getElementById('crumbs')!;
+  const bar = toolbar(document.getElementById('bar')!, document.getElementById('overflow-menu')!);
+  const select = bar.views;
+  const crumbs = bar.crumbs;
   const menu = document.getElementById('drill-menu')!;
+  const toolMenu = document.getElementById('tool-menu')!;
   const status = document.getElementById('status')!;
   const hint = document.getElementById('hint')!;
-  const list = document.getElementById('diagnostics')!;
-  const undo = document.getElementById('undo') as HTMLButtonElement;
-  const redo = document.getElementById('redo') as HTMLButtonElement;
-  const arrange = document.getElementById('arrange') as HTMLSelectElement;
-  const unpin = document.getElementById('unpin') as HTMLButtonElement;
-  const zoomLabel = document.getElementById('zoom')!;
+  const guide = document.getElementById('guide')!;
+  const empty = document.getElementById('empty')!;
+  const broken = document.getElementById('broken')!;
   const ctxMenu = document.getElementById('context-menu')!;
-  const newView = document.getElementById('new-view') as HTMLButtonElement;
-  const addNode = document.getElementById('add-node') as HTMLButtonElement;
-  const connectBtn = document.getElementById('connect') as HTMLButtonElement;
-  const edgeKind = document.getElementById('edge-kind') as HTMLSelectElement;
-  const addDecoration = document.getElementById('add-decoration') as HTMLSelectElement;
   const toastEl = document.getElementById('toast')!;
+  const diagnosticsEl = document.getElementById('diagnostics')!;
+  const opener = inPanel ? openDiagnostic : undefined;
+  const diagBar = diagnosticsBar(diagnosticsEl, opener);
+  bindMenu(menu);
+  bindMenu(toolMenu);
   const graph = new dia.Graph({}, { cellNamespace: namespace });
   const paper = new dia.Paper({
     el: document.getElementById('paper')!,
@@ -80,39 +87,47 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
   let titles = new Map<string, string>();
   const title = (id: string) => titles.get(id) || id;
 
+  const setPanel = (cls: string, id: string, on: boolean) => {
+    document.body.classList.toggle(cls, !on);
+    bar.button(id).setAttribute('aria-pressed', String(on));
+  };
+
   const showDiagnostics = () => {
     const all = [...serverDiags, ...tooSmall.map((id): Diagnostic => ({ severity: 'warning', summary: 'Container too small', detail: `Node "${id}" has a pinned size too small for its children.` }))];
-    list.replaceChildren(
-      ...all.map((d) => {
-        const li = document.createElement('li');
-        li.className = d.severity;
-        li.textContent = (d.file ? `${d.file}:${d.line}:${d.column}: ` : '') + `${d.severity}: ${d.summary}` + (d.detail ? `: ${d.detail}` : '');
-        return li;
-      }),
-    );
-    list.hidden = all.length === 0;
-    const errors = serverDiags.some((d) => d.severity === 'error');
-    document.body.classList.toggle('stale', errors);
-    status.textContent = errors ? 'The project has errors; showing the last good drawing (read-only).' : '';
+    const errors = all.filter((d) => d.severity === 'error');
+    const stale = errors.length > 0;
+    document.body.classList.toggle('stale', stale);
+    diagBar.show(all, stale && current ? 'Showing the last good drawing, read-only.' : '');
+    const blank = stale && !current;
+    diagnosticsEl.hidden ||= blank;
+    broken.hidden = !blank;
+    if (blank) broken.replaceChildren(h('h2', {}, 'The project has errors'), diagnosticList(errors, opener));
     controls();
   };
 
-  const editable = () => open && !document.body.classList.contains('stale') && waiting === undefined && !redraw && !!current && !ui.busy();
+  const stale = () => document.body.classList.contains('stale');
+  const editable = () => open && !stale() && waiting === undefined && !redraw && !!current && !ui.busy();
   let canUndo = false;
   let canRedo = false;
+  // blocked says why nothing can be edited now.
+  const blocked = () => (!open ? 'Waiting for dg serve' : stale() ? 'Fix the errors in the project first' : current ? 'Saving…' : 'Loading…');
   const controls = () => {
     const on = editable();
     document.body.classList.toggle('editable', on);
-    undo.disabled = !canUndo || !on;
-    redo.disabled = !canRedo || !on;
-    unpin.disabled = !on || !ui.can('unpin');
-    arrange.disabled = !on || !ui.can(2);
-    for (const o of arrange.options) if (o.value === 'x' || o.value === 'y') o.disabled = !ui.can(3);
-    for (const c of [newView, addNode, connectBtn, edgeKind, addDecoration]) c.disabled = !on;
-    connectBtn.setAttribute('aria-pressed', String(ui.connecting()));
+    const tool = (id: string, ok: boolean, need: string) => bar.enable(id, on && ok, on ? need : blocked());
+    tool('undo', canUndo, 'Nothing to undo');
+    tool('redo', canRedo, 'Nothing to redo');
+    tool('unpin', ui.can('unpin'), 'Select a pinned node');
+    tool('arrange', ui.can(2), 'Select two nodes or more');
+    for (const id of ['new-view', 'add-node', 'connect', 'edge-kind', 'add-decoration']) tool(id, true, '');
+    for (const id of ['zoom-out', 'zoom', 'zoom-in', 'fit']) bar.enable(id, !!current, 'Nothing to zoom yet');
+    bar.enable('save', !!current, 'Nothing to export yet');
+    bar.button('connect').setAttribute('aria-pressed', String(ui.connecting()));
+    guide.hidden = !ui.connecting();
     const s = current?.scene;
-    pal.update(s?.model.kinds ?? [], on);
-    panel.show(s, ui.selection(), !open || document.body.classList.contains('stale') || !s);
+    hint.hidden = !s || ui.connecting() || s.drawing.nodes.length === 0 || s.drawing.nodes.some((n) => n.pinned);
+    pal.update(s?.model, on);
+    panel.show(s, ui.selection(), !open || stale() || !s);
   };
 
   const show = (d: Drawing, family: string) => {
@@ -126,7 +141,9 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
     // In a view with nothing pinned every node is unpinned, so fading tells nothing; a hint says
     // the layout is not saved instead (spec 7.4).
     const anyPinned = d.nodes.some((n) => n.pinned);
-    hint.hidden = anyPinned;
+    empty.hidden = d.nodes.length > 0;
+    document.body.classList.toggle('blank', !d.nodes.length);
+    if (!d.nodes.length) setPanel('no-palette', 'show-palette', true);
     const periods = flowPeriods(d.edges);
     const cells = layers(d).map((l, z) => {
       if ('node' in l) {
@@ -147,9 +164,10 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
     checkStyle(flowStyle);
     graph.resetCells(cells);
     fit(d);
-    if (paper.el.dataset.view !== d.view) paper.el.parentElement!.scrollTo(0, 0);
+    const opened = paper.el.dataset.view !== d.view;
     paper.el.dataset.view = d.view;
     ui.shown();
+    if (opened) ui.fit();
   };
 
   // fit sizes the paper to the drawing at the zoom.
@@ -158,7 +176,8 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
     paper.scale(z, z);
     paper.setDimensions(d.bounds.w * z, d.bounds.h * z);
     paper.translate(-d.bounds.x * z, -d.bounds.y * z);
-    zoomLabel.textContent = `${Math.round(z * 100)}%`;
+    const level = `${Math.round(z * 100)}%`;
+    bar.setText('zoom', level, `Zoom level ${level}`);
   };
 
   // display shows a drawing of view now, or after the gesture in progress.
@@ -201,24 +220,9 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
     }
   };
 
-  // openMenu lists views at the page position (x, y); choosing one selects it.
-  const openMenu = (views: string[], x: number, y: number) => {
-    menu.replaceChildren(
-      ...views.map((v) => {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.textContent = title(v);
-        b.dataset.view = v;
-        b.addEventListener('click', () => {
-          menu.hidden = true;
-          conn.selectView(v);
-        });
-        return b;
-      }),
-    );
-    menu.style.left = `${x}px`;
-    menu.style.top = `${y}px`;
-    menu.hidden = false;
+  // openMenu lists views at the client point (x, y); choosing one selects it.
+  const openMenu = (views: string[], x: number, y: number, from?: Element) => {
+    showMenu(menu, views.map((v): Entry => ({ label: title(v), view: v, on: true, run: () => conn.selectView(v) })), x, y, from);
   };
 
   // A breadcrumb leads to a view, or, when several views are one level up, to a menu of them.
@@ -229,36 +233,44 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
       b.type = 'button';
       b.textContent = level.length === 1 ? title(level[0]) : `${title(level[0])} (+${level.length - 1}) ▾`;
       b.dataset.views = level.join(' ');
+      b.dataset.tip = b.textContent;
       b.addEventListener('click', (ev) => {
         if (level.length === 1) return conn.selectView(level[0]);
         const r = b.getBoundingClientRect();
-        openMenu(level, r.left + window.scrollX, r.bottom + window.scrollY);
+        openMenu(level, r.left, r.bottom, b);
         ev.stopPropagation();
       });
-      items.push(b, document.createTextNode(' › '));
+      items.push(b, h('span', { class: 'sep' }, ' › '));
     }
     if (items.length) {
       const here = document.createElement('span');
       here.textContent = title(view.view);
+      here.dataset.tip = title(view.view);
       items.push(here);
     }
     crumbs.replaceChildren(...items);
     crumbs.hidden = items.length === 0;
+    bar.layout();
   };
 
   // A drill-down badge opens the view of its node, or, when several views show its inside, a
   // menu of them.
   paper.el.addEventListener('click', (ev) => {
-    const id = (ev.target as Element).closest('[data-drill]')?.getAttribute('data-drill');
-    const current = received?.view === shown?.view ? received : shown;
-    const views = current?.nodes.find((n) => n.id === id)?.drill ?? [];
+    // At a low zoom the resize handle of a selected node lies over the badge in its corner.
+    const p = ui.at({ x: ev.clientX, y: ev.clientY });
+    const id = (ev.target as Element).closest('[data-drill]')?.getAttribute('data-drill') ?? current?.scene.drawing.nodes.find((n) => p && n.drill && p.x >= n.drill.x && p.x <= n.drill.x + n.drill.w && p.y >= n.drill.y && p.y <= n.drill.y + n.drill.h)?.id;
+    const latest = received?.view === shown?.view ? received : shown;
+    const views = latest?.nodes.find((n) => n.id === id)?.drill ?? [];
     if (views.length === 1) conn.selectView(views[0]);
     if (views.length < 2) return;
-    openMenu(views, ev.pageX, ev.pageY);
+    openMenu(views, ev.clientX, ev.clientY);
     ev.stopPropagation();
   });
-  document.addEventListener('click', (ev) => {
-    if (!menu.contains(ev.target as Node)) menu.hidden = true;
+  tooltips(document.getElementById('tip')!, (el) => {
+    const id = el.getAttribute('data-drill');
+    if (id === null) return undefined;
+    const views = shown?.nodes.find((n) => n.id === id)?.drill ?? [];
+    return views.length === 1 ? `Open view ${title(views[0])}` : `Choose one of ${views.length} views`;
   });
 
   const showViews = (views: ViewInfo[], current: string) => {
@@ -272,6 +284,7 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
       }),
     );
     select.value = current;
+    bar.layout();
   };
 
   const send = (op: Op, f?: (results: Result[]) => void) => request({ type: 'op', op }, f);
@@ -297,6 +310,7 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
     status: setStatus,
   };
   const act = actions(host);
+  const help = () => void sheet('Keyboard shortcuts', shortcutSheet());
 
   const ui = interact(paper, document.getElementById('canvas')!, ctxMenu, {
     ...host,
@@ -306,7 +320,8 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
       controls();
     },
     toast,
-    edgeKind: () => edgeKind.value,
+    edgeKind: () => edgeKind,
+    help,
   }, act, () => current && fit(current.scene.drawing), () => controls());
 
   // create creates a node of kind at p, then selects it and edits its label in place, so the
@@ -320,17 +335,17 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
       if (id) ui.editLabel(id);
     });
   };
-  const pal = palette(document.getElementById('palette')!, (kind) => create(kind, ui.center()), (kind, client) => {
+  let edgeKind = 'default';
+  const pal = palette(document.getElementById('palette')!, (kind) => current && create(kind, clearOf(current.scene, ui.center())), (kind, client) => {
     const p = ui.at(client);
     if (p) create(kind, p);
   });
   const panel = inspector(document.getElementById('inspector')!, host, act);
 
   const showKinds = (kinds: string[]) => {
-    if ([...edgeKind.options].map((o) => o.value).join('\n') === kinds.join('\n')) return;
-    const was = edgeKind.value || 'default';
-    edgeKind.replaceChildren(...kinds.map((k) => h('option', { value: k }, k)));
-    edgeKind.value = kinds.includes(was) ? was : kinds[0] ?? '';
+    if (!kinds.includes(edgeKind)) edgeKind = kinds[0] ?? '';
+    bar.setText('edge-kind', `Edge: ${edgeKind}`);
+    bar.layout();
   };
 
   // request sends r unless the editor cannot edit now; f gets the results of an operation once
@@ -408,7 +423,7 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
         waiting = undefined;
         redraw = false;
       }
-      document.body.classList.toggle('disconnected', !up);
+      setStatus(up ? '' : 'Disconnected from dg serve.');
       controls();
     },
   );
@@ -417,35 +432,64 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
     ['show-palette', 'no-palette'],
     ['show-inspector', 'no-inspector'],
   ]) {
-    const b = document.getElementById(id)!;
-    const set = (on: boolean) => {
-      document.body.classList.toggle(cls, !on);
-      b.setAttribute('aria-pressed', String(on));
-    };
-    set(window.innerWidth >= WIDE);
-    b.addEventListener('click', () => set(document.body.classList.contains(cls)));
+    setPanel(cls, id, window.innerWidth >= WIDE);
+    bar.click(id, () => setPanel(cls, id, document.body.classList.contains(cls)));
   }
+
+  // openTool opens entries as the menu of tool id, or closes it when it is already open.
+  const openTool = (id: string, entries: () => Entry[]) => {
+    bar.click(id, () => {
+      const b = bar.button(id);
+      if (openerOf(toolMenu) === b) return closeMenu(toolMenu);
+      const r = b.getBoundingClientRect();
+      showMenu(toolMenu, entries(), r.left, r.bottom + MENU_GAP, b);
+    });
+  };
+  openTool('edge-kind', () => model.edge_kinds.map((k) => ({ label: k, on: true, checked: k === edgeKind, run: () => ((edgeKind = k), showKinds(model.edge_kinds)) })));
+  const decoration = (label: string, type: DecorationType): Entry => ({
+    label,
+    on: true,
+    run: () => {
+      const sel = ui.selection();
+      void act.addDecoration(type, ui.center(), sel.nodes.length === 1 ? sel.nodes[0] : undefined);
+    },
+  });
+  openTool('add-decoration', () => [decoration('Text', 'text'), decoration('Rectangle', 'rect'), decoration('Ellipse', 'ellipse'), decoration('Band', 'band'), decoration('Image', 'image'), decoration('Arrow', 'arrow'), decoration('Freehand', 'freehand')]);
+  openTool('arrange', () => arrangeItems(ui.arrange, ui.movable()));
+  const zoomTo = (z: number): Entry => ({ label: `${z * 100}%`, on: true, run: () => ui.setZoom(z) });
+  const zoomToSelection = () => {
+    const b = ui.selectionBox();
+    if (b) ui.fit(b);
+  };
+  openTool('zoom', () => [zoomTo(0.5), zoomTo(1), zoomTo(2), { label: '', on: true, run: () => {} }, { label: 'Fit', keys: 'Shift+1', on: true, run: () => ui.fit() }, { label: 'Zoom to selection', keys: 'Shift+2', on: !!ui.selectionBox(), why: 'Select something first', run: zoomToSelection }]);
+  const save = async (name: string, data: () => Blob | Promise<Blob>) => {
+    try {
+      const a = h('a', { href: URL.createObjectURL(await data()), download: name });
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch (err) {
+      setStatus(`Export failed: ${err}`);
+    }
+  };
+  openTool('save', () => {
+    const d = picture(current!.scene.drawing);
+    const view = current!.scene.view;
+    return [
+      { label: 'Export SVG', on: true, run: () => void save(`${d.view}.svg`, () => new Blob([toSVG(d)], { type: 'image/svg+xml' })) },
+      { label: 'Export PNG', on: true, run: () => void save(`${d.view}.png`, () => toPNG(d, view.font)) },
+    ];
+  });
   select.addEventListener('change', () => conn.selectView(select.value));
-  newView.addEventListener('click', () => act.newView(ui.selection().nodes.map(nodeSelector)));
-  addNode.addEventListener('click', () => act.addNode());
-  connectBtn.addEventListener('click', () => ui.connecting(!ui.connecting()));
-  addDecoration.addEventListener('change', () => {
-    const type = addDecoration.value as DecorationType;
-    addDecoration.value = '';
-    const sel = ui.selection();
-    if (type) void act.addDecoration(type, ui.center(), sel.nodes.length === 1 ? sel.nodes[0] : undefined);
-  });
-  undo.addEventListener('click', () => request({ type: 'undo' }));
-  redo.addEventListener('click', () => request({ type: 'redo' }));
-  unpin.addEventListener('click', () => ui.unpin());
-  arrange.addEventListener('change', () => {
-    const how = arrange.value as Parameters<typeof ui.arrange>[0];
-    arrange.value = '';
-    if (how) ui.arrange(how);
-  });
-  document.getElementById('zoom-out')!.addEventListener('click', () => ui.setZoom(ui.zoom() / 1.25));
-  document.getElementById('zoom-in')!.addEventListener('click', () => ui.setZoom(ui.zoom() * 1.25));
-  zoomLabel.addEventListener('click', () => ui.setZoom(1));
+  bar.click('new-view', () => void act.newView(ui.selection().nodes.map(nodeSelector)));
+  bar.click('add-node', () => void act.addNode());
+  bar.click('connect', () => ui.connecting(!ui.connecting()));
+  bar.click('undo', () => request({ type: 'undo' }));
+  bar.click('redo', () => request({ type: 'redo' }));
+  bar.click('unpin', () => ui.unpin());
+  bar.click('zoom-out', () => ui.setZoom(ui.zoom() / 1.25));
+  bar.click('zoom-in', () => ui.setZoom(ui.zoom() * 1.25));
+  bar.click('fit', () => ui.fit());
+  bar.click('help', help);
   document.addEventListener('keydown', (ev) => {
     const tag = (ev.target as Element).tagName;
     if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || !(ev.ctrlKey || ev.metaKey)) return;

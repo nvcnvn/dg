@@ -1,12 +1,14 @@
 import '@fontsource/inter/400.css';
 import '@fontsource/inter/700.css';
+import './theme.css';
 import './app.css';
 import ELK from 'elkjs/lib/elk-api.js';
 import elkWorkerUrl from 'elkjs/lib/elk-worker.min.js?url';
 import libavoidUrl from '../node_modules/libavoid-js/dist/libavoid.wasm?url';
 import { avoidRouter } from './canvas/avoid';
 import { startEditor } from './canvas/editor';
-import { mountSVG, setClock, toJSON, toSVG, type Drawing } from './canvas/export';
+import { mountSVG, picture, setClock, toJSON, toSVG, type Drawing } from './canvas/export';
+import { followHost } from './canvas/host';
 import { canvasMeasure, loadFonts } from './canvas/measure';
 import type { Elk } from './place/elk';
 import type { ResolvedView } from './protocol/view';
@@ -36,8 +38,7 @@ if (new URLSearchParams(location.search).has('export')) {
       const elk = new ELK({ workerUrl: elkWorkerUrl });
       try {
         const { drawing: d, family } = await render(view, elk);
-        // A drill-down badge is a control of the editor; a picture keeps only the collapse badge.
-        const drawing = { ...d, nodes: d.nodes.map(({ drill: _, ...n }) => n) };
+        const drawing = picture(d);
         const svg = toSVG(drawing);
         await mountSVG(svg, family);
         if (blocked.length) throw new Error('blocked requests: ' + blocked.join(', '));
@@ -49,6 +50,7 @@ if (new URLSearchParams(location.search).has('export')) {
     setClock,
   };
 } else {
+  followHost();
   const elk = new ELK({ workerUrl: elkWorkerUrl });
   startEditor((view) => render(view, elk));
 }

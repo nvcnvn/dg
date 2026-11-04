@@ -1,37 +1,39 @@
 import type { Scene } from '../edit/edit';
 import type { Point } from '../geometry/geometry';
-import type { KindInfo, ModelNode } from '../protocol/client';
+import { X } from 'lucide';
+import type { KindInfo, ModelInfo, ModelNode } from '../protocol/client';
 import type { Op } from '../protocol/ops';
-import type { Compartment } from '../protocol/view';
+import type { Compartment, CustomShape } from '../protocol/view';
 import type { ActionHost, Actions, Selection } from './actions';
-import { h, labeled } from './dialog';
+import { h, icon, labeled } from './dialog';
+import { kindPicture } from './markup';
 
 // DRAG starts dragging a kind out of the palette after the pointer moved this many pixels.
 const DRAG = 3;
 
-// palette lists the kinds of the loaded packs (FR-11). A kind dragged onto the canvas, or into a
+// palette lists the kinds of the loaded packs, each with a picture of its shape in its default
+// style, under its pack's name in load order (FR-20). A kind dragged onto the canvas, or into a
 // container, creates a node there (drop); one chosen by click or keyboard creates it in the
 // middle of what the canvas shows (pick).
 export function palette(root: HTMLElement, pick: (kind: string) => void, drop: (kind: string, client: Point) => void) {
   const list = root.querySelector('#kinds') as HTMLElement;
   const filter = root.querySelector('#palette-filter') as HTMLInputElement;
-  let kinds: KindInfo[] = [];
+  let shown: ModelInfo | undefined;
   let enabled = false;
+  const entry = (k: KindInfo, shapes: Record<string, CustomShape>) => {
+    const b = h('button', { type: 'button', 'data-kind': k.name, disabled: !enabled, 'data-tip': `Drag onto the canvas to create a ${k.name}, or click to add it in the middle` }, picture(k, shapes), h('span', {}, k.name));
+    b.addEventListener('click', () => {
+      if (!b.dataset.dragged) pick(k.name);
+      delete b.dataset.dragged;
+    });
+    b.addEventListener('pointerdown', (ev) => dragKind(b, k.name, ev));
+    return b;
+  };
   const fill = () => {
     const q = filter.value.toLowerCase();
-    list.replaceChildren(
-      ...kinds
-        .filter((k) => k.name.toLowerCase().includes(q))
-        .map((k) => {
-          const b = h('button', { type: 'button', 'data-kind': k.name, disabled: !enabled, title: `Drag onto the canvas to create a ${k.name}` }, k.name);
-          b.addEventListener('click', () => {
-            if (!b.dataset.dragged) pick(k.name);
-            delete b.dataset.dragged;
-          });
-          b.addEventListener('pointerdown', (ev) => dragKind(b, k.name, ev));
-          return b;
-        }),
-    );
+    const kinds = (shown?.kinds ?? []).filter((k) => k.name.toLowerCase().includes(q));
+    const groups = [...(shown?.packs ?? []), ''].map((pack) => ({ pack, kinds: kinds.filter((k) => (k.pack ?? '') === pack) }));
+    list.replaceChildren(...groups.filter((g) => g.kinds.length).flatMap((g) => [h('h3', {}, g.pack || 'Project'), ...g.kinds.map((k) => entry(k, shown?.shapes ?? {}))]));
   };
   const dragKind = (b: HTMLButtonElement, kind: string, ev: PointerEvent) => {
     if (ev.button !== 0 || b.disabled) return;
@@ -59,13 +61,21 @@ export function palette(root: HTMLElement, pick: (kind: string) => void, drop: (
   };
   filter.addEventListener('input', fill);
   return {
-    update(next: KindInfo[], on: boolean) {
-      if (on === enabled && next.length === kinds.length && next.every((k, i) => k.name === kinds[i].name)) return;
-      kinds = next;
+    update(next: ModelInfo | undefined, on: boolean) {
+      const changed = next !== shown;
+      if (on === enabled && !changed) return;
       enabled = on;
-      fill();
+      shown = next;
+      if (changed) fill();
+      else for (const b of list.querySelectorAll('button')) b.disabled = !on;
     },
   };
+}
+
+// picture is the palette's picture of kind k.
+function picture(k: KindInfo, shapes: Record<string, CustomShape>): Element | null {
+  if (!k.style) return null;
+  return new DOMParser().parseFromString(kindPicture(k.style, shapes), 'image/svg+xml').documentElement;
 }
 
 // inspector shows the selection (FR-11): a node's ID, label, kind, tags, properties typed by its
@@ -83,17 +93,47 @@ export function inspector(root: HTMLElement, host: ActionHost, act: Actions) {
     return labeled(text, control);
   };
 
+  // head titles the panel with what is selected and its kind, its ID beneath.
+  const head = (title: string, kind: string, id: string, rename?: () => void) => [
+    h('h2', {}, title.split('\n')[0]),
+    h('p', { class: 'kind' }, kind),
+    h('div', { class: 'identity' }, h('code', { class: 'id' }, id), rename ? h('button', { type: 'button', onclick: rename }, 'Rename ID…') : null),
+  ];
+
+  // tagsField edits tags as chips, completed from the project's tags.
+  const tagsField = (s: Scene, tags: string[], commit: (tags: string[]) => void) => {
+    const input = h('input', { list: 'dg-tags', placeholder: 'Add a tag' });
+    const add = () => {
+      const added = words(input.value).filter((t) => !tags.includes(t));
+      input.value = '';
+      if (added.length) commit([...tags, ...added]);
+    };
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key !== 'Enter') return;
+      ev.preventDefault();
+      add();
+    });
+    const chips = h(
+      'div',
+      { class: 'chips' },
+      ...tags.map((t) => h('span', { class: 'chip' }, t, h('button', { type: 'button', 'aria-label': `Remove tag ${t}`, onclick: () => commit(tags.filter((x) => x !== t)) }, icon(X)))),
+    );
+    const [label, control] = field('Tags', input, add);
+    return [label, chips, control, h('datalist', { id: 'dg-tags' }, ...s.model.tags.map((t) => h('option', { value: t })))];
+  };
+
   const nodeView = (s: Scene, n: ModelNode) => {
     const kinds = s.model.kinds;
     const kind = kinds.find((k) => k.name === n.kind);
     const ro = !!n.read_only;
     const out: (Node | null)[] = [
-      h('h2', {}, `Node ${n.id}`),
+      ...head(n.label || n.id, n.kind, n.id, () => act.rename('node', n.id)),
       ro ? h('p', { class: 'lock' }, 'Read-only: defined in a read-only file, so only its layout can change.') : null,
+      h('h3', {}, 'Text'),
       ...field('Label', h('textarea', { rows: 2, value: n.label }), (v) => v !== n.label && send({ op: 'set_label', id: n.id, label: v })),
+      h('h3', {}, 'Kind and tags'),
       ...field('Kind', h('select', {}, ...kinds.map((k) => h('option', { value: k.name, selected: k.name === n.kind }, k.name))), (v) => send({ op: 'set_kind', id: n.id, kind: v })),
-      ...field('Tags', h('input', { value: (n.tags ?? []).join(' '), list: 'dg-tags', placeholder: 'space-separated' }), (v) => send({ op: 'set_tags', id: n.id, tags: words(v) })),
-      h('datalist', { id: 'dg-tags' }, ...s.model.tags.map((t) => h('option', { value: t }))),
+      ...tagsField(s, n.tags ?? [], (tags) => send({ op: 'set_tags', id: n.id, tags })),
     ];
     const props = kind?.properties ?? [];
     if (props.length) {
@@ -123,15 +163,14 @@ export function inspector(root: HTMLElement, host: ActionHost, act: Actions) {
     for (const p of n.ports ?? []) {
       out.push(h('div', { class: 'row' }, h('span', {}, `${p.name}${p.side ? ` (${p.side})` : ''}`), h('button', { type: 'button', 'aria-label': `Remove port ${p.name}`, onclick: () => send({ op: 'remove_port', id: n.id, name: p.name }) }, 'Remove')));
     }
-    out.push(h('button', { type: 'button', onclick: () => act.addPort(n.id) }, 'Add port…'));
+    out.push(h('div', { class: 'actions' }, h('button', { type: 'button', onclick: () => act.addPort(n.id) }, 'Add port…')));
     if (kind?.rows) out.push(...rowsEditor(n, (compartments) => send({ op: 'set_rows', id: n.id, compartments })));
     out.push(
       h(
         'div',
-        { class: 'actions' },
-        h('button', { type: 'button', onclick: () => act.rename('node', n.id) }, 'Rename ID…'),
+        { class: 'actions last' },
         h('button', { type: 'button', onclick: () => act.hide([n.id]) }, 'Hide from view'),
-        h('button', { type: 'button', onclick: () => act.remove({ nodes: [n.id] }) }, 'Delete'),
+        h('button', { type: 'button', class: 'danger', onclick: () => act.remove({ nodes: [n.id] }) }, 'Delete'),
       ),
     );
     return wrap(out, ro, ['Hide from view']);
@@ -140,7 +179,7 @@ export function inspector(root: HTMLElement, host: ActionHost, act: Actions) {
   const edgeView = (s: Scene, id: string) => {
     const ve = s.view.edges.find((e) => e.id === id);
     const e = s.model.edges.find((x) => x.id === id);
-    if (!e) return [h('h2', {}, 'Lifted edge'), h('p', { class: 'note' }, `Stands for ${(ve?.edges ?? []).join(', ')}; edit those in a view that draws them.`)];
+    if (!e) return [...head('Lifted edge', ve?.kind ?? '', id), h('p', { class: 'note' }, `Stands for ${(ve?.edges ?? []).join(', ')}; edit those in a view that draws them.`)];
     const ro = !!e.read_only;
     const labels = { ...e.labels };
     const label = (pos: 'start' | 'mid' | 'end', text: string) =>
@@ -151,16 +190,17 @@ export function inspector(root: HTMLElement, host: ActionHost, act: Actions) {
       });
     return wrap(
       [
-        h('h2', {}, `Edge ${id}`),
+        ...head(e.labels.mid || `${e.from.node} → ${e.to.node}`, `${e.kind} edge`, id, () => act.rename('edge', id)),
         ro ? h('p', { class: 'lock' }, 'Read-only: defined in a read-only file, so only its hints can change.') : null,
         h('p', { class: 'note' }, `${endText(e.from)} → ${endText(e.to)}`),
-        ...field('Kind', h('select', {}, ...s.model.edge_kinds.map((k) => h('option', { value: k, selected: k === e.kind }, k))), (v) => send({ op: 'set_kind', type: 'edge', id, kind: v })),
+        h('h3', {}, 'Text'),
         ...label('mid', 'Label'),
         ...label('start', 'Start label'),
         ...label('end', 'End label'),
-        ...field('Tags', h('input', { value: (e.tags ?? []).join(' '), list: 'dg-tags', placeholder: 'space-separated' }), (v) => send({ op: 'set_tags', type: 'edge', id, tags: words(v) })),
-        h('datalist', { id: 'dg-tags' }, ...s.model.tags.map((t) => h('option', { value: t }))),
-        h('div', { class: 'actions' }, h('button', { type: 'button', onclick: () => act.rename('edge', id) }, 'Rename ID…'), h('button', { type: 'button', onclick: () => act.remove({ nodes: [], edge: id }) }, 'Delete')),
+        h('h3', {}, 'Kind and tags'),
+        ...field('Kind', h('select', {}, ...s.model.edge_kinds.map((k) => h('option', { value: k, selected: k === e.kind }, k))), (v) => send({ op: 'set_kind', type: 'edge', id, kind: v })),
+        ...tagsField(s, e.tags ?? [], (tags) => send({ op: 'set_tags', type: 'edge', id, tags })),
+        h('div', { class: 'actions last' }, h('button', { type: 'button', class: 'danger', onclick: () => act.remove({ nodes: [], edge: id }) }, 'Delete')),
       ],
       ro,
     );
@@ -170,8 +210,8 @@ export function inspector(root: HTMLElement, host: ActionHost, act: Actions) {
     const d = s.view.decorations?.find((x) => x.id === id);
     if (!d) return [];
     const view = s.view.view;
-    const out: (Node | null)[] = [h('h2', {}, `Decoration ${id}`), h('p', { class: 'note' }, d.type + (d.attach ? `, attached to ${d.attach}` : ''))];
-    if (d.type === 'text') out.push(...field('Text', h('textarea', { rows: 3, value: d.text ?? '' }), (v) => v && send({ op: 'update_decoration', view, id, decoration: { text: v } })));
+    const out: (Node | null)[] = [...head(d.text || d.type, `${d.type} decoration`, id), d.attach ? h('p', { class: 'note' }, `Attached to ${d.attach}`) : null];
+    if (d.type === 'text') out.push(h('h3', {}, 'Text'), ...field('Text', h('textarea', { rows: 3, value: d.text ?? '' }), (v) => v && send({ op: 'update_decoration', view, id, decoration: { text: v } })));
     const promotable = !d.attach && d.type !== 'arrow' && d.type !== 'freehand';
     out.push(
       h(
@@ -179,8 +219,8 @@ export function inspector(root: HTMLElement, host: ActionHost, act: Actions) {
         { class: 'actions' },
         d.attach ? h('button', { type: 'button', onclick: () => act.detach(id) }, 'Detach') : h('button', { type: 'button', onclick: () => act.attach(id) }, 'Attach to node…'),
         promotable ? h('button', { type: 'button', onclick: () => act.promote(id) }, 'Promote to node…') : null,
-        h('button', { type: 'button', onclick: () => act.remove({ nodes: [], decoration: id }) }, 'Delete'),
       ),
+      h('div', { class: 'actions last' }, h('button', { type: 'button', class: 'danger', onclick: () => act.remove({ nodes: [], decoration: id }) }, 'Delete')),
     );
     return out;
   };
@@ -212,10 +252,10 @@ export function inspector(root: HTMLElement, host: ActionHost, act: Actions) {
     else if (sel.nodes.length > 1)
       body = [
         h('h2', {}, `${sel.nodes.length} nodes`),
-        h('div', { class: 'actions' }, h('button', { type: 'button', onclick: () => act.hide(sel.nodes) }, 'Hide from view'), h('button', { type: 'button', onclick: () => act.remove(sel) }, 'Delete')),
+        h('div', { class: 'actions last' }, h('button', { type: 'button', onclick: () => act.hide(sel.nodes) }, 'Hide from view'), h('button', { type: 'button', class: 'danger', onclick: () => act.remove(sel) }, 'Delete')),
       ];
     else body = [h('h2', {}, 'Nothing selected'), h('p', { class: 'note' }, 'Select a node, edge or decoration to edit it. Double-click a node to edit its label.')];
-    const fs = h('fieldset', { disabled: locked, style: 'border: none; margin: 0; padding: 0' }, ...body.filter((x): x is Node => !!x));
+    const fs = h('fieldset', { disabled: locked }, ...body.filter((x): x is Node => !!x));
     const seen = new Map<string, number>();
     for (const c of fs.querySelectorAll<HTMLElement>('input, select, textarea, button')) {
       const name = c.getAttribute('aria-label') || (c.id && fs.querySelector(`label[for="${c.id}"]`)?.textContent) || c.textContent;

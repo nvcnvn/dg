@@ -1,6 +1,8 @@
+import { Check } from 'lucide';
 import { movable, unpinOps, type Align, type Scene } from '../edit/edit';
 import type { Point } from '../geometry/geometry';
 import type { Actions, Selection } from './actions';
+import { h, icon } from './dialog';
 
 // Commands are what the context menu and the keys do on the canvas (canvas/interact.ts).
 export interface Commands {
@@ -23,27 +25,114 @@ export interface Commands {
   cancel(): boolean;
   zoom(): number;
   setZoom(z: number): void;
+  fit(): void;
+  zoomToSelection(): void;
+  help(): void;
   center(): Point;
   pagePoint(p: Point): Point;
   selectView(id: string): void;
   space(down: boolean): void;
 }
 
-// Entry is an item of the context menu, a separator when its label is empty. A disabled item
-// is listed when why says why it is disabled, and left out otherwise.
-type Entry = { label: string; run: () => void; on: boolean; why?: string };
+// Entry is an item of a menu, a separator when its label is empty, with its shortcut on the
+// right; danger colors a destructive one. A disabled item shows why it is disabled.
+export interface Entry {
+  label: string;
+  run: () => void;
+  on: boolean;
+  why?: string;
+  keys?: string;
+  danger?: boolean;
+  // checked marks the current choice of a menu that holds one.
+  checked?: boolean;
+  view?: string;
+}
 
 const SEP: Entry = { label: '', run: () => {}, on: true };
+const openers = new Map<HTMLElement, Element | undefined>();
+const GAP = 4;
+
+// showMenu shows entries in menu at the client point (x, y), kept inside the window, with the
+// focus on its first item that can be chosen; opener is the control that opened it, which gets
+// the focus back on Escape and closes it when clicked again.
+export function showMenu(menu: HTMLElement, entries: Entry[], x: number, y: number, opener?: Element) {
+  menu.replaceChildren(
+    ...entries.map((e) => {
+      if (!e.label) return document.createElement('hr');
+      const radio = e.checked !== undefined;
+      return h(
+        'button',
+        {
+          type: 'button',
+          class: e.danger ? 'item danger' : 'item',
+          role: radio ? 'menuitemradio' : 'menuitem',
+          'aria-checked': radio ? String(e.checked) : undefined,
+          'data-view': e.view,
+          disabled: !e.on,
+          onclick: () => {
+            closeMenu(menu);
+            e.run();
+          },
+        },
+        e.checked ? icon(Check) : null,
+        h('span', { class: 'text' }, e.label),
+        e.keys ? h('kbd', { 'aria-hidden': 'true' }, e.keys) : null,
+        !e.on && e.why ? h('small', {}, e.why) : null,
+      );
+    }),
+  );
+  menu.hidden = false;
+  menu.style.left = `${Math.max(GAP, Math.min(x, window.innerWidth - menu.offsetWidth - GAP))}px`;
+  menu.style.top = `${Math.max(GAP, Math.min(y, window.innerHeight - menu.offsetHeight - GAP))}px`;
+  openers.set(menu, opener);
+  menu.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
+}
+
+export function closeMenu(menu: HTMLElement) {
+  if (menu.hidden) return;
+  menu.hidden = true;
+  menu.replaceChildren();
+  openers.delete(menu);
+}
+
+// openerOf is the control that opened menu, while it is open.
+export const openerOf = (menu: HTMLElement) => openers.get(menu);
+
+// bindMenu makes the arrow keys, Home and End move through menu, Escape close it, and a click
+// outside it close it.
+export function bindMenu(menu: HTMLElement) {
+  menu.addEventListener('keydown', (ev) => {
+    const items = [...menu.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')];
+    const i = items.indexOf(document.activeElement as HTMLButtonElement);
+    if (ev.key === 'ArrowDown') items[(i + 1) % items.length]?.focus();
+    else if (ev.key === 'ArrowUp') items[(i - 1 + items.length) % items.length]?.focus();
+    else if (ev.key === 'Home') items[0]?.focus();
+    else if (ev.key === 'End') items[items.length - 1]?.focus();
+    else if (ev.key === 'Escape') {
+      const opener = openers.get(menu);
+      closeMenu(menu);
+      if (opener instanceof HTMLElement) opener.focus();
+      else window.focus();
+    } else return;
+    ev.preventDefault();
+    ev.stopPropagation();
+  });
+  document.addEventListener('click', (ev) => {
+    const t = ev.target as Node;
+    if (!menu.contains(t) && !openers.get(menu)?.contains(t)) closeMenu(menu);
+  });
+}
 const READ_ONLY = 'Defined in a read-only file';
 const ZOOMS = [0.25, 0.33, 0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 2, 3, 4];
 
 // UI is where the canvas's keys do not apply: controls, which use the keys themselves, and the
 // toolbar, panels, menus, dialogs and toast around the canvas.
-const UI = 'button, input, select, textarea, a, dialog, #bar, #palette, #inspector, #context-menu, #drill-menu, #toast';
+const UI = 'button, input, select, textarea, a, dialog, #bar, #palette, #inspector, #context-menu, #drill-menu, #tool-menu, #overflow-menu, #toast';
 
 // menuAndKeys runs the context menu and the editor's keys (FR-11).
 export function menuAndKeys(menu: HTMLElement, c: Commands, act: Actions) {
-  const item = (label: string, run: () => void, on: boolean, why?: string): Entry => ({ label, run, on, why: on ? undefined : why });
+  const item = (label: string, run: () => void, on: boolean, why?: string, keys?: string): Entry => ({ label, run, on, why: on ? undefined : why, keys });
+  const danger = (label: string, run: () => void, on: boolean, why?: string, keys?: string): Entry => ({ ...item(label, run, on, why, keys), danger: true });
 
   // entries are the context menu's items for the selection, or for the canvas at p.
   const entries = (s: Scene, p: Point): Entry[] => {
@@ -59,7 +148,8 @@ export function menuAndKeys(menu: HTMLElement, c: Commands, act: Actions) {
       return [
         item('Promote to node…', () => act.promote(id), !!d && !d.attach && d.type !== 'arrow' && d.type !== 'freehand', why),
         d?.attach ? item('Detach from node', () => act.detach(id), true) : item('Attach to node…', () => act.attach(id), true),
-        item('Delete decoration', () => c.remove(), true),
+        SEP,
+        danger('Delete decoration', () => c.remove(), true, undefined, 'Del'),
       ];
     }
     if (sel.edge) {
@@ -69,16 +159,16 @@ export function menuAndKeys(menu: HTMLElement, c: Commands, act: Actions) {
       const why = me ? READ_ONLY : 'A lifted edge stands for edges inside a collapsed container';
       const ok = !!me && !me.read_only;
       return [
-        item('Edit label', () => c.editEdgeLabel(id), ok, why),
+        item('Edit label', () => c.editEdgeLabel(id), ok, why, 'F2'),
         item('Rename ID…', () => act.rename('edge', id), ok, why),
-        item('Delete edge', () => c.remove(), ok, why),
-        SEP,
         item('Reset route', () => c.resetRoute(id), !!ve?.hint),
+        SEP,
+        danger('Delete edge', () => c.remove(), ok, why, 'Del'),
       ];
     }
     if (!ids.length) {
       return [
-        item('Paste here', () => c.paste(p), c.hasClip()),
+        item('Paste here', () => c.paste(p), c.hasClip(), undefined, 'Ctrl/⌘+V'),
         item('Add node…', () => act.addNode(), s.model.nodes.some((m) => !s.nodes.has(m.id))),
         item('Add text here', () => act.addDecoration('text', p), true),
       ];
@@ -87,81 +177,34 @@ export function menuAndKeys(menu: HTMLElement, c: Commands, act: Actions) {
     const drill = one ? (s.view.nodes.find((x) => x.id === one)?.drill ?? []) : [];
     const container = ids.some((id) => s.model.nodes.some((m) => m.parent === id));
     return [
-      item('Edit label', () => c.editLabel(one!), !!one && !ro, one && READ_ONLY),
-      item('Copy', () => c.copy(), true),
-      item('Paste', () => c.paste(), c.hasClip()),
-      SEP,
+      item('Edit label', () => c.editLabel(one!), !!one && !ro, one && READ_ONLY, 'F2'),
+      item('Copy', () => c.copy(), true, undefined, 'Ctrl/⌘+C'),
+      item('Paste', () => c.paste(), c.hasClip(), undefined, 'Ctrl/⌘+V'),
       item('Hide from view', () => act.hide(ids), true),
-      item('Delete from model', () => c.remove(), !ro, READ_ONLY),
-      ...(container ? [item('Delete with contents', () => c.remove(true), !ro, READ_ONLY)] : []),
       item('Rename ID…', () => act.rename('node', one!), !!one && !ro, one && READ_ONLY),
       item('Add port…', () => act.addPort(one!), !!one && !ro, one && READ_ONLY),
       ...drill.map((v) => item(`Open view ${v}`, () => c.selectView(v), true)),
       SEP,
-      item('Unpin', () => c.unpin(), unpinOps(s, ids).length > 0),
-      item('Align left', () => c.arrange('left'), n > 1),
-      item('Align center', () => c.arrange('center'), n > 1),
-      item('Align right', () => c.arrange('right'), n > 1),
-      item('Align top', () => c.arrange('top'), n > 1),
-      item('Align middle', () => c.arrange('middle'), n > 1),
-      item('Align bottom', () => c.arrange('bottom'), n > 1),
-      item('Distribute horizontally', () => c.arrange('x'), n > 2),
-      item('Distribute vertically', () => c.arrange('y'), n > 2),
+      item('Unpin', () => c.unpin(), unpinOps(s, ids).length > 0, undefined, 'U'),
+      ...arrangeItems(c.arrange, n, true),
+      SEP,
+      danger('Delete from model', () => c.remove(), !ro, READ_ONLY, 'Del'),
+      ...(container ? [danger('Delete with contents', () => c.remove(true), !ro, READ_ONLY)] : []),
     ];
   };
 
-  const close = () => {
-    if (menu.hidden) return;
-    menu.hidden = true;
-    menu.replaceChildren();
-  };
+  const close = () => closeMenu(menu);
 
-  // open shows the context menu at the page point (x, y) for the drawing's point p, with the
-  // focus on its first item; arrow keys move between items and Escape closes it.
+  // open shows the context menu at the client point (x, y) for the drawing's point p.
   const open = (x: number, y: number, p: Point) => {
     const s = c.scene();
     if (!s || !c.editable()) return;
     const list = entries(s, p).filter((e) => !e.label || e.on || e.why);
     const shown = list.filter((e, i) => e.label || (i > 0 && list[i - 1].label && list.slice(i + 1).some((x) => x.label)));
-    if (!shown.some((e) => e.label && e.on)) return;
-    menu.replaceChildren(
-      ...shown.map((e) => {
-        if (!e.label) return document.createElement('hr');
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.textContent = e.label;
-        b.setAttribute('role', 'menuitem');
-        b.disabled = !e.on;
-        if (e.why) b.title = e.why;
-        b.addEventListener('click', () => {
-          close();
-          e.run();
-        });
-        return b;
-      }),
-    );
-    menu.style.left = `${x}px`;
-    menu.style.top = `${y}px`;
-    menu.hidden = false;
-    menu.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
+    if (shown.some((e) => e.label && e.on)) showMenu(menu, shown, x, y);
   };
 
-  menu.addEventListener('keydown', (ev) => {
-    const items = [...menu.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')];
-    const i = items.indexOf(document.activeElement as HTMLButtonElement);
-    if (ev.key === 'ArrowDown') items[(i + 1) % items.length]?.focus();
-    else if (ev.key === 'ArrowUp') items[(i - 1 + items.length) % items.length]?.focus();
-    else if (ev.key === 'Escape') {
-      close();
-      window.focus();
-    } else return;
-    ev.preventDefault();
-    ev.stopPropagation();
-  });
-
-  document.addEventListener('click', (ev) => {
-    if (!menu.contains(ev.target as Node)) close();
-  });
+  bindMenu(menu);
 
   document.addEventListener('keydown', (ev) => {
     if ((ev.target as Element).closest?.(UI)) return;
@@ -193,6 +236,12 @@ export function menuAndKeys(menu: HTMLElement, c: Commands, act: Actions) {
       const p = b ? { x: b.x + b.w / 2, y: b.y + b.h / 2 } : c.center();
       const q = c.pagePoint(p);
       open(q.x, q.y, p);
+    } else if (!mod && ev.shiftKey && ev.code === 'Digit1') {
+      c.fit();
+    } else if (!mod && ev.shiftKey && ev.code === 'Digit2') {
+      c.zoomToSelection();
+    } else if (!mod && ev.key === '?') {
+      c.help();
     } else if (!mod && key === 'c') {
       c.connecting(!c.connecting());
     } else if (!mod && key === 'u') {
@@ -211,6 +260,22 @@ export function menuAndKeys(menu: HTMLElement, c: Commands, act: Actions) {
   });
 
   return { open, close };
+}
+
+// arrangeItems are the align and distribute actions for n nodes that can move, which disabled
+// are left out of the context menu and explained in the toolbar's menu.
+export function arrangeItems(arrange: (how: Align | 'x' | 'y') => void, n: number, quiet = false): Entry[] {
+  const item = (label: string, how: Align | 'x' | 'y', need: number): Entry => ({ label, run: () => arrange(how), on: n >= need, why: quiet ? undefined : need === 2 ? 'Select two nodes or more' : 'Select three nodes or more' });
+  return [
+    item('Align left', 'left', 2),
+    item('Align center', 'center', 2),
+    item('Align right', 'right', 2),
+    item('Align top', 'top', 2),
+    item('Align middle', 'middle', 2),
+    item('Align bottom', 'bottom', 2),
+    item('Distribute horizontally', 'x', 3),
+    item('Distribute vertically', 'y', 3),
+  ];
 }
 
 function step(z: number, dir: 1 | -1): number {

@@ -6,15 +6,27 @@
     <script type="module" src="./src/main.ts"></script>
   </head>
   <body>
-    <header id="bar"><select id="views" aria-label="View"></select><button type="button" id="new-view" title="New view" disabled>New view…</button><span id="tools"><button type="button" id="undo" title="Undo (Ctrl+Z)" disabled>Undo</button><button type="button" id="redo" title="Redo (Ctrl+Shift+Z)" disabled>Redo</button><button type="button" id="unpin" title="Unpin the selection (U)" disabled>Unpin</button><select id="arrange" aria-label="Arrange" disabled><option value="">Arrange…</option><option value="left">Align left</option><option value="center">Align center</option><option value="right">Align right</option><option value="top">Align top</option><option value="middle">Align middle</option><option value="bottom">Align bottom</option><option value="x">Distribute horizontally</option><option value="y">Distribute vertically</option></select><button type="button" id="add-node" title="Add a node of the model to the view" disabled>Add node…</button><button type="button" id="connect" title="Draw edges from nodes, ports and rows (C)" aria-pressed="false" disabled>Connect</button><select id="edge-kind" aria-label="Edge kind" title="Kind of new edges" disabled></select><select id="add-decoration" aria-label="Add decoration" disabled><option value="">Decoration…</option><option value="text">Text</option><option value="rect">Rectangle</option><option value="ellipse">Ellipse</option><option value="band">Band</option><option value="image">Image</option><option value="arrow">Arrow</option><option value="freehand">Freehand</option></select><button type="button" id="show-palette" title="Show the palette of kinds" aria-pressed="true">Palette</button><button type="button" id="show-inspector" title="Show the inspector" aria-pressed="true">Inspector</button><button type="button" id="zoom-out" title="Zoom out (-)">−</button><button type="button" id="zoom" title="Actual size (0)">100%</button><button type="button" id="zoom-in" title="Zoom in (+)">+</button></span><nav id="crumbs" aria-label="Breadcrumbs" hidden></nav><span id="hint" hidden>Layout not saved: placed automatically until a node is pinned.</span><span id="status" role="status"></span></header>
-    <ul id="diagnostics" hidden></ul>
+    <header id="bar" aria-label="Toolbar"></header>
     <main id="main">
       <aside id="palette" aria-label="Palette"><h2>Kinds</h2><input id="palette-filter" type="search" placeholder="Filter" aria-label="Filter kinds" /><div id="kinds"></div></aside>
-      <div id="canvas"><div id="paper"></div></div>
+      <div id="stage">
+        <div id="canvas" tabindex="0" role="region" aria-label="Canvas"><div id="paper"></div></div>
+        <div id="top">
+          <section id="diagnostics" aria-label="Diagnostics" hidden></section>
+          <p id="guide" hidden>Drag from a node, port or row to another. Esc to finish.</p>
+          <p id="hint" hidden>Placed automatically. Drag a node to keep this arrangement.</p>
+        </div>
+        <p id="empty" hidden>Drag a kind from the palette, or click one, to add a node</p>
+        <section id="broken" aria-label="Errors" hidden></section>
+        <div id="status" role="status"></div>
+      </div>
       <aside id="inspector" aria-label="Inspector"></aside>
     </main>
-    <div id="drill-menu" role="menu" hidden></div>
-    <div id="context-menu" role="menu" hidden></div>
+    <div id="overflow-menu" role="group" aria-label="More tools" hidden></div>
+    <div id="tool-menu" role="menu" aria-label="Tool menu" hidden></div>
+    <div id="drill-menu" role="menu" aria-label="Views" hidden></div>
+    <div id="context-menu" role="menu" aria-label="Context menu" hidden></div>
+    <div id="tip" role="tooltip" hidden></div>
     <div id="toast" role="status" hidden></div>
     <dialog id="dialog"></dialog>
   </body>

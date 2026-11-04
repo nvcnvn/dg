@@ -1,4 +1,5 @@
 import * as cp from "node:child_process";
+import { randomBytes } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
@@ -184,7 +185,10 @@ async function openDiagram(dg: string, uri?: vscode.Uri): Promise<void> {
     void vscode.window.showErrorMessage(`dg: cannot open the diagram: ${(err as Error).message}`);
     return;
   }
-  const external = (await vscode.env.asExternalUri(vscode.Uri.parse(url))).toString(true);
+  const external = new URL((await vscode.env.asExternalUri(vscode.Uri.parse(url))).toString(true));
+  external.searchParams.set("host", "vscode");
+  external.searchParams.set("theme", themeKind());
+  const nonce = randomBytes(16).toString("base64");
   const panel = vscode.window.createWebviewPanel(
     "dg.diagram",
     `Diagram: ${path.basename(root)}`,
@@ -195,16 +199,58 @@ async function openDiagram(dg: string, uri?: vscode.Uri): Promise<void> {
 <html>
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; frame-src ${new URL(external).origin}">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}'; frame-src ${external.origin}">
 <style>html, body, iframe { margin: 0; padding: 0; border: 0; width: 100%; height: 100%; overflow: hidden; display: block; }</style>
 </head>
-<body><iframe src="${external}" title="Diagram"></iframe></body>
+<body><iframe src="${external.href}" title="Diagram"></iframe>
+<script nonce="${nonce}">
+const host = acquireVsCodeApi();
+const frame = document.querySelector("iframe");
+window.addEventListener("message", (ev) => {
+  if (ev.source === frame.contentWindow) {
+    if (ev.origin === ${JSON.stringify(external.origin)}) host.postMessage(ev.data);
+  } else {
+    frame.contentWindow.postMessage(ev.data, ${JSON.stringify(external.origin)});
+  }
+});
+</script>
+</body>
 </html>`;
   diagram = { panel, serve, url, root };
+  const themes = vscode.window.onDidChangeActiveColorTheme(() => void panel.webview.postMessage({ type: "dg-theme", theme: themeKind() }));
+  panel.webview.onDidReceiveMessage((m: unknown) => void openDiagnostic(root, m));
   panel.onDidDispose(() => {
+    themes.dispose();
     serve.kill();
     if (diagram?.panel === panel) diagram = undefined;
   });
+}
+
+/** themeKind is the kind of VS Code's theme, as the page takes it (spec FR-20). */
+function themeKind(): "light" | "dark" | "high-contrast" {
+  switch (vscode.window.activeColorTheme.kind) {
+    case vscode.ColorThemeKind.Dark:
+      return "dark";
+    case vscode.ColorThemeKind.HighContrast:
+      return "high-contrast";
+    default:
+      return "light";
+  }
+}
+
+/** openDiagnostic opens the project file a click on a diagnostic in the panel names, at its position. */
+async function openDiagnostic(root: string, m: unknown): Promise<void> {
+  const { type, file, line, column } = (m ?? {}) as { type?: unknown; file?: unknown; line?: unknown; column?: unknown };
+  if (type !== "dg-open" || typeof file !== "string") return;
+  const target = path.resolve(root, file);
+  const relative = path.relative(root, target);
+  if (relative.startsWith("..") || path.isAbsolute(relative)) return;
+  const at = new vscode.Position(Math.max(Number(line) - 1, 0) || 0, Math.max(Number(column) - 1, 0) || 0);
+  try {
+    await vscode.window.showTextDocument(vscode.Uri.file(target), { selection: new vscode.Range(at, at), viewColumn: vscode.ViewColumn.One });
+  } catch (err) {
+    void vscode.window.showErrorMessage(`dg: cannot open ${file}: ${(err as Error).message}`);
+  }
 }
 
 /** served resolves to the address dg serve prints when it listens. */

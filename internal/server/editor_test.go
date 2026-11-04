@@ -221,9 +221,15 @@ func dragBy(sel string, dx, dy float64) chromedp.Action[chromedp.Void] {
 	return at(sel, func(x, y float64) chromedp.Action[chromedp.Void] { return drag(x, y, dx, dy, 8) })
 }
 
-// arrange chooses an action of the toolbar's arrange menu.
-func arrange(value string) chromedp.Action[chromedp.Void] {
-	return chromedp.Evaluate[chromedp.Void](`(() => { const s = document.getElementById('arrange'); s.value = ` + jsString(value) + `; s.dispatchEvent(new Event('change')); })()`)
+// toolMenu opens the menu of the toolbar's button id and chooses item.
+func toolMenu(id, item string) chromedp.Action[chromedp.Void] {
+	return js(`(() => {
+		document.getElementById(` + jsString(id) + `).click();
+		const items = [...document.querySelectorAll('#tool-menu button')];
+		const b = items.find((b) => b.querySelector('.text').textContent === ` + jsString(item) + `);
+		if (!b) throw new Error('the menu holds ' + items.map((b) => b.innerText).join(', '));
+		b.click();
+	})()`)
 }
 
 // TestEditorGestures drives the layout gestures in Chromium (FR-11): each sends one operation or
@@ -247,7 +253,7 @@ func TestEditorGestures(t *testing.T) {
 		{"move", []chromedp.Action[chromedp.Void]{dragBy(`[data-node="c"]`, 0, 40)}, "move", nil, nil},
 		{"multi-select move", []chromedp.Action[chromedp.Void]{click(`[data-node="a"]`), click(`[data-node="b"]`, chromedp.ButtonModifiers(chromedp.ModifierShift)), dragBy(`[data-node="b"]`, -40, 20)}, "batch", nil, nil},
 		{"align from the context menu", []chromedp.Action[chromedp.Void]{click(`[data-node="a"]`, chromedp.ButtonRight), chromedp.Poll[chromedp.Void](`!document.getElementById('context-menu').hidden`), chromedp.Evaluate[chromedp.Void](`[...document.querySelectorAll('#context-menu button')].find((b) => b.textContent === 'Align left').click()`)}, "move", nil, nil},
-		{"distribute", []chromedp.Action[chromedp.Void]{click(`[data-node="c"]`, chromedp.ButtonModifiers(chromedp.ModifierShift)), arrange("y")}, "move", nil, nil},
+		{"distribute", []chromedp.Action[chromedp.Void]{click(`[data-node="c"]`, chromedp.ButtonModifiers(chromedp.ModifierShift)), toolMenu("arrange", "Distribute vertically")}, "move", nil, nil},
 		{"resize", []chromedp.Action[chromedp.Void]{click(`[data-node="c"]`), dragBy(`[data-handle="resize:se"]`, 40, 20)}, "resize", []string{"w: 140, h: 60"}, nil},
 		{"resize from the top left", []chromedp.Action[chromedp.Void]{dragBy(`[data-handle="resize:nw"]`, -20, -20)}, "batch", []string{"w: 160, h: 80"}, nil},
 		{"move inside a container stays inside", []chromedp.Action[chromedp.Void]{dragBy(`[data-node="d"]`, -400, -400)}, "move", []string{"d: {in: g, x: 0, y: 0}"}, nil},
@@ -293,7 +299,7 @@ func TestEditorGestures(t *testing.T) {
 		if got := tree(t, e.dir); !reflect.DeepEqual(got, before) {
 			t.Fatalf("%s: one undo left %v, want %v", g.name, got, before)
 		}
-		if err := chromedp.Do(ctx, chromedp.Poll[chromedp.Void](`!document.getElementById('redo').disabled`), chromedp.Click(chromedp.CSS(`#redo`)), e.idle()); err != nil {
+		if err := chromedp.Do(ctx, chromedp.Poll[chromedp.Void](`document.getElementById('redo').ariaDisabled === 'false'`), chromedp.Click(chromedp.CSS(`#redo`)), e.idle()); err != nil {
 			t.Fatal(err)
 		}
 		if got := tree(t, e.dir); !reflect.DeepEqual(got, after) {
@@ -357,7 +363,7 @@ func TestEditorClients(t *testing.T) {
 	}
 	err := chromedp.Do(b,
 		chromedp.Poll[chromedp.Void](`document.querySelector('[data-node="b"]').closest('[transform]').getAttribute('transform') !== `+jsString(was)),
-		chromedp.Poll[chromedp.Void](`!document.getElementById('undo').disabled`),
+		chromedp.Poll[chromedp.Void](`document.getElementById('undo').ariaDisabled === 'false'`),
 		chromedp.Click(chromedp.CSS(`#undo`)),
 		e.idle(),
 	)
@@ -365,7 +371,7 @@ func TestEditorClients(t *testing.T) {
 		t.Fatalf("the other client: %v", err)
 	}
 	waitFiles(t, e, before)
-	if err := chromedp.Do(ctx, chromedp.Poll[chromedp.Void](`document.getElementById('undo').disabled && !document.getElementById('redo').disabled`)); err != nil {
+	if err := chromedp.Do(ctx, chromedp.Poll[chromedp.Void](`document.getElementById('undo').ariaDisabled === 'true' && document.getElementById('redo').ariaDisabled === 'false'`)); err != nil {
 		t.Fatalf("the history of the first client after the other undid: %v", err)
 	}
 

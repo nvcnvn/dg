@@ -3,7 +3,7 @@ import slugs from '../../../testdata/ids/slug.json';
 import { editScene } from '../fixtures';
 import type { ModelInfo } from '../protocol/client';
 import type { Scene } from './edit';
-import { copy, createOps, decorationOp, deleteOps, dropTarget, endAt, hideOps, newID, nodeID, nodeSelector, pasteOps, reparentOps, selectors, slug } from './model';
+import { clearOf, copy, createOps, decorationOp, deleteOps, dropTarget, endAt, hideOps, newID, nodeID, nodeSelector, pasteOps, reparentOps, selectors, slug } from './model';
 
 const model: ModelInfo = {
   kinds: [{ name: 'node' }, { name: 'group', container: true }],
@@ -181,5 +181,17 @@ describe('context menu', () => {
   it('adds decorations at a point or attached to a node', () => {
     expect(decorationOp(fixture(), 'text', { x: 13, y: 27 }, undefined, 'Hi')).toEqual({ op: 'add_decoration', view: 'main', decoration: { type: 'text', x: 10, y: 30, text: 'Hi' } });
     expect(decorationOp(fixture(), 'rect', { x: 0, y: 0 }, 'a')).toEqual({ op: 'add_decoration', view: 'main', decoration: { type: 'rect', attach: 'a', dx: 0, dy: -50, w: 120, h: 60 } });
+  });
+});
+
+describe('clearOf', () => {
+  const box = { x: 100, y: 100, w: 120, h: 40 };
+  const at = (boxes: (typeof box)[]) => ({ view: { grid: 10 }, drawing: { nodes: boxes.map((b, i) => ({ id: `n${i}`, box: b, container: false })) } }) as unknown as Scene;
+  it.each([
+    ['an empty place stays', [], { x: 500, y: 500 }, { x: 500, y: 500 }],
+    ['beside a node', [box], { x: 160, y: 120 }, { x: 300, y: 120 }],
+    ['past the next node too', [box, { ...box, x: 240 }], { x: 160, y: 120 }, { x: 440, y: 120 }],
+  ])('%s', (_, boxes, p, want) => {
+    expect(clearOf(at(boxes), p)).toEqual(want);
   });
 });

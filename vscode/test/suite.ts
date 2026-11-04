@@ -106,6 +106,8 @@ export async function run(): Promise<void> {
   // not receive is tried again from a new measurement.
   await win.send("Page.bringToFront", {});
   await evaluate<number>(frame, `window.pressed = 0; document.addEventListener('pointerdown', () => window.pressed++, true); 0`);
+  // The view opens fitted to the panel; at 100% a pixel of the drag is a unit of the layout.
+  await evaluate<number>(frame, `document.getElementById('zoom').click(); [...document.querySelectorAll('#tool-menu button')].find((b) => b.textContent === '100%').click(); 0`);
   const panelAt = () =>
     evaluate<[number, number]>(
       win,
@@ -136,7 +138,7 @@ export async function run(): Promise<void> {
   for (let dx = 10; dx <= 60; dx += 10) await mouse("mouseMoved", dx, 1);
   await mouse("mouseReleased", 60, 0);
   await waitFor("the text editor to show the moved node", () => layoutDoc.getText() !== original && layoutDoc.getText().includes("customer: {x: 310,"));
-  await waitFor("the panel to draw the moved node", () => evaluate<boolean>(frame, `document.body.classList.contains('editable') && !document.getElementById('undo').disabled`));
+  await waitFor("the panel to draw the moved node", () => evaluate<boolean>(frame, `document.body.classList.contains('editable') && document.getElementById('undo').ariaDisabled === 'false'`));
   const mod = process.platform === "darwin" ? 4 : 2;
   for (const type of ["rawKeyDown", "keyUp"]) {
     await win.send("Input.dispatchKeyEvent", { type, modifiers: mod, key: "z", code: "KeyZ", windowsVirtualKeyCode: 90, nativeVirtualKeyCode: 90 });
@@ -145,7 +147,7 @@ export async function run(): Promise<void> {
 
   // The panel edits the model (FR-18): a label edited in place in the panel is written to the
   // model file, which the open text editor shows.
-  await waitFor("the panel to draw the layout before the move", () => evaluate<boolean>(frame, `document.body.classList.contains('editable') && !document.getElementById('redo').disabled`));
+  await waitFor("the panel to draw the layout before the move", () => evaluate<boolean>(frame, `document.body.classList.contains('editable') && document.getElementById('redo').ariaDisabled === 'false'`));
   const box = await evaluate<[number, number]>(
     frame,
     `(() => { const r = document.querySelector('[data-node="customer"]').getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; })()`,
@@ -159,6 +161,29 @@ export async function run(): Promise<void> {
   await win.send("Input.insertText", { text: "Customer" });
   for (const type of ["rawKeyDown", "char", "keyUp"]) await win.send("Input.dispatchKeyEvent", { type, key: "Enter", code: "Enter", text: "\r", windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13 });
   await waitFor("the text editor to show the new label", () => doc.getText().includes('label = "Customer"\n'));
+
+  // The page follows VS Code's theme, and a click on a diagnostic opens its file at its position
+  // (FR-20).
+  const theme = (kind: string) => waitFor(`the ${kind} theme in the panel`, async () => (await evaluate<string>(frame, `document.documentElement.dataset.theme`)) === kind);
+  const workbench = vscode.workspace.getConfiguration("workbench");
+  for (const [name, kind] of [["Default Light Modern", "light"], ["Default Dark Modern", "dark"], ["Default High Contrast", "high-contrast"]]) {
+    await workbench.update("colorTheme", name, vscode.ConfigurationTarget.Global);
+    await theme(kind);
+  }
+  await workbench.update("colorTheme", undefined, vscode.ConfigurationTarget.Global);
+  const end = doc.lineCount;
+  await editor.edit((e) => e.insert(doc.lineAt(end - 1).range.end, '\nnode "bad" {\n  kind = "nope"\n}\n'));
+  await doc.save();
+  await waitFor("the diagnostic in the panel", () => evaluate<boolean>(frame, `document.querySelector('#diagnostics .diags li.error button') !== null`));
+  await evaluate<number>(frame, `document.querySelector('#diagnostics .diags li.error button').click(); 0`);
+  const opened = await waitFor("the file of the diagnostic", () => {
+    const e = vscode.window.activeTextEditor;
+    return e?.document.uri.toString() === model.toString() && e.selection.active.line >= end ? e : undefined;
+  });
+  assert.equal(opened.document.lineAt(opened.selection.active.line).text.trim(), 'node "bad" {');
+  await opened.edit((e) => e.delete(new vscode.Range(new vscode.Position(end - 1, doc.lineAt(end - 1).text.length), doc.lineAt(doc.lineCount - 1).range.end)));
+  await doc.save();
+  await waitFor("the panel without the diagnostic", () => evaluate<boolean>(frame, `document.body.classList.contains('editable')`));
   frame.close();
   win.close();
 
