@@ -27,13 +27,14 @@ function bigView(n: number): ResolvedView {
 
 // The drag budget of FR-8 is M10's; this bounds a whole draw so routing cannot blow up again.
 // Nearly all of it is libavoid's own routing of this dense graph: about 3.3 seconds on an M-series
-// Mac, where a pin or nudging option that makes libavoid slow costs minutes.
-it('draws 200 nodes and 400 edges within 8 seconds', async () => {
+// Mac, where a pin or nudging option that makes libavoid slow costs minutes. The bound leaves room
+// for shared CI runners, which take from 4 to 10 seconds on the same code.
+it('draws 200 nodes and 400 edges within 20 seconds', async () => {
   const view = bigView(200);
   const start = performance.now();
   const d = await draw(view, text, 'Inter', noElk, avoidRouter(libavoidWasm));
   const ms = performance.now() - start;
   console.log(`draw 200/400: ${Math.round(ms)} ms`);
   expect(d.edges).toHaveLength(400);
-  expect(ms).toBeLessThan(8000);
+  expect(ms).toBeLessThan(20000);
 }, 120000);
