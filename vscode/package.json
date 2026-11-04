@@ -1,6 +1,6 @@
 {
-  "name": "dg",
-  "displayName": "dg",
+  "name": "dg-diagrams",
+  "displayName": "dg Diagrams",
   "description": "Language server and diagram panel for dg projects.",
   "version": "0.0.1",
   "publisher": "nvcnvn",

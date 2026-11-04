@@ -15,7 +15,7 @@ async function waitFor<T>(what: string, check: () => T | undefined | false | Pro
 }
 
 export async function run(): Promise<void> {
-  const ext = vscode.extensions.getExtension<API>("nvcnvn.dg");
+  const ext = vscode.extensions.getExtension<API>("nvcnvn.dg-diagrams");
   assert.ok(ext, "the dg extension is installed");
   const api = await ext.activate();
   const top = vscode.workspace.workspaceFolders![0].uri;
