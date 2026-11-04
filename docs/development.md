@@ -42,7 +42,8 @@ Golden files are rewritten with `-update`:
 Benchmarks and performance tests: `go test ./internal/project -bench Load1000` times `dg check`
 at 1,000 nodes, `go test ./internal/lsp -bench Keystroke` one keystroke in the language server at
 1,000 nodes, and `go test ./internal/server -run DragPerformance -v` reads a Chromium performance
-trace of drags in a view of 200 nodes and 400 edges (frames per second, longest task).
+trace of drags in a view of 200 nodes and 400 edges (frames per second, longest task); it skips
+itself where the environment variable `CI` is set.
 
 Fuzz targets: `FuzzLoad` (`internal/project`), `FuzzDecodeLayout` (`internal/view`),
 `FuzzDecodeMessage` (`internal/server`, the WebSocket protocol), `FuzzOp` (`internal/ops`,

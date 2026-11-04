@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -162,6 +163,9 @@ func frameStats(events []traceEvent) (window, longest, after float64, states map
 // each drop, the editor must draw the change and be editable again within afterDrop. The window is
 // as large as the viewport, since headless Chromium draws no frame for changes outside its window.
 func TestDragPerformance(t *testing.T) {
+	if os.Getenv("CI") != "" {
+		t.Skip("CI machines share their CPU and have no GPU: frame rates there measure the machine (docs/tech-debts.md)")
+	}
 	e := newEditor(t, dense())
 	ctx, _ := chromedp.NewContext(e.browser)
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)

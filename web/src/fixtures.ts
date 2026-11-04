@@ -9,6 +9,10 @@ import type { EdgeStyle, NodeStyle, Policy, ResolvedView, ViewEdge, ViewNode } f
 // Fixtures for unit tests: the generic pack's defaults and a text measure where every
 // character is 8 pixels wide at 14 pixels.
 
+// On Windows a file URL's path is /D:/…, which the file system would read as \D:\….
+/** libavoidWasm is the path of libavoid's WebAssembly module, for the tests that route. */
+export const libavoidWasm = decodeURIComponent(new URL('../node_modules/libavoid-js/dist/libavoid.wasm', import.meta.url).pathname).replace(/^\/(?=[A-Za-z]:)/, '');
+
 export const text: TextMeasure = { width: (s, f) => (s.length * 8 * f.size) / 14, ascent: 0.9, descent: 0.2 };
 
 export function nodeStyle(over: Partial<NodeStyle> = {}): NodeStyle {

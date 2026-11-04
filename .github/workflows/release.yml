@@ -20,6 +20,10 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: "*/package-lock.json"
+      # Chrome's sandbox needs unprivileged user namespaces, which Ubuntu's AppArmor forbids
+      # (docs/tech-debts.md).
+      - if: runner.os == 'Linux'
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - run: cd vscode && npm pkg set version="${GITHUB_REF_NAME#v}"
       - run: make lint test
       - run: make release VERSION="$GITHUB_REF_NAME"
@@ -56,6 +60,10 @@ jobs:
           archive="dg-$GITHUB_REF_NAME-${{ matrix.target }}"
           if [ "${{ matrix.ext }}" = zip ]; then unzip -q "dist/$archive.zip"; else tar -xzf "dist/$archive.tar.gz"; fi
           mv "$archive" smoke
+      # Chrome's sandbox needs unprivileged user namespaces, which Ubuntu's AppArmor forbids
+      # (docs/tech-debts.md).
+      - if: runner.os == 'Linux'
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - run: smoke/dg check -C examples/c4
       - if: matrix.export
         run: smoke/dg export -C examples/c4 --all --format svg --out pictures && ls pictures

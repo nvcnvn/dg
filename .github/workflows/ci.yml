@@ -42,6 +42,10 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: "*/package-lock.json"
+      # Chrome's sandbox needs unprivileged user namespaces, which Ubuntu's AppArmor forbids
+      # (docs/tech-debts.md).
+      - if: runner.os == 'Linux'
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - run: cd web && npm ci && npm run build && npm test
       - run: go test ./...
       - name: VS Code extension test

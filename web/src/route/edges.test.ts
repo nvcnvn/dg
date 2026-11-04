@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { avoidRouter } from '../canvas/avoid';
-import { edge, node, text } from '../fixtures';
+import { edge, libavoidWasm, node, text } from '../fixtures';
 import type { Box, Point } from '../geometry/geometry';
 import type { ResolvedView } from '../protocol/view';
 import { awayFromBorders, cornerLoop, keepStub, placeLabels, planPorts, routeEdges, type Router } from './edges';
 
-const wasm = decodeURIComponent(new URL('../../node_modules/libavoid-js/dist/libavoid.wasm', import.meta.url).pathname);
-const avoid = avoidRouter(wasm);
+const avoid = avoidRouter(libavoidWasm);
 
 async function routes(view: ResolvedView, boxes: Record<string, Box>, router: Router = avoid, rows: Record<string, Record<string, number>> = {}) {
   const g = { view, boxes: new Map(Object.entries(boxes)), headers: new Map<string, Box>(), rows: new Map(Object.entries(rows).map(([k, v]) => [k, new Map(Object.entries(v))])), grid: 10 };

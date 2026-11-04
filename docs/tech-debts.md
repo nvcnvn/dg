@@ -40,6 +40,25 @@ to remove it.
 - **Remove when:** `libavoid-js` ships matching typings and binds the calls above, and directional
   pins and the unifying step are fast at 400 edges.
 
+## Chrome's sandbox on Ubuntu CI runners
+
+- **Where:** the step that runs `sysctl -w kernel.apparmor_restrict_unprivileged_userns=0` in
+  the Linux jobs of `.github/workflows/ci.yml` and `release.yml`.
+- **Why:** Ubuntu 24.04 restricts unprivileged user namespaces with AppArmor, and Google Chrome
+  installed on GitHub's runners has no AppArmor profile that allows them, so it stops with "No
+  usable sandbox!" and every test that starts it fails. Running Chrome without its sandbox
+  instead would change what dg does on users' machines.
+- **Remove when:** Chrome starts with its sandbox on GitHub's Ubuntu runners without the step.
+
+## Drag frame rates not measured on CI
+
+- **Where:** `TestDragPerformance` in `internal/server/perf_test.go` skips itself when `CI` is
+  set.
+- **Why:** GitHub's runners are virtual machines that share their CPU and have no GPU; on the
+  macOS runner a drag in the dense view draws 27 frames per second, so the test would measure the
+  machine. It runs on developers' machines, where the 60 frames per second of section 11 hold.
+- **Remove when:** CI has runners with a GPU and dedicated CPUs, where the test passes.
+
 ## Export goldens are generated on macOS Chrome
 
 - **Where:** `testdata/export/*.svg` and `*.json`, whose SVG files are also the pictures of the

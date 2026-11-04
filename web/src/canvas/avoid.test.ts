@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { libavoidWasm } from '../fixtures';
 import type { RouteRequest } from '../route/edges';
 import { avoidRouter } from './avoid';
 
-const wasm = decodeURIComponent(new URL('../../node_modules/libavoid-js/dist/libavoid.wasm', import.meta.url).pathname);
-const route = avoidRouter(wasm);
+const route = avoidRouter(libavoidWasm);
 
 const boxes = new Map([
   ['a', { x: 0, y: 0, w: 100, h: 40 }],

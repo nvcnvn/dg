@@ -1,10 +1,9 @@
 import { expect, it } from 'vitest';
 import { avoidRouter } from './canvas/avoid';
-import { edge, node, text } from './fixtures';
+import { edge, libavoidWasm, node, text } from './fixtures';
 import type { ResolvedView, ViewEdge, ViewNode } from './protocol/view';
 import { draw } from './render';
 
-const wasm = decodeURIComponent(new URL('../node_modules/libavoid-js/dist/libavoid.wasm', import.meta.url).pathname);
 const noElk = { layout: () => Promise.reject(new Error('elk is not used when a node is pinned')) };
 
 // bigView is n nodes in n/20 containers, one pinned so the spiral placer runs, and 2n edges
@@ -32,7 +31,7 @@ function bigView(n: number): ResolvedView {
 it('draws 200 nodes and 400 edges within 8 seconds', async () => {
   const view = bigView(200);
   const start = performance.now();
-  const d = await draw(view, text, 'Inter', noElk, avoidRouter(wasm));
+  const d = await draw(view, text, 'Inter', noElk, avoidRouter(libavoidWasm));
   const ms = performance.now() - start;
   console.log(`draw 200/400: ${Math.round(ms)} ms`);
   expect(d.edges).toHaveLength(400);
