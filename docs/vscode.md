@@ -13,7 +13,9 @@ the Marketplace: search for it in the Extensions view, or use VS Code's command 
 code --install-extension nvcnvn.dg-diagrams
 ```
 
-The Marketplace gives you the package for your platform. Each package holds its own `dg` binary,
+VSCodium, Cursor and Windsurf install the same extension from [Open VSX](https://open-vsx.org/extension/nvcnvn/dg-diagrams).
+
+Either registry gives you the package for your platform. Each package holds its own `dg` binary,
 so the extension needs nothing else on the machine, and it never uses the network. To use dg
 outside the extension as well, see [The command line and agents](#the-command-line-and-agents).
 

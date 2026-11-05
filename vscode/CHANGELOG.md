@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.3
+
+First release on Open VSX.
+
+- The extension's `dg` comes first on the `PATH` of the editor's terminals, so you, the panel and
+  an agent started there share one version
+- A project written for a newer dg says so, with dg's version and advice to update
+- An unknown attribute lists what is expected, and errors and `dg op --help` show nested fields
+
 ## 0.1.2
 
 First release on the Marketplace.

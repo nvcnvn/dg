@@ -178,10 +178,12 @@ or renew.
 
 **Open VSX** (variable `OPEN_VSX` = `true`), the registry of VSCodium, Cursor, Windsurf and
 Gitpod. Sign in at <https://open-vsx.org> with GitHub, link an Eclipse account and sign the
-publisher agreement, create an access token, store it as the secret `OVSX_PAT`, and run
-`npx ovsx create-namespace nvcnvn -p <token>` once. After the first release, register the
-workflow as a trusted publisher (Settings → Trusted Publishers: `nvcnvn`, `dg`, `release.yml`)
-and delete the secret; `ovsx` then publishes with the workflow's OIDC token.
+publisher agreement, create an access token, store it as the secret `OVSX_PAT`, run
+`npx ovsx create-namespace nvcnvn -p <token>` once, and claim ownership of the namespace. The
+registry trusts a workflow only for an extension that already has a version, so after the first
+release register it at <https://open-vsx.org/user-settings/trusted-publishers> (`nvcnvn`, `dg`,
+`release.yml`, no environment) and delete the secret; `ovsx` then publishes with the workflow's
+OIDC token.
 
 **Homebrew** (variable `HOMEBREW_TAP` = `nvcnvn/homebrew-tap`). Create the public repository
 `nvcnvn/homebrew-tap` and a fine-grained token with Contents read and write on it alone, stored

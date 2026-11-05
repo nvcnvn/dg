@@ -14,6 +14,8 @@ the Extensions view, or with VS Code's command line:
 code --install-extension nvcnvn.dg-diagrams
 ```
 
+VSCodium, Cursor and Windsurf install it from [Open VSX](https://open-vsx.org/extension/nvcnvn/dg-diagrams).
+
 The extension holds its own `dg` binary and needs nothing else on the machine, and it puts that
 `dg` on the `PATH` of VS Code's terminals, so every command in this guide works there.
 
