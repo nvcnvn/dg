@@ -57,6 +57,12 @@ undo), `FuzzOpArgs` (`cmd/dg`, `dg op` command lines), `FuzzTools` (`internal/mc
 calls), and `FuzzMessage` and `FuzzBuffer` (`internal/lsp`, any message, and every request at any
 position of any buffer).
 
+`TestInstallScript` (`cmd/dg`) pipes `install.sh` to bash against a local server holding fake
+releases: the latest, a pinned version, replacing a copy, and the refusals, which leave any
+installed `dg` as it was. It runs on every platform of CI, without the network.
+`.github/workflows/install.yml` installs the real release from GitHub on each platform, runs
+ShellCheck and starts `dg mcp`, when `install.sh` or that workflow changes and after each release.
+
 The scripts in `testdata/rebuild` rebuild `examples/c4-container`, `examples/c4`,
 `examples/incident`, `examples/swimlane`, `examples/flowchart` and `examples/state-machine` with
 operations alone.
@@ -131,8 +137,10 @@ git tag v0.1.0 && git push origin v0.1.0
 
 `.github/workflows/release.yml` then runs `make lint test` and `make release VERSION=v0.1.0` on
 Linux, runs `dg check` and `dg export` from each archive on its own platform, publishes the
-GitHub release, and then publishes to each channel below that is set up. `make release` fills
-`dist/` with what the release holds, and works on any machine:
+GitHub release, runs `install.sh` against it on each platform, and publishes to each channel below
+that is set up. `make release` fills `dist/` with what the release holds, and works on any machine.
+It links `VERSION` into each binary, because the workflow's change to `vscode/package.json` would
+make the Go toolchain stamp the version `+dirty`:
 
 - `dg-<version>-<os>-<arch>.tar.gz` (`.zip` for Windows) for darwin, linux and windows on amd64
   and arm64, each holding `dg`, `LICENSE`, `THIRD_PARTY_NOTICES` and `README.md`
@@ -153,8 +161,10 @@ section names, and run `make notices`.
 
 ### Channels
 
-Each channel is set up once, in the repository's Settings → Secrets and variables → Actions; the
-workflow skips a channel whose variable is unset.
+The install script needs no setup: `install.sh` on `main` finds the latest release from GitHub's
+redirect and reads the archive names and `SHA256SUMS` this section describes, so a change to either
+must change the script too. Every other channel is set up once, in the repository's Settings →
+Secrets and variables → Actions; the workflow skips a channel whose variable is unset.
 
 **VS Code Marketplace** (variable `VS_MARKETPLACE` = `true`). The workflow runs `vsce publish
 --oidc`, which trades GitHub's OIDC token for a Marketplace credential; there is no token to store

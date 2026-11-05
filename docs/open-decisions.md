@@ -13,6 +13,18 @@ the decision in `docs/spec.md`).
 - **Default:** (a). A clean checkout needs Node and `make`.
 - **Milestone:** M1.
 
+## Should the extension offer its dg to agents?
+
+- **Question:** an agent in VS Code needs a `dg` of its own today, even though the extension already
+  holds one. The extension's path holds its version, so a client cannot be pointed at it by hand.
+- **Options:** (a) separate installs; (b) add the package's `bin` at the end of the `PATH` of
+  VS Code's terminals with `environmentVariableCollection`, so a `dg` the user installed still wins
+  and an agent in a terminal needs no install; (c) also register `dg mcp` with
+  `lm.registerMcpServerDefinitionProvider`, which needs VS Code 1.101 (the extension supports
+  1.91) and reaches only the agents that use VS Code's MCP list.
+- **Default:** (a).
+- **Milestone:** M13.
+
 ## Embed the font in exported SVG?
 
 - **Question:** an exported SVG names `Inter, sans-serif` but does not contain the font, so a viewer
