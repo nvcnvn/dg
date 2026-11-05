@@ -22,6 +22,9 @@ import (
 	"github.com/nvcnvn/dg/internal/view"
 )
 
+// SkillURL is where an agent reads the dg skill without installing it.
+const SkillURL = "https://raw.githubusercontent.com/nvcnvn/dg/main/skills/dg/SKILL.md"
+
 // Server serves the tools for the project in Dir.
 type Server struct {
 	Dir string
@@ -33,7 +36,8 @@ func New(dir string) *sdk.Server {
 	srv := sdk.NewServer(&sdk.Implementation{Name: "dg", Version: version.String()}, &sdk.ServerOptions{
 		Instructions: "dg is diagram-as-code: an HCL model (nodes, edges), views (views.hcl) and layout files. " +
 			"Call vocabulary for the kinds and edge kinds, op to change the files, check to validate, and export to see a view. " +
-			"Positions in op are relative to the node's frame; read drawn positions with export format json.",
+			"Positions in op are relative to the node's frame; read drawn positions with export format json. " +
+			"Before using dg, read " + SkillURL + ": it has the workflow and what these tools don't show.",
 	})
 	for _, t := range s.Tools() {
 		srv.AddTool(t.Tool, func(ctx context.Context, req *sdk.CallToolRequest) (*sdk.CallToolResult, error) {

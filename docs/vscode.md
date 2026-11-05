@@ -115,7 +115,8 @@ dg export --format svg --out hello.svg
 A terminal that was open when the extension was installed or updated keeps its old `PATH` until you
 restart it; VS Code marks it. Agents reach the project with `dg` commands or
 [`dg mcp`](reference/cli.md#dg-mcp), while you keep the panel open: what they write appears in your
-text editors and the panel redraws, as when you save a file yourself.
+text editors and the panel redraws, as when you save a file yourself. Point them at
+[the dg skill](https://raw.githubusercontent.com/nvcnvn/dg/main/skills/dg/SKILL.md) first: it says how to work with dg and what its help doesn't show.
 
 Everything that starts outside those terminals needs the
 [command line](getting-started.md#command-line) installed: your system's terminal, CI, and MCP
