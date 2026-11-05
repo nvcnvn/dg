@@ -61,29 +61,78 @@ func FromHCL(diags hcl.Diagnostics) Diagnostics {
 		if d.Severity == hcl.DiagWarning {
 			sev = Warning
 		}
-		detail := d.Detail
-		if unknownName(d) {
-			detail += " " + Newer()
-		}
 		if d.Subject == nil {
-			out = append(out, Diagnostic{Severity: sev, Summary: d.Summary, Detail: detail})
+			out = append(out, Diagnostic{Severity: sev, Summary: d.Summary, Detail: d.Detail})
 		} else {
-			out = append(out, At(sev, *d.Subject, d.Summary, detail))
+			out = append(out, At(sev, *d.Subject, d.Summary, d.Detail))
 		}
 	}
 	return out
 }
 
-// unknownName reports whether d is about a name this dg does not know, and that HCL found no
-// close match for, so it is no typo.
-func unknownName(d *hcl.Diagnostic) bool {
-	return (d.Summary == "Unsupported argument" || d.Summary == "Unsupported block type") &&
-		!strings.Contains(d.Detail, "Did you mean")
+// Expecting returns body so that decoding it, its blocks and what a partial decode leaves adds to
+// each diagnostic about an unknown name, with no close match, the names the decoder expects. HCL's
+// diagnostic does not give them.
+func Expecting(body hcl.Body) hcl.Body {
+	return expectingBody{body}
 }
 
-// Newer is the sentence that ends a diagnostic a project written for a newer dg would get.
+type expectingBody struct{ hcl.Body }
+
+func (b expectingBody) Content(schema *hcl.BodySchema) (*hcl.BodyContent, hcl.Diagnostics) {
+	content, diags := b.Body.Content(schema)
+	for _, d := range diags {
+		if d.Summary == "Unsupported argument" || d.Summary == "Unsupported block type" {
+			if !strings.Contains(d.Detail, "Did you mean") {
+				d.Detail += expected(schema) + " " + UnknownName()
+			}
+		}
+	}
+	return expectingBlocks(content), diags
+}
+
+func (b expectingBody) PartialContent(schema *hcl.BodySchema) (*hcl.BodyContent, hcl.Body, hcl.Diagnostics) {
+	content, remain, diags := b.Body.PartialContent(schema)
+	return expectingBlocks(content), expectingBody{remain}, diags
+}
+
+func expectingBlocks(content *hcl.BodyContent) *hcl.BodyContent {
+	for _, block := range content.Blocks {
+		block.Body = expectingBody{block.Body}
+	}
+	return content
+}
+
+// expected lists the names schema takes, as sentences that follow a diagnostic's detail.
+func expected(schema *hcl.BodySchema) string {
+	var attrs, blocks []string
+	for _, a := range schema.Attributes {
+		attrs = append(attrs, a.Name)
+	}
+	for _, b := range schema.Blocks {
+		blocks = append(blocks, b.Type)
+	}
+	var out string
+	if len(attrs) > 0 {
+		slices.Sort(attrs)
+		out += " Expected arguments: " + strings.Join(attrs, ", ") + "."
+	}
+	if len(blocks) > 0 {
+		slices.Sort(blocks)
+		out += " Expected blocks: " + strings.Join(blocks, ", ") + "."
+	}
+	return out
+}
+
+// Newer is the sentence that ends a diagnostic only a project written for a newer dg would get.
 func Newer() string {
 	return fmt.Sprintf("If a newer dg wrote this project, update dg: this one is %s.", version.String())
+}
+
+// UnknownName is the sentence that ends a diagnostic about a name dg does not know, which is most
+// often a mistake but may come from a newer dg.
+func UnknownName() string {
+	return fmt.Sprintf("If the name is right, a newer dg may know it: this one is %s.", version.String())
 }
 
 // HasErrors reports whether ds has an error.

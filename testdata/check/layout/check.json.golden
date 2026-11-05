@@ -72,7 +72,7 @@
   {
     "severity": "error",
     "summary": "Invalid layout",
-    "detail": "Unknown field \"z\"; expected one of in, x, y, w, h, order, ports. If a newer dg wrote this project, update dg: this one is (devel).",
+    "detail": "Unknown field \"z\"; expected one of in, x, y, w, h, order, ports. If the name is right, a newer dg may know it: this one is (devel).",
     "file": "views/broken.layout.yaml",
     "line": 5,
     "column": 21,
@@ -342,7 +342,7 @@
   {
     "severity": "error",
     "summary": "Invalid layout",
-    "detail": "Unknown field \"extra\"; expected one of version, place, edge_hints, decorations. If a newer dg wrote this project, update dg: this one is (devel).",
+    "detail": "Unknown field \"extra\"; expected one of version, place, edge_hints, decorations. If the name is right, a newer dg may know it: this one is (devel).",
     "file": "views/broken.layout.yaml",
     "line": 21,
     "column": 1,

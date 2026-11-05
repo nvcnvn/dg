@@ -126,5 +126,5 @@ curl -fsSL https://raw.githubusercontent.com/nvcnvn/dg/main/install.sh | bash
 ```
 
 That is a second copy, which you update by running the script again. If it falls behind, a project
-that uses a newer feature is an error in that copy: the error says which version it is and to
-update it.
+that uses a newer feature is an error in that copy: the error says which version it is and that a
+newer one may know the name.

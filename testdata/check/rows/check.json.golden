@@ -52,7 +52,7 @@
   {
     "severity": "error",
     "summary": "Unsupported argument",
-    "detail": "An argument named \"size\" is not expected here. If a newer dg wrote this project, update dg: this one is (devel).",
+    "detail": "An argument named \"size\" is not expected here. Expected arguments: key, type. If the name is right, a newer dg may know it: this one is (devel).",
     "file": "model.hcl",
     "line": 26,
     "column": 7,

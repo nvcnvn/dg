@@ -1,0 +1,30 @@
+dg.hcl:2:3: error: Unsupported argument: An argument named "theme" is not expected here. Expected arguments: font, grid, layout_dir, models, packs, read_only, views. If the name is right, a newer dg may know it: this one is (devel).
+model.hcl:3:3: error: Unsupported argument: An argument named "color" is not expected here. Expected arguments: kind, label, parent, ports, props, tags. Expected blocks: compartment, port, row. If the name is right, a newer dg may know it: this one is (devel).
+model.hcl:6:5: error: Unsupported argument: An argument named "position" is not expected here. Expected arguments: side. If the name is right, a newer dg may know it: this one is (devel).
+model.hcl:9:3: error: Rows not allowed: Node "a" declares rows, but its kind "service" does not set rows = true.
+model.hcl:10:5: error: Unsupported argument: An argument named "width" is not expected here. Expected arguments: key, type. If the name is right, a newer dg may know it: this one is (devel).
+model.hcl:13:3: error: Rows outside compartments: Node "a" declares rows both inside and outside compartments.
+model.hcl:14:5: error: Unsupported argument: An argument named "title" is not expected here. Expected blocks: row. If the name is right, a newer dg may know it: this one is (devel).
+model.hcl:17:3: error: Unsupported block type: Blocks of type "widget" are not expected here. Expected arguments: kind, label, parent, ports, props, tags. Expected blocks: compartment, port, row. If the name is right, a newer dg may know it: this one is (devel).
+model.hcl:24:3: error: Unsupported argument: An argument named "style" is not expected here. Expected arguments: from, kind, label, labels, tags, to. If the name is right, a newer dg may know it: this one is (devel).
+spec.hcl:1:1: info: Overridden definition: The kind "service" replaces the one defined at <generic>/spec.hcl:3:1.
+spec.hcl:2:3: error: Unsupported argument: An argument named "colour" is not expected here. Expected arguments: container, default_port_side, extends, ports, rows. Expected blocks: property. If the name is right, a newer dg may know it: this one is (devel).
+spec.hcl:4:3: error: Missing required argument: The argument "type" is required.
+spec.hcl:5:5: error: Unsupported argument: An argument named "required" is not expected here. Expected arguments: default, type. If the name is right, a newer dg may know it: this one is (devel).
+spec.hcl:10:3: error: Unsupported argument: An argument named "label" is not expected here. If the name is right, a newer dg may know it: this one is (devel).
+style.hcl:1:1: info: Overridden definition: The style "service" overrides the properties it sets of the one defined at <generic>/style.hcl:28:1.
+style.hcl:2:3: error: Unsupported argument: An argument named "color" is not expected here. Expected arguments: align, columns, corner_radius, direction, fill, font_size, font_weight, gap, icon, image, label_side, layout, max_w, min_h, min_w, opacity, padding, shape, stretch, stroke, stroke_dash, stroke_width, sub_font_size, sub_font_weight, sub_text_color, text_color, z. If the name is right, a newer dg may know it: this one is (devel).
+style.hcl:5:1: info: Overridden definition: The edge_style "default" overrides the properties it sets of the one defined at <generic>/style.hcl:158:1.
+style.hcl:6:3: error: Unsupported argument: An argument named "text_color" is not expected here. Expected arguments: animate, arrow_end, arrow_start, font_size, routing, stroke, stroke_dash, stroke_width. If the name is right, a newer dg may know it: this one is (devel).
+style.hcl:10:3: error: Unsupported argument: An argument named "corner_radius" is not expected here. Expected arguments: fill, opacity, padding, stroke, stroke_dash, stroke_width. If the name is right, a newer dg may know it: this one is (devel).
+style.hcl:14:10: error: Invalid style value: The value of svg must be an SVG picture, whose root element is svg with xmlns="http://www.w3.org/2000/svg".
+style.hcl:15:3: error: Unsupported argument: An argument named "size" is not expected here. Expected arguments: anchors, stretch, svg, text_box. If the name is right, a newer dg may know it: this one is (devel).
+style.hcl:18:1: warning: Undefined kind: Style label "typo" names no defined kind.
+style.hcl:19:3: error: Unsupported argument: An argument named "fil" is not expected here. Did you mean "fill"?
+style.hcl:22:1: error: Unsupported block type: Blocks of type "widget" are not expected here. Expected blocks: edge_style, overlay_style, shape, style. If the name is right, a newer dg may know it: this one is (devel).
+views.hcl:2:3: error: Unsupported argument: An argument named "theme" is not expected here. Expected arguments: collapse, direction, edges, exclude, include, of, title. Expected blocks: edge_style, node, overlay, style. If the name is right, a newer dg may know it: this one is (devel).
+views.hcl:6:5: error: Unsupported argument: An argument named "colour" is not expected here. Expected arguments: label, members, style. If the name is right, a newer dg may know it: this one is (devel).
+views.hcl:11:5: error: Unsupported argument: An argument named "color" is not expected here. Expected arguments: label. If the name is right, a newer dg may know it: this one is (devel).
+views.hcl:15:5: error: Unsupported argument: An argument named "color" is not expected here. Expected arguments: align, columns, corner_radius, direction, fill, font_size, font_weight, gap, icon, image, label_side, layout, max_w, min_h, min_w, opacity, padding, shape, stretch, stroke, stroke_dash, stroke_width, sub_font_size, sub_font_weight, sub_text_color, text_color, z. If the name is right, a newer dg may know it: this one is (devel).
+views.hcl:19:5: error: Unsupported argument: An argument named "color" is not expected here. Expected arguments: animate, arrow_end, arrow_start, font_size, routing, stroke, stroke_dash, stroke_width. If the name is right, a newer dg may know it: this one is (devel).
+exit 1

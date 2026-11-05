@@ -61,6 +61,11 @@ curl -fsSL https://raw.githubusercontent.com/nvcnvn/dg/main/install.sh | bash
 The [getting-started guide](docs/getting-started.md#command-line) has the options, the manual
 download and the build from source.
 
+To teach a coding agent dg, install the
+[dg skill](https://github.com/nvcnvn/dg/blob/main/skills/dg/SKILL.md) with
+`npx skills add nvcnvn/dg`, or copy the `skills/dg` folder into the agent's skills folder, such as
+`~/.claude/skills`.
+
 ## Licensing
 
 dg is licensed under the [Apache License 2.0](https://github.com/nvcnvn/dg/blob/main/LICENSE). The

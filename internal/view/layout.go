@@ -312,7 +312,7 @@ func (d *decoder) fields(n *yaml.Node, allowed []string, f func(key string, k, v
 		k, v := n.Content[i], n.Content[i+1]
 		switch {
 		case !slices.Contains(allowed, k.Value):
-			d.errorf(k, "Unknown field %q; expected one of %s. %s", k.Value, strings.Join(allowed, ", "), diag.Newer())
+			d.errorf(k, "Unknown field %q; expected one of %s. %s", k.Value, strings.Join(allowed, ", "), diag.UnknownName())
 		case seen[k.Value]:
 			d.errorf(k, "Field %q is repeated.", k.Value)
 		default:

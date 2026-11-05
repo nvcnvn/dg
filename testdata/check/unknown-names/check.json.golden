@@ -1,0 +1,293 @@
+[
+  {
+    "severity": "error",
+    "summary": "Unsupported argument",
+    "detail": "An argument named \"theme\" is not expected here. Expected arguments: font, grid, layout_dir, models, packs, read_only, views. If the name is right, a newer dg may know it: this one is (devel).",
+    "file": "dg.hcl",
+    "line": 2,
+    "column": 3,
+    "end_line": 2,
+    "end_column": 8
+  },
+  {
+    "severity": "error",
+    "summary": "Unsupported argument",
+    "detail": "An argument named \"color\" is not expected here. Expected arguments: kind, label, parent, ports, props, tags. Expected blocks: compartment, port, row. If the name is right, a newer dg may know it: this one is (devel).",
+    "file": "model.hcl",
+    "line": 3,
+    "column": 3,
+    "end_line": 3,
+    "end_column": 8
+  },
+  {
+    "severity": "error",
+    "summary": "Unsupported argument",
+    "detail": "An argument named \"position\" is not expected here. Expected arguments: side. If the name is right, a newer dg may know it: this one is (devel).",
+    "file": "model.hcl",
+    "line": 6,
+    "column": 5,
+    "end_line": 6,
+    "end_column": 13
+  },
+  {
+    "severity": "error",
+    "summary": "Rows not allowed",
+    "detail": "Node \"a\" declares rows, but its kind \"service\" does not set rows = true.",
+    "file": "model.hcl",
+    "line": 9,
+    "column": 3,
+    "end_line": 9,
+    "end_column": 10
+  },
+  {
+    "severity": "error",
+    "summary": "Unsupported argument",
+    "detail": "An argument named \"width\" is not expected here. Expected arguments: key, type. If the name is right, a newer dg may know it: this one is (devel).",
+    "file": "model.hcl",
+    "line": 10,
+    "column": 5,
+    "end_line": 10,
+    "end_column": 10
+  },
+  {
+    "severity": "error",
+    "summary": "Rows outside compartments",
+    "detail": "Node \"a\" declares rows both inside and outside compartments.",
+    "file": "model.hcl",
+    "line": 13,
+    "column": 3,
+    "end_line": 13,
+    "end_column": 18
+  },
+  {
+    "severity": "error",
+    "summary": "Unsupported argument",
+    "detail": "An argument named \"title\" is not expected here. Expected blocks: row. If the name is right, a newer dg may know it: this one is (devel).",
+    "file": "model.hcl",
+    "line": 14,
+    "column": 5,
+    "end_line": 14,
+    "end_column": 10
+  },
+  {
+    "severity": "error",
+    "summary": "Unsupported block type",
+    "detail": "Blocks of type \"widget\" are not expected here. Expected arguments: kind, label, parent, ports, props, tags. Expected blocks: compartment, port, row. If the name is right, a newer dg may know it: this one is (devel).",
+    "file": "model.hcl",
+    "line": 17,
+    "column": 3,
+    "end_line": 17,
+    "end_column": 9
+  },
+  {
+    "severity": "error",
+    "summary": "Unsupported argument",
+    "detail": "An argument named \"style\" is not expected here. Expected arguments: from, kind, label, labels, tags, to. If the name is right, a newer dg may know it: this one is (devel).",
+    "file": "model.hcl",
+    "line": 24,
+    "column": 3,
+    "end_line": 24,
+    "end_column": 8
+  },
+  {
+    "severity": "info",
+    "summary": "Overridden definition",
+    "detail": "The kind \"service\" replaces the one defined at \u003cgeneric\u003e/spec.hcl:3:1.",
+    "file": "spec.hcl",
+    "line": 1,
+    "column": 1,
+    "end_line": 1,
+    "end_column": 15
+  },
+  {
+    "severity": "error",
+    "summary": "Unsupported argument",
+    "detail": "An argument named \"colour\" is not expected here. Expected arguments: container, default_port_side, extends, ports, rows. Expected blocks: property. If the name is right, a newer dg may know it: this one is (devel).",
+    "file": "spec.hcl",
+    "line": 2,
+    "column": 3,
+    "end_line": 2,
+    "end_column": 9
+  },
+  {
+    "severity": "error",
+    "summary": "Missing required argument",
+    "detail": "The argument \"type\" is required.",
+    "file": "spec.hcl",
+    "line": 4,
+    "column": 3,
+    "end_line": 4,
+    "end_column": 15
+  },
+  {
+    "severity": "error",
+    "summary": "Unsupported argument",
+    "detail": "An argument named \"required\" is not expected here. Expected arguments: default, type. If the name is right, a newer dg may know it: this one is (devel).",
+    "file": "spec.hcl",
+    "line": 5,
+    "column": 5,
+    "end_line": 5,
+    "end_column": 13
+  },
+  {
+    "severity": "error",
+    "summary": "Unsupported argument",
+    "detail": "An argument named \"label\" is not expected here. If the name is right, a newer dg may know it: this one is (devel).",
+    "file": "spec.hcl",
+    "line": 10,
+    "column": 3,
+    "end_line": 10,
+    "end_column": 8
+  },
+  {
+    "severity": "info",
+    "summary": "Overridden definition",
+    "detail": "The style \"service\" overrides the properties it sets of the one defined at \u003cgeneric\u003e/style.hcl:28:1.",
+    "file": "style.hcl",
+    "line": 1,
+    "column": 1,
+    "end_line": 1,
+    "end_column": 16
+  },
+  {
+    "severity": "error",
+    "summary": "Unsupported argument",
+    "detail": "An argument named \"color\" is not expected here. Expected arguments: align, columns, corner_radius, direction, fill, font_size, font_weight, gap, icon, image, label_side, layout, max_w, min_h, min_w, opacity, padding, shape, stretch, stroke, stroke_dash, stroke_width, sub_font_size, sub_font_weight, sub_text_color, text_color, z. If the name is right, a newer dg may know it: this one is (devel).",
+    "file": "style.hcl",
+    "line": 2,
+    "column": 3,
+    "end_line": 2,
+    "end_column": 8
+  },
+  {
+    "severity": "info",
+    "summary": "Overridden definition",
+    "detail": "The edge_style \"default\" overrides the properties it sets of the one defined at \u003cgeneric\u003e/style.hcl:158:1.",
+    "file": "style.hcl",
+    "line": 5,
+    "column": 1,
+    "end_line": 5,
+    "end_column": 21
+  },
+  {
+    "severity": "error",
+    "summary": "Unsupported argument",
+    "detail": "An argument named \"text_color\" is not expected here. Expected arguments: animate, arrow_end, arrow_start, font_size, routing, stroke, stroke_dash, stroke_width. If the name is right, a newer dg may know it: this one is (devel).",
+    "file": "style.hcl",
+    "line": 6,
+    "column": 3,
+    "end_line": 6,
+    "end_column": 13
+  },
+  {
+    "severity": "error",
+    "summary": "Unsupported argument",
+    "detail": "An argument named \"corner_radius\" is not expected here. Expected arguments: fill, opacity, padding, stroke, stroke_dash, stroke_width. If the name is right, a newer dg may know it: this one is (devel).",
+    "file": "style.hcl",
+    "line": 10,
+    "column": 3,
+    "end_line": 10,
+    "end_column": 16
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid style value",
+    "detail": "The value of svg must be an SVG picture, whose root element is svg with xmlns=\"http://www.w3.org/2000/svg\".",
+    "file": "style.hcl",
+    "line": 14,
+    "column": 10,
+    "end_line": 14,
+    "end_column": 18
+  },
+  {
+    "severity": "error",
+    "summary": "Unsupported argument",
+    "detail": "An argument named \"size\" is not expected here. Expected arguments: anchors, stretch, svg, text_box. If the name is right, a newer dg may know it: this one is (devel).",
+    "file": "style.hcl",
+    "line": 15,
+    "column": 3,
+    "end_line": 15,
+    "end_column": 7
+  },
+  {
+    "severity": "warning",
+    "summary": "Undefined kind",
+    "detail": "Style label \"typo\" names no defined kind.",
+    "file": "style.hcl",
+    "line": 18,
+    "column": 1,
+    "end_line": 18,
+    "end_column": 13
+  },
+  {
+    "severity": "error",
+    "summary": "Unsupported argument",
+    "detail": "An argument named \"fil\" is not expected here. Did you mean \"fill\"?",
+    "file": "style.hcl",
+    "line": 19,
+    "column": 3,
+    "end_line": 19,
+    "end_column": 6
+  },
+  {
+    "severity": "error",
+    "summary": "Unsupported block type",
+    "detail": "Blocks of type \"widget\" are not expected here. Expected blocks: edge_style, overlay_style, shape, style. If the name is right, a newer dg may know it: this one is (devel).",
+    "file": "style.hcl",
+    "line": 22,
+    "column": 1,
+    "end_line": 22,
+    "end_column": 7
+  },
+  {
+    "severity": "error",
+    "summary": "Unsupported argument",
+    "detail": "An argument named \"theme\" is not expected here. Expected arguments: collapse, direction, edges, exclude, include, of, title. Expected blocks: edge_style, node, overlay, style. If the name is right, a newer dg may know it: this one is (devel).",
+    "file": "views.hcl",
+    "line": 2,
+    "column": 3,
+    "end_line": 2,
+    "end_column": 8
+  },
+  {
+    "severity": "error",
+    "summary": "Unsupported argument",
+    "detail": "An argument named \"colour\" is not expected here. Expected arguments: label, members, style. If the name is right, a newer dg may know it: this one is (devel).",
+    "file": "views.hcl",
+    "line": 6,
+    "column": 5,
+    "end_line": 6,
+    "end_column": 11
+  },
+  {
+    "severity": "error",
+    "summary": "Unsupported argument",
+    "detail": "An argument named \"color\" is not expected here. Expected arguments: label. If the name is right, a newer dg may know it: this one is (devel).",
+    "file": "views.hcl",
+    "line": 11,
+    "column": 5,
+    "end_line": 11,
+    "end_column": 10
+  },
+  {
+    "severity": "error",
+    "summary": "Unsupported argument",
+    "detail": "An argument named \"color\" is not expected here. Expected arguments: align, columns, corner_radius, direction, fill, font_size, font_weight, gap, icon, image, label_side, layout, max_w, min_h, min_w, opacity, padding, shape, stretch, stroke, stroke_dash, stroke_width, sub_font_size, sub_font_weight, sub_text_color, text_color, z. If the name is right, a newer dg may know it: this one is (devel).",
+    "file": "views.hcl",
+    "line": 15,
+    "column": 5,
+    "end_line": 15,
+    "end_column": 10
+  },
+  {
+    "severity": "error",
+    "summary": "Unsupported argument",
+    "detail": "An argument named \"color\" is not expected here. Expected arguments: animate, arrow_end, arrow_start, font_size, routing, stroke, stroke_dash, stroke_width. If the name is right, a newer dg may know it: this one is (devel).",
+    "file": "views.hcl",
+    "line": 19,
+    "column": 5,
+    "end_line": 19,
+    "end_column": 10
+  }
+]
+exit 1

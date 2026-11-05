@@ -36,14 +36,19 @@ The first operation generates the ID `api` from the label; `--id` names one. The
 
 Each field of an operation is a flag of the same name. Lists such as `--tags`, `--include` and
 `--order` are repeated, one value each, and `--props`, `--compartments`, `--overlays`, `--styles`
-and `--decoration` take JSON. The exceptions are the ends of `connect` (`--from`, `--from-port`,
-`--from-row`, `--to`, `--to-port`, `--to-row`), edge labels (`--start-label`, `--label`,
-`--end-label`) and the hint of `set_edge_hint` (`--from-side`, `--to-side`, `--via x,y` repeated,
-`--label-pos`).
+and `--decoration` take JSON. The exceptions are the fields that hold objects, which several flags
+fill:
+
+| JSON field | Keys | Flags |
+|---|---|---|
+| `from`, `to` | `node`, `port?`, `row?` | `--from`, `--from-port`, `--from-row`, `--to`, `--to-port`, `--to-row` |
+| `labels` | `start?`, `mid?`, `end?` | `--start-label`, `--label`, `--end-label` |
+| `hint` | `from_side?`, `to_side?`, `via?`, `label_pos?` | `--from-side`, `--to-side`, `--via x,y` repeated, `--label-pos` |
 
 As JSON, an operation is an object whose `op` field names it and whose other fields are its
-arguments; an unknown or missing field is an error. `dg op batch` reads a list of them, or one,
-from standard input or `--file`, and applies them in order as one change:
+arguments. An unknown or missing field is an error that lists the fields it takes, and an unknown
+key in a nested field is an error that gives that field's keys. `dg op batch` reads a list of
+operations, or one, from standard input or `--file`, and applies them in order as one change:
 
 ```sh
 echo '[{"op": "set_label", "id": "db", "label": "Orders DB"},
@@ -238,7 +243,7 @@ Replace a node's rows and compartments.
 
 As JSON, with the required fields: `{"op": "set_rows", "id": "api", "compartments": [{"rows": [{"name": "id", "type": "uuid", "key": "pk"}]}]}`
 
-Fields (`?` marks the optional ones): `id, compartments`
+Fields (`?` marks the optional ones): `id, compartments: [{name?, rows: [{name, type?, key?}]}]`
 
 ### connect
 
@@ -262,7 +267,7 @@ Append an edge block. With view, make the view's edges filter show it (adding ed
 
 As JSON, with the required fields: `{"op": "connect", "from": {"node": "api"}, "to": {"node": "db"}}`
 
-Fields (`?` marks the optional ones): `from, to, id?, kind?, labels?, tags?, view?`
+Fields (`?` marks the optional ones): `from: {node, port?, row?}, to: {node, port?, row?}, id?, kind?, labels?: {start?, mid?, end?}, tags?, view?`
 
 ### disconnect
 
@@ -289,7 +294,7 @@ Replace an edge's labels; none removes them.
 
 As JSON, with the required fields: `{"op": "set_edge_labels", "id": "api-db"}`
 
-Fields (`?` marks the optional ones): `id, labels?`
+Fields (`?` marks the optional ones): `id, labels?: {start?, mid?, end?}`
 
 ### move
 
@@ -379,7 +384,7 @@ Replace an edge's routing hint in a view.
 
 As JSON, with the required fields: `{"op": "set_edge_hint", "view": "main", "id": "api-db", "hint": {"to_side": "top"}}`
 
-Fields (`?` marks the optional ones): `view, id, hint`
+Fields (`?` marks the optional ones): `view, id, hint: {from_side?, to_side?, via?: [[x, y]], label_pos?}`
 
 ### rename_id
 
@@ -414,7 +419,7 @@ Append a view block to views.hcl.
 
 As JSON, with the required fields: `{"op": "create_view", "id": "overview"}`
 
-Fields (`?` marks the optional ones): `id, title?, include?, exclude?, collapse?, edges?, of?, direction?, overlays?, styles?`
+Fields (`?` marks the optional ones): `id, title?, include?, exclude?, collapse?, edges?, of?, direction?, overlays?: [{id, members, style?, label?}], styles?: [{type?, label, props}]`
 
 ### update_view
 
@@ -436,7 +441,7 @@ Change attributes and overlays of a view in views.hcl: the fields given replace 
 
 As JSON, with the required fields: `{"op": "update_view", "id": "overview"}`
 
-Fields (`?` marks the optional ones): `id, title?, include?, exclude?, collapse?, edges?, of?, direction?, overlays?, styles?, unset?`
+Fields (`?` marks the optional ones): `id, title?, include?, exclude?, collapse?, edges?, of?, direction?, overlays?: [{id, members, style?, label?}], styles?: [{type?, label, props}], unset?`
 
 ### delete_view
 
@@ -488,7 +493,7 @@ Add a decoration to a view's layout file (spec 5.7).
 
 As JSON, with the required fields: `{"op": "add_decoration", "view": "main", "decoration": {"type": "text", "x": 0, "y": -60, "text": "Title"}}`
 
-Fields (`?` marks the optional ones): `view, id?, decoration`
+Fields (`?` marks the optional ones): `view, id?, decoration: {type, in?, attach?, x?, y?, dx?, dy?, w?, h?, z?, text?, src?, points?, path?, fill?, stroke?, stroke_width?, stroke_dash?, opacity?, text_color?, font_size?}`
 
 ### update_decoration
 
@@ -503,7 +508,7 @@ Change fields of a decoration of a view: the fields given replace its, unset rem
 
 As JSON, with the required fields: `{"op": "update_decoration", "view": "main", "id": "note"}`
 
-Fields (`?` marks the optional ones): `view, id, decoration?, unset?`
+Fields (`?` marks the optional ones): `view, id, decoration?: {type?, in?, attach?, x?, y?, dx?, dy?, w?, h?, z?, text?, src?, points?, path?, fill?, stroke?, stroke_width?, stroke_dash?, opacity?, text_color?, font_size?}, unset?`
 
 ### delete_decoration
 

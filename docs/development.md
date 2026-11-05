@@ -220,6 +220,9 @@ rest equal to the code:
 - `TestDocLinks` checks that every relative link and image names a Markdown page or SVG picture
   the site publishes, every link to a file on GitHub a file of the repository, and every anchor a
   heading.
+- `TestSkillExamples` runs the HCL, the batch and the `dg op` commands of the
+  [agent skill](https://github.com/nvcnvn/dg/blob/main/skills/dg/SKILL.md) in order as one project,
+  and `TestSkillOperations` checks that every operation it names exists.
 - `TestDocSite` checks that, with the exclude list of `_config.yml`, the site publishes only
   `README.md`, the pages of `docs/` and the SVG files of `testdata/export`.
 
