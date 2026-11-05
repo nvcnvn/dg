@@ -103,20 +103,28 @@ Palette and Inspector buttons show them. Closing the panel stops its server.
 
 ## The command line and agents
 
-The extension runs the `dg` in its package and no other, and it does not put that `dg` on your
-`PATH`. A `dg` you install yourself is never used by the extension, and the extension's is not
-there for your terminal or your agents, so they need the
-[command line](getting-started.md#command-line):
+The extension runs the `dg` in its package and no other, so a `dg` you installed yourself never
+changes what the panel does. It also puts that `dg` first on the `PATH` of VS Code's terminals.
+There, you and any agent you start get the same version as the panel, with nothing to install:
+
+```sh
+dg version
+dg export --format svg --out hello.svg
+```
+
+A terminal that was open when the extension was installed or updated keeps its old `PATH` until you
+restart it; VS Code marks it. Agents reach the project with `dg` commands or
+[`dg mcp`](reference/cli.md#dg-mcp), while you keep the panel open: what they write appears in your
+text editors and the panel redraws, as when you save a file yourself.
+
+Everything that starts outside those terminals needs the
+[command line](getting-started.md#command-line) installed: your system's terminal, CI, and MCP
+clients that start `dg` themselves, which includes VS Code's own MCP servers.
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/nvcnvn/dg/main/install.sh | bash
 ```
 
-An agent then reaches the project through [`dg mcp`](reference/cli.md#dg-mcp) or by running `dg`
-in a terminal, while you keep the panel open. The two copies work on the same files, so what the
-agent writes appears in your text editors and the panel redraws, as when you save a file yourself.
-
-Each copy is updated on its own: VS Code updates the extension, and running the script again
-updates the command line. Keep them close. A project that uses a feature newer than a copy is an
-error in that copy, so an agent on an old `dg` can fail on a project the panel draws. `dg version`
-prints the command line's version; the Extensions view shows the extension's.
+That is a second copy, which you update by running the script again. If it falls behind, a project
+that uses a newer feature is an error in that copy: the error says which version it is and to
+update it.

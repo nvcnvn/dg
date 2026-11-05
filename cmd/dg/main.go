@@ -11,7 +11,6 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
-	"runtime/debug"
 	"slices"
 	"strings"
 
@@ -19,6 +18,7 @@ import (
 	"github.com/nvcnvn/dg/internal/export"
 	"github.com/nvcnvn/dg/internal/ops"
 	"github.com/nvcnvn/dg/internal/project"
+	"github.com/nvcnvn/dg/internal/version"
 	"github.com/nvcnvn/dg/internal/view"
 )
 
@@ -59,7 +59,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprint(stdout, usage)
 		return 0
 	case "-version", "--version", "version":
-		fmt.Fprintln(stdout, "dg", version())
+		fmt.Fprintln(stdout, "dg", version.String())
 		return 0
 	case "check":
 		err = runCheck(args[1:], stdout, stderr)
@@ -96,22 +96,6 @@ func run(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "dg: %v\n", err)
 		return 1
 	}
-}
-
-// stampedVersion is the version the Makefile links into the binaries of a release, whose Git
-// checkout the release workflow leaves modified.
-var stampedVersion string
-
-// version returns the version the Makefile or the Go toolchain stamped in the binary, the latter
-// from the build's module or its Git checkout.
-func version() string {
-	if stampedVersion != "" {
-		return stampedVersion
-	}
-	if info, ok := debug.ReadBuildInfo(); ok {
-		return info.Main.Version
-	}
-	return "unknown"
 }
 
 func flags(name string, args []string, stderr io.Writer, define func(*flag.FlagSet)) (dir string, err error) {

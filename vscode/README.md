@@ -47,8 +47,10 @@ and still gets a clean picture:
 
 `dg mcp` offers all of this over the Model Context Protocol, with four tools: `check`,
 `vocabulary`, `op` and `export`. `export` returns images, so the agent sees what it drew. To use
-the command line or MCP, install `dg` with the command below, on Linux and macOS or in Git Bash on
-Windows, and Chrome or Chromium for `export`:
+the command line in a VS Code terminal, there is nothing to install: the extension's `dg` is on
+the `PATH` there, so you and your agent get the same version as the panel. `export` needs Chrome or
+Chromium. Outside those terminals, such as in CI or from an MCP client that starts `dg` itself,
+install it with this command, on Linux and macOS or in Git Bash on Windows:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/nvcnvn/dg/main/install.sh | bash
@@ -60,7 +62,7 @@ Then add it to your MCP client as a stdio server:
 dg mcp -C /path/to/project
 ```
 
-This `dg` is a separate copy from the one in the extension, updated by running the script again.
+That `dg` is a separate copy from the one in the extension, updated by running the script again.
 
 ## Quick start
 
@@ -113,8 +115,8 @@ This `dg` is a separate copy from the one in the extension, updated by running t
 - Undo with Ctrl+Z (⌘Z), with every change written straight back to your files
 - VS Code's light or dark theme
 
-The extension bundles its own `dg` binary and always runs that one, so it needs nothing else on
-your machine, and it never uses the network.
+The extension bundles its own `dg` binary, always runs that one, and puts it on the `PATH` of
+VS Code's terminals. It needs nothing else on your machine, and it never uses the network.
 
 ## What it draws
 

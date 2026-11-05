@@ -18,6 +18,7 @@ import (
 	"github.com/nvcnvn/dg/internal/export"
 	"github.com/nvcnvn/dg/internal/ops"
 	"github.com/nvcnvn/dg/internal/project"
+	"github.com/nvcnvn/dg/internal/version"
 	"github.com/nvcnvn/dg/internal/view"
 )
 
@@ -29,7 +30,7 @@ type Server struct {
 // New returns the MCP server of the project in dir.
 func New(dir string) *sdk.Server {
 	s := &Server{Dir: dir}
-	srv := sdk.NewServer(&sdk.Implementation{Name: "dg", Version: "0"}, &sdk.ServerOptions{
+	srv := sdk.NewServer(&sdk.Implementation{Name: "dg", Version: version.String()}, &sdk.ServerOptions{
 		Instructions: "dg is diagram-as-code: an HCL model (nodes, edges), views (views.hcl) and layout files. " +
 			"Call vocabulary for the kinds and edge kinds, op to change the files, check to validate, and export to see a view. " +
 			"Positions in op are relative to the node's frame; read drawn positions with export format json.",

@@ -14,13 +14,14 @@ the Extensions view, or with VS Code's command line:
 code --install-extension nvcnvn.dg-diagrams
 ```
 
-The extension holds its own `dg` binary and needs nothing else on the machine. It is all you need
-to write and arrange diagrams.
+The extension holds its own `dg` binary and needs nothing else on the machine, and it puts that
+`dg` on the `PATH` of VS Code's terminals, so every command in this guide works there.
 
 ### Command line
 
-Install `dg` as well to use it in a terminal, in scripts and CI, or from an agent through
-[MCP](reference/cli.md#dg-mcp). On Linux and macOS, and in Git Bash on Windows:
+Install `dg` as well to use it outside VS Code's terminals: in your system's terminal, in CI, or
+from an MCP client that starts it itself ([MCP](reference/cli.md#dg-mcp)). On Linux and macOS, and
+in Git Bash on Windows:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/nvcnvn/dg/main/install.sh | bash
@@ -189,8 +190,8 @@ Without VS Code, `dg serve` opens the same editor in your browser, and Ctrl+C st
 
 ## Check it
 
-The extension shows the project's errors and warnings as you type. The rest of this guide uses the
-[command line](#command-line), where the same check is:
+The extension shows the project's errors and warnings as you type. In a VS Code terminal, the same
+check is:
 
 ```sh
 dg check

@@ -19,9 +19,8 @@ commands:
 
 <!-- end dg -->
 
-These commands need `dg` on your `PATH`:
-[install the command line](../getting-started.md#command-line). The VS Code extension has its own
-copy and does not need one.
+In a VS Code terminal with the extension installed, `dg` is already on the `PATH`. Elsewhere,
+[install the command line](../getting-started.md#command-line).
 
 Every command takes `-C <dir>`, the project directory (default: the current directory). Flags
 take one dash or two: `-json` and `--json` are the same.
@@ -169,8 +168,10 @@ output, for agents. It has four tools, each giving the same result as its comman
 | `op` | applies an [operation](operations.md) given as a JSON object, `batch` included; the result is `dg op --json`'s, an error result when refused |
 | `export` | draws a view: `{view?, format?}`; PNG (the default) and GIF are returned as images the agent can see, SVG and JSON as text |
 
-To use it from an MCP client, install the [command line](../getting-started.md#command-line) and
-add `dg mcp -C /path/to/project` as a stdio server. One server serves one project. Without `-C` it
+To use it from an MCP client, add `dg mcp -C /path/to/project` as a stdio server. An agent started
+in a VS Code terminal finds the extension's `dg`; a client that starts `dg` from anywhere else,
+VS Code's own MCP servers included, needs the
+[command line](../getting-started.md#command-line) installed. One server serves one project. Without `-C` it
 serves the directory the client starts it in. Most clients take this JSON:
 
 ```json

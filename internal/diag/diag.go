@@ -6,8 +6,11 @@ import (
 	"cmp"
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/hashicorp/hcl/v2"
+
+	"github.com/nvcnvn/dg/internal/version"
 )
 
 // Severity is error, warning or info.
@@ -58,13 +61,29 @@ func FromHCL(diags hcl.Diagnostics) Diagnostics {
 		if d.Severity == hcl.DiagWarning {
 			sev = Warning
 		}
+		detail := d.Detail
+		if unknownName(d) {
+			detail += " " + Newer()
+		}
 		if d.Subject == nil {
-			out = append(out, Diagnostic{Severity: sev, Summary: d.Summary, Detail: d.Detail})
+			out = append(out, Diagnostic{Severity: sev, Summary: d.Summary, Detail: detail})
 		} else {
-			out = append(out, At(sev, *d.Subject, d.Summary, d.Detail))
+			out = append(out, At(sev, *d.Subject, d.Summary, detail))
 		}
 	}
 	return out
+}
+
+// unknownName reports whether d is about a name this dg does not know, and that HCL found no
+// close match for, so it is no typo.
+func unknownName(d *hcl.Diagnostic) bool {
+	return (d.Summary == "Unsupported argument" || d.Summary == "Unsupported block type") &&
+		!strings.Contains(d.Detail, "Did you mean")
+}
+
+// Newer is the sentence that ends a diagnostic a project written for a newer dg would get.
+func Newer() string {
+	return fmt.Sprintf("If a newer dg wrote this project, update dg: this one is %s.", version.String())
 }
 
 // HasErrors reports whether ds has an error.
