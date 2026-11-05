@@ -68,19 +68,22 @@ type Def struct {
 	Fields  []Field
 }
 
-// Field describes a field of an operation: its JSON schema, what it means, and an example value
-// as JSON.
+// Field describes a field of an operation: its JSON schema, what it means, an example value as
+// JSON and, for a field that nests, the Shape of its value.
 type Field struct {
 	Name     string
 	Schema   string
 	Help     string
 	Example  string
+	Shape    string
 	Required bool
 }
 
 func (f Field) req() Field { f.Required = true; return f }
 
 func (f Field) help(h string) Field { f.Help = h; return f }
+
+func (f Field) shape(s string) Field { f.Shape = s; return f }
 
 const (
 	strSchema        = `{"type":"string"}`
@@ -94,6 +97,14 @@ const (
 	stylesSchema     = `{"type":"array","items":{"type":"object","properties":{"type":{"type":"string","enum":["style","edge_style"]},"label":{"type":"string"},"props":{"type":"object","additionalProperties":{"anyOf":[{"type":["string","number","boolean"]},{"type":"array","items":{"type":"number"}}]}}},"required":["label","props"],"additionalProperties":false}}`
 	decorationSchema = `{"type":"object","properties":{"type":{"type":"string","enum":["text","rect","ellipse","band","image","arrow","freehand"]},"in":{"type":"string"},"attach":{"type":"string"},"x":{"type":"integer"},"y":{"type":"integer"},"dx":{"type":"integer"},"dy":{"type":"integer"},"w":{"type":"integer","minimum":1},"h":{"type":"integer","minimum":1},"z":{"type":"integer"},"text":{"type":"string"},"src":{"type":"string"},"points":{"type":"array","items":{"type":"array","items":{"type":"integer"},"minItems":2,"maxItems":2}},"path":{"type":"string"},"fill":{"type":"string"},"stroke":{"type":"string"},"stroke_width":{"type":"number","minimum":0},"stroke_dash":{"type":"array","items":{"type":"number","minimum":0}},"opacity":{"type":"number","minimum":0,"maximum":1},"text_color":{"type":"string"},"font_size":{"type":"number","minimum":1}},"additionalProperties":false}`
 	hintSchema       = `{"type":"object","properties":{"from_side":` + sideSchema + `,"to_side":` + sideSchema + `,"via":{"type":"array","items":{"type":"array","items":{"type":"integer"},"minItems":2,"maxItems":2}},"label_pos":{"type":"number","minimum":0,"maximum":1}},"additionalProperties":false}`
+
+	endShape        = `{node, port?, row?}`
+	labelsShape     = `{start?, mid?, end?}`
+	rowsShape       = `[{name?, rows: [{name, type?, key?}]}]`
+	overlaysShape   = `[{id, members, style?, label?}]`
+	stylesShape     = `[{type?, label, props}]`
+	decorationShape = `in?, attach?, x?, y?, dx?, dy?, w?, h?, z?, text?, src?, points?, path?, fill?, stroke?, stroke_width?, stroke_dash?, opacity?, text_color?, font_size?}`
+	hintShape       = `{from_side?, to_side?, via?: [[x, y]], label_pos?}`
 )
 
 var (
@@ -109,7 +120,7 @@ var (
 	fY        = Field{Name: "y", Schema: intSchema, Help: "y relative to the node's frame, rounded to the project grid", Example: `40`}
 	fTags     = Field{Name: "tags", Schema: stringList, Help: "tags (simple IDs); an empty list removes them", Example: `["critical"]`}
 	fPortName = Field{Name: "name", Schema: strSchema, Help: "port name", Example: `"grpc"`}
-	fLabels   = Field{Name: "labels", Schema: labelsSchema, Help: "edge labels {start?, mid?, end?}", Example: `{"mid": "SQL"}`}
+	fLabels   = Field{Name: "labels", Schema: labelsSchema, Help: "edge labels {start?, mid?, end?}", Example: `{"mid": "SQL"}`, Shape: labelsShape}
 	fSels     = func(name, help string) Field {
 		return Field{Name: name, Schema: stringList, Help: help, Example: `["node.api"]`}
 	}
@@ -121,11 +132,11 @@ var (
 	fEdgeSels     = fSels("edges", "selectors of the edges the view shows: edge_kind.<kind>, tag.<tag>, edge.<id> (default: every edge whose ends are shown)")
 	fOf           = Field{Name: "of", Schema: strSchema, Help: "ID of the container whose inside the view shows (drill-down)", Example: `"backend"`}
 	fDirection    = Field{Name: "direction", Schema: `{"type":"string","enum":["down","right","up","left"]}`, Help: "the way the layers of the view's first layout run: down, right, up or left (default: down, or right when an edge ends at a row)", Example: `"right"`}
-	fOverlays     = Field{Name: "overlays", Schema: overlaysSchema, Help: "overlays [{id, members: [selectors], style?, label?}]", Example: `[{"id": "blast", "members": ["tag.critical"], "label": "Blast radius"}]`}
-	fStyles       = Field{Name: "styles", Schema: stylesSchema, Help: "view style rules [{type?: style (default) or edge_style, label: a kind, tag.<tag>, node.<id> or edge.<id>, props: {property: value}}]", Example: `[{"label": "tag.new", "props": {"fill": "#E6F4EA"}}]`}
+	fOverlays     = Field{Name: "overlays", Schema: overlaysSchema, Help: "overlays [{id, members: [selectors], style?, label?}]", Example: `[{"id": "blast", "members": ["tag.critical"], "label": "Blast radius"}]`, Shape: overlaysShape}
+	fStyles       = Field{Name: "styles", Schema: stylesSchema, Help: "view style rules [{type?: style (default) or edge_style, label: a kind, tag.<tag>, node.<id> or edge.<id>, props: {property: value}}]", Example: `[{"label": "tag.new", "props": {"fill": "#E6F4EA"}}]`, Shape: stylesShape}
 	fUnset        = Field{Name: "unset", Schema: stringList, Example: `["of"]`}
 	fDecorationID = Field{Name: "id", Schema: strSchema, Help: "ID of the decoration", Example: `"note"`}
-	fDecoration   = Field{Name: "decoration", Schema: decorationSchema, Help: "decoration fields as in layout files: type (text, rect, ellipse, band, image, arrow, freehand), in or attach, x and y (in the frame) or dx and dy (from the attached node's center), w, h, z, text, src, points, path, fill, stroke, stroke_width, stroke_dash, opacity, text_color, font_size", Example: `{"type": "text", "x": 0, "y": -60, "text": "Title"}`}
+	fDecoration   = Field{Name: "decoration", Schema: decorationSchema, Help: "decoration fields as in layout files: type (text, rect, ellipse, band, image, arrow, freehand), in or attach, x and y (in the frame) or dx and dy (from the attached node's center), w, h, z, text, src, points, path, fill, stroke, stroke_width, stroke_dash, opacity, text_color, font_size", Example: `{"type": "text", "x": 0, "y": -60, "text": "Title"}`, Shape: "{type?, " + decorationShape}
 )
 
 // Defs are the operations, in the order help lists them.
@@ -143,10 +154,10 @@ var Defs = []Def{
 	{"set_props", "Replace a node's properties.", []Field{fNode.req(), {Name: "props", Schema: `{"type":"object","additionalProperties":{"type":["string","number","boolean"]}}`, Help: "property values by name, of the types the kind declares; an empty object removes them", Example: `{"replicas": 3}`, Required: true}}},
 	{"add_port", "Add an instance port block to a node.", []Field{fNode.req(), fPortName.req(), {Name: "side", Schema: `{"type":"string","enum":["top","right","bottom","left","auto"]}`, Help: "side of the port: top, right, bottom, left or auto", Example: `"right"`}}},
 	{"remove_port", "Remove an instance port block, and its pinned positions. Refused while an edge uses the port.", []Field{fNode.req(), fPortName.req()}},
-	{"set_rows", "Replace a node's rows and compartments.", []Field{fNode.req(), {Name: "compartments", Schema: rowsSchema, Help: "compartments of rows ({name, rows: [{name, type?, key?}]}); one compartment without a name holds rows declared directly in the node; an empty list removes every row", Example: `[{"rows": [{"name": "id", "type": "uuid", "key": "pk"}]}]`, Required: true}}},
+	{"set_rows", "Replace a node's rows and compartments.", []Field{fNode.req(), {Name: "compartments", Schema: rowsSchema, Help: "compartments of rows ({name, rows: [{name, type?, key?}]}); one compartment without a name holds rows declared directly in the node; an empty list removes every row", Example: `[{"rows": [{"name": "id", "type": "uuid", "key": "pk"}]}]`, Shape: rowsShape, Required: true}}},
 	{"connect", "Append an edge block. With view, make the view's edges filter show it (adding edge.<id>) if needed.", []Field{
-		{Name: "from", Schema: endSchema, Help: "start of the edge: {node, port?} or {node, row?}", Example: `{"node": "api"}`, Required: true},
-		{Name: "to", Schema: endSchema, Help: "end of the edge: {node, port?} or {node, row?}", Example: `{"node": "db"}`, Required: true},
+		{Name: "from", Schema: endSchema, Help: "start of the edge: {node, port?} or {node, row?}", Example: `{"node": "api"}`, Shape: endShape, Required: true},
+		{Name: "to", Schema: endSchema, Help: "end of the edge: {node, port?} or {node, row?}", Example: `{"node": "db"}`, Shape: endShape, Required: true},
 		fEdge.help("ID of the new edge (<from>-<to> when omitted)"), fKind.help("edge kind"), fLabels, fTags, fView.help("view to show the edge in")}},
 	{"disconnect", "Remove an edge with its hints and view references.", []Field{fEdge.req()}},
 	{"set_edge_labels", "Replace an edge's labels; none removes them.", []Field{fEdge.req(), fLabels}},
@@ -164,7 +175,7 @@ var Defs = []Def{
 		{Name: "offset", Schema: `{"type":"number","minimum":0,"maximum":1}`, Help: "position along the side, 0 to 1, kept to two decimals", Example: `0.5`}}},
 	{"set_edge_hint", "Replace an edge's routing hint in a view.", []Field{fView.req(),
 		fEdge.help("ID of the edge, or lift:<from>:<to> for a lifted edge (with %, : and # in those IDs written %25, %3A and %23)").req(),
-		{Name: "hint", Schema: hintSchema, Help: "{from_side?, to_side?, via?: [[x, y], ...] in canvas coordinates, label_pos?: 0 to 1}; empty removes the hint", Example: `{"to_side": "top"}`, Required: true}}},
+		{Name: "hint", Schema: hintSchema, Help: "{from_side?, to_side?, via?: [[x, y], ...] in canvas coordinates, label_pos?: 0 to 1}; empty removes the hint", Example: `{"to_side": "top"}`, Shape: hintShape, Required: true}}},
 	{"rename_id", "Rename a node, edge or view everywhere it is referenced: model files, views.hcl, layout files (and the layout file's name).", []Field{
 		{Name: "type", Schema: `{"type":"string","enum":["node","edge","view"]}`, Help: "what old names: node, edge or view", Example: `"node"`, Required: true},
 		{Name: "old", Schema: strSchema, Help: "current ID", Example: `"api"`, Required: true},
@@ -181,7 +192,7 @@ var Defs = []Def{
 	{"hide_node", "Make a view stop showing a node: remove node.<id> from its include and, when its selectors still show the node, add node.<id> to its exclude.", []Field{fView.req(), fNode.req()}},
 	{"add_decoration", "Add a decoration to a view's layout file (spec 5.7).", []Field{fView.req(),
 		fDecorationID.help("ID of the new decoration (generated from its type when omitted)"),
-		fDecoration.help(fDecoration.Help + "; type is required").req()}},
+		fDecoration.help(fDecoration.Help + "; type is required").shape("{type, " + decorationShape).req()}},
 	{"update_decoration", "Change fields of a decoration of a view: the fields given replace its, unset removes them.", []Field{fView.req(), fDecorationID.req(), fDecoration,
 		fUnset.help("decoration fields to remove, such as attach, dx and dy")}},
 	{"delete_decoration", "Remove a decoration from a view.", []Field{fView.req(), fDecorationID.req()}},
@@ -210,15 +221,19 @@ func (d Def) Field(name string) (Field, bool) {
 	return d.Fields[i], true
 }
 
-// Signature lists the fields d takes, the optional ones marked with ?.
+// Signature lists the fields d takes, the optional ones marked with ?, each nested field with its
+// shape.
 func (d Def) Signature() string {
 	var parts []string
 	for _, f := range d.Fields {
-		if f.Required {
-			parts = append(parts, f.Name)
-		} else {
-			parts = append(parts, f.Name+"?")
+		part := f.Name
+		if !f.Required {
+			part += "?"
 		}
+		if f.Shape != "" {
+			part += ": " + f.Shape
+		}
+		parts = append(parts, part)
 	}
 	return strings.Join(parts, ", ")
 }
@@ -274,12 +289,9 @@ func DecodeOp(data []byte) (Op, error) {
 	if err != nil {
 		return Op{}, err
 	}
-	dec := json.NewDecoder(bytes.NewReader(rest))
-	dec.UseNumber()
-	dec.DisallowUnknownFields()
-	var op Op
-	if err := dec.Decode(&op); err != nil {
-		return Op{}, typeError(name, err)
+	op, err := decodeFields(rest)
+	if err != nil {
+		return Op{}, decodeError(def, raw, err)
 	}
 	if ops != nil {
 		var list []json.RawMessage
@@ -362,6 +374,36 @@ func mustJSON(s string) map[string]any {
 		panic(fmt.Sprintf("schema %s: %v", s, err))
 	}
 	return v
+}
+
+func decodeFields(data []byte) (Op, error) {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.UseNumber()
+	dec.DisallowUnknownFields()
+	var op Op
+	err := dec.Decode(&op)
+	return op, err
+}
+
+// decodeError explains err, from decoding the fields in raw, with the shape of the nested field
+// at fault when there is one. encoding/json names neither that field nor, for an unknown key,
+// where the key is, so each nested field is decoded alone to find it.
+func decodeError(def Def, raw map[string]json.RawMessage, err error) error {
+	for _, f := range def.Fields {
+		value, ok := raw[f.Name]
+		if !ok || f.Shape == "" {
+			continue
+		}
+		alone, merr := json.Marshal(map[string]json.RawMessage{f.Name: value})
+		if merr != nil {
+			continue
+		}
+		if _, ferr := decodeFields(alone); ferr != nil {
+			msg := strings.Replace(typeError(def.Name, ferr).Error(), "json: ", f.Name+": ", 1)
+			return fmt.Errorf("%s; it takes %s", msg, f.Shape)
+		}
+	}
+	return typeError(def.Name, err)
 }
 
 // typeError explains a JSON value of the wrong type without naming Go types.

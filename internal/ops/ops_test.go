@@ -10,6 +10,7 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -556,6 +557,18 @@ func TestDecodeOp(t *testing.T) {
 		{`{"op": "batch", "ops": [{"op": "unpin", "view": "v"}]}`, `batch operation 1: unpin: missing field "id"`},
 		{`[1]`, `batch operation 1`},
 		{`{"op": "batch", "ops": [{"op": "batch", "ops": []}]}`, ``},
+		{`{"op": "connect", "from": {"node": "a"}, "to": {"node": "b"}, "label": "x"}`, `connect: unknown field "label"; it takes from: {node, port?, row?}, to: {node, port?, row?}, id?, kind?, labels?: {start?, mid?, end?}, tags?, view?`},
+		{`{"op": "connect", "from": {"node": "a"}, "to": {"node": "b"}, "labels": {"middle": "x"}}`, `connect: labels: unknown field "middle"; it takes {start?, mid?, end?}`},
+		{`{"op": "connect", "from": "a", "to": {"node": "b"}}`, `connect: from must be an object, not string; it takes {node, port?, row?}`},
+		{`{"op": "connect", "from": {"id": "a"}, "to": {"node": "b"}}`, `connect: from: unknown field "id"; it takes {node, port?, row?}`},
+		{`{"op": "set_edge_labels", "id": "e", "labels": {"mid": 1}}`, `set_edge_labels: labels.mid must be a string, not number; it takes {start?, mid?, end?}`},
+		{`{"op": "set_edge_hint", "view": "v", "id": "e", "hint": {"side": "top"}}`, `set_edge_hint: hint: unknown field "side"; it takes {from_side?, to_side?, via?: [[x, y]], label_pos?}`},
+		{`{"op": "set_rows", "id": "a", "compartments": [{"rows": [{"column": "id"}]}]}`, `set_rows: compartments: unknown field "column"; it takes [{name?, rows: [{name, type?, key?}]}]`},
+		{`{"op": "update_view", "id": "v", "overlays": [{"id": "o", "members": [], "color": "red"}]}`, `update_view: overlays: unknown field "color"; it takes [{id, members, style?, label?}]`},
+		{`{"op": "update_view", "id": "v", "styles": [{"label": "a", "props": {}, "kind": "x"}]}`, `update_view: styles: unknown field "kind"; it takes [{type?, label, props}]`},
+		{`{"op": "add_decoration", "view": "v", "decoration": {"type": "text", "colour": "red"}}`, `add_decoration: decoration: unknown field "colour"; it takes {type, in?`},
+		{`{"op": "update_decoration", "view": "v", "id": "d", "decoration": {"colour": "red"}}`, `update_decoration: decoration: unknown field "colour"; it takes {type?, in?`},
+		{`{"op": "batch", "ops": [{"op": "connect", "from": {"node": "a"}, "to": {"node": "b"}, "labels": {"label": "x"}}]}`, `batch operation 1: connect: labels: unknown field "label"; it takes`},
 	}
 	for _, tt := range tests {
 		_, err := DecodeOps([]byte(tt.src))
@@ -563,6 +576,41 @@ func TestDecodeOp(t *testing.T) {
 			t.Errorf("DecodeOps(%s): %v, want %q", tt.src, err, tt.err)
 		}
 	}
+}
+
+// TestShapes checks that the shape of every nested field names exactly the keys its schema has.
+func TestShapes(t *testing.T) {
+	via := regexp.MustCompile(`\[\[x, y\]\]`)
+	name := regexp.MustCompile(`[a-z_]+`)
+	for _, d := range Defs {
+		for _, f := range d.Fields {
+			var schema any
+			if err := json.Unmarshal([]byte(f.Schema), &schema); err != nil {
+				t.Fatal(err)
+			}
+			want := schemaKeys(schema)
+			slices.Sort(want)
+			got := name.FindAllString(via.ReplaceAllString(f.Shape, ""), -1)
+			slices.Sort(got)
+			if !slices.Equal(got, want) {
+				t.Errorf("%s %s: shape %q names %v, schema %v", d.Name, f.Name, f.Shape, got, want)
+			}
+		}
+	}
+}
+
+// schemaKeys returns the names of the properties in a parsed JSON schema, at any depth.
+func schemaKeys(schema any) []string {
+	s, ok := schema.(map[string]any)
+	if !ok {
+		return nil
+	}
+	keys := schemaKeys(s["items"])
+	props, _ := s["properties"].(map[string]any)
+	for k, v := range props {
+		keys = append(append(keys, k), schemaKeys(v)...)
+	}
+	return keys
 }
 
 // TestExistingErrors checks that errors the project already has do not refuse an operation,

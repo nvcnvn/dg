@@ -24,8 +24,8 @@ the node it names; read drawn positions with dg export --format json.
 
 batch reads operations as JSON from --file or standard input: a list of operation objects such
 as [{"op": "create_node", "kind": "service", "label": "API"}], applied in order as one change.
-The fields of each object are the flags of its operation without the dashes; see
-dg op <operation> --help.
+Most fields are the operation's flags without the dashes; from, to, labels and hint are objects
+that gather several flags. dg op <operation> --help shows an operation's fields.
 
 --json prints {"results": [...], "files": [...], "warnings": [...]}, or {"error": ...,
 "diagnostics": [...]} when the operation is refused. Exit code 0: applied; 1: refused or

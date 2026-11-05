@@ -119,7 +119,7 @@ func (l *loader) parse(fsys fs.FS, rel, name string, decode decodeFunc) error {
 	if d.HasErrors() {
 		l.p.Unparsed = append(l.p.Unparsed, name)
 	} else {
-		l.diags = append(l.diags, decode(f.Body, evalContext(fsys, path.Dir(rel)))...)
+		l.diags = append(l.diags, decode(diag.Expecting(f.Body), evalContext(fsys, path.Dir(rel)))...)
 	}
 	return nil
 }

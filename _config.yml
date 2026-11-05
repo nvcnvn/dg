@@ -24,6 +24,7 @@ exclude:
   - web
   - vscode
   - packs
+  - skills
   - examples
   - docs/media
   - docs/open-decisions.md

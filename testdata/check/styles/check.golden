@@ -10,14 +10,14 @@ style.hcl:11:18: error: Invalid style value: The value of z must be a whole numb
 style.hcl:12:18: error: Invalid style value: The value of layout must be one of "free", "stack", "grid".
 style.hcl:13:18: error: Invalid style value: The value of columns must be a whole number of at least 1.
 style.hcl:14:18: error: Invalid style value: The value of stretch must be true or false.
-style.hcl:15:3: error: Unsupported argument: An argument named "colour" is not expected here. If a newer dg wrote this project, update dg: this one is (devel).
+style.hcl:15:3: error: Unsupported argument: An argument named "colour" is not expected here. Expected arguments: align, columns, corner_radius, direction, fill, font_size, font_weight, gap, icon, image, label_side, layout, max_w, min_h, min_w, opacity, padding, shape, stretch, stroke, stroke_dash, stroke_width, sub_font_size, sub_font_weight, sub_text_color, text_color, z. If the name is right, a newer dg may know it: this one is (devel).
 style.hcl:18:1: error: Duplicate definition: The style "service" is already defined at line 6 of this file.
 style.hcl:20:1: error: Invalid ID: The tag ID "bad tag" is not a simple ID (letters, digits, _ and -, starting with a letter or _).
 style.hcl:22:1: error: Invalid style label: The label "node.api" names one node; such rules are only allowed in a view.
 style.hcl:24:1: warning: Undefined kind: Style label "ghost" names no defined kind.
 style.hcl:26:1: error: Invalid style label: The label "a.b" is not a kind, tag.<tag> or node.<id>.
 style.hcl:32:1: info: Overridden definition: The edge_style "default" overrides the properties it sets of the one defined at <generic>/style.hcl:158:1.
-style.hcl:33:3: error: Unsupported argument: An argument named "fill" is not expected here. If a newer dg wrote this project, update dg: this one is (devel).
+style.hcl:33:3: error: Unsupported argument: An argument named "fill" is not expected here. Expected arguments: animate, arrow_end, arrow_start, font_size, routing, stroke, stroke_dash, stroke_width. If the name is right, a newer dg may know it: this one is (devel).
 style.hcl:34:15: error: Invalid style value: The value of arrow_end must be one of "none", "arrow", "triangle", "triangle-open", "diamond", "diamond-open", "circle", "circle-open", "crow-one", "crow-zero-one", "crow-many", "crow-one-many", "crow-zero-many".
 style.hcl:35:15: error: Invalid style value: The value of routing must be one of "orthogonal", "polyline", "straight".
 style.hcl:39:1: error: Invalid style label: The label "edge.e" names one edge; such rules are only allowed in a view.

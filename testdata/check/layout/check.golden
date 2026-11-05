@@ -5,7 +5,7 @@ views/broken.layout.yaml:3:3: error: Invalid layout: Invalid ID: "bad:key" conta
 views/broken.layout.yaml:4:3: error: Invalid layout: Invalid ID: "50%" contains "%"; only %25, %3A and %23 are escapes.
 views/broken.layout.yaml:5:3: warning: Orphan layout entry: Node "c" does not exist.
 views/broken.layout.yaml:5:10: error: Invalid layout: "1.5" is not a whole number.
-views/broken.layout.yaml:5:21: error: Invalid layout: Unknown field "z"; expected one of in, x, y, w, h, order, ports. If a newer dg wrote this project, update dg: this one is (devel).
+views/broken.layout.yaml:5:21: error: Invalid layout: Unknown field "z"; expected one of in, x, y, w, h, order, ports. If the name is right, a newer dg may know it: this one is (devel).
 views/broken.layout.yaml:6:6: error: Invalid layout: Expected a mapping.
 views/broken.layout.yaml:7:3: error: Invalid layout: A lift: key is only valid in edge_hints.
 views/broken.layout.yaml:9:3: warning: Orphan layout entry: Edge "e" does not exist.
@@ -32,7 +32,7 @@ views/broken.layout.yaml:18:91: error: Invalid layout: The value of font_size mu
 views/broken.layout.yaml:18:105: error: Invalid layout: The values of stroke_dash must be at least 0.
 views/broken.layout.yaml:19:5: error: File not found: Decoration "m": the picture "missing.svg" cannot be read.
 views/broken.layout.yaml:20:5: error: Invalid picture: Decoration "n": the picture "model.hcl" must be an SVG picture, whose root element is svg with xmlns="http://www.w3.org/2000/svg".
-views/broken.layout.yaml:21:1: error: Invalid layout: Unknown field "extra"; expected one of version, place, edge_hints, decorations. If a newer dg wrote this project, update dg: this one is (devel).
+views/broken.layout.yaml:21:1: error: Invalid layout: Unknown field "extra"; expected one of version, place, edge_hints, decorations. If the name is right, a newer dg may know it: this one is (devel).
 views/lanes.layout.yaml:3:3: warning: Ignored position: Node "b" is placed in order by "lanes", a stack container, so its x and y are ignored.
 views/main.layout.yaml:3:3: warning: Stale frame: Node "a" is stored relative to the canvas, but its frame in this view is node "g".
 views/main.layout.yaml:3:58: warning: Orphan layout entry: Port "p9" does not exist.

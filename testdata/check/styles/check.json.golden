@@ -122,7 +122,7 @@
   {
     "severity": "error",
     "summary": "Unsupported argument",
-    "detail": "An argument named \"colour\" is not expected here. If a newer dg wrote this project, update dg: this one is (devel).",
+    "detail": "An argument named \"colour\" is not expected here. Expected arguments: align, columns, corner_radius, direction, fill, font_size, font_weight, gap, icon, image, label_side, layout, max_w, min_h, min_w, opacity, padding, shape, stretch, stroke, stroke_dash, stroke_width, sub_font_size, sub_font_weight, sub_text_color, text_color, z. If the name is right, a newer dg may know it: this one is (devel).",
     "file": "style.hcl",
     "line": 15,
     "column": 3,
@@ -192,7 +192,7 @@
   {
     "severity": "error",
     "summary": "Unsupported argument",
-    "detail": "An argument named \"fill\" is not expected here. If a newer dg wrote this project, update dg: this one is (devel).",
+    "detail": "An argument named \"fill\" is not expected here. Expected arguments: animate, arrow_end, arrow_start, font_size, routing, stroke, stroke_dash, stroke_width. If the name is right, a newer dg may know it: this one is (devel).",
     "file": "style.hcl",
     "line": 33,
     "column": 3,
