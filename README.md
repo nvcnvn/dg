@@ -1,12 +1,12 @@
 # dg
 
 dg draws diagrams from text: you write what exists as an HCL model, arrange it by dragging in a
-browser editor, and dg routes the arrows around the boxes every time it draws.
+panel beside your editor in VS Code, and dg routes the arrows around the boxes every time it draws.
 
-- [Getting started](docs/getting-started.md): build dg, write a first diagram, check it, arrange
-  it in the browser and export it.
+- [Getting started](docs/getting-started.md): install the VS Code extension, write a first
+  diagram, arrange it, check it and export it.
 - [VS Code extension](docs/vscode.md): diagnostics, completion, rename and formatting in the
-  editor, and the diagram in a panel beside it.
+  editor, the diagram in a panel beside it, and how the extension works with the command line.
 - [Examples](docs/examples.md): architecture and C4 with drill-down, entity-relationship, class,
   flowchart, swimlane, state machine, network, animated edges, shapes.
 - [Reference](docs/reference/README.md): the language, styles, views and layout files, the
@@ -47,10 +47,18 @@ or Venn diagrams.
 
 ## Install
 
-Download `dg` from the [releases page](https://github.com/nvcnvn/dg/releases), or
-[build it from source](docs/getting-started.md#build-from-source). For VS Code, install
-[dg Diagrams](https://marketplace.visualstudio.com/items?itemName=nvcnvn.dg-diagrams) from the
-Marketplace.
+Install [dg Diagrams](https://marketplace.visualstudio.com/items?itemName=nvcnvn.dg-diagrams) from
+the VS Code Marketplace. It holds everything it needs, its own `dg` binary included.
+
+To use dg in a terminal, in CI or from an agent through MCP, install the command line as well, on
+Linux and macOS or in Git Bash on Windows:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/nvcnvn/dg/main/install.sh | bash
+```
+
+The [getting-started guide](docs/getting-started.md#command-line) has the options, the manual
+download and the build from source.
 
 ## Licensing
 

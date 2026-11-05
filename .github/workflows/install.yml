@@ -1,0 +1,67 @@
+name: Install script
+
+on:
+  push:
+    branches: [main]
+    paths: [install.sh, .github/workflows/install.yml]
+  pull_request:
+    paths: [install.sh, .github/workflows/install.yml]
+  workflow_call:
+    inputs:
+      version:
+        description: The release to install; empty for the latest.
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: sudo apt-get install -y shellcheck
+      - run: shellcheck install.sh
+
+  # Installs the real release from GitHub. cmd/dg's TestInstallScript covers the failures offline.
+  install:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - ubuntu-latest
+          - ubuntu-24.04-arm
+          - macos-latest
+          - macos-15-intel
+          - windows-latest
+          - windows-11-arm
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      DG_VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install from standard input, as curl | bash does
+        run: bash < install.sh
+      - name: Install over the first copy
+        run: bash install.sh
+      - name: Add the default directory to the PATH, as a native path on Windows
+        run: |
+          dir="$HOME/.local/bin"
+          if command -v cygpath >/dev/null; then dir=$(cygpath -w "$dir"); fi
+          echo "$dir" >> "$GITHUB_PATH"
+      - name: The installed version is the one asked for
+        if: env.DG_VERSION != ''
+        run: test "$(dg version)" = "dg $DG_VERSION"
+      - run: dg check -C examples/c4
+      - name: Answer an MCP client
+        run: |
+          request='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"0"}}}'
+          { echo "$request"; sleep 2; } | dg mcp -C examples/c4 | grep '"serverInfo"'
+      - name: Run from a native Windows shell
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: dg check -C examples/c4

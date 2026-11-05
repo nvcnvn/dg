@@ -14,7 +14,8 @@ code --install-extension nvcnvn.dg-diagrams
 ```
 
 The Marketplace gives you the package for your platform. Each package holds its own `dg` binary,
-so the extension needs nothing else on the machine, and it never uses the network.
+so the extension needs nothing else on the machine, and it never uses the network. To use dg
+outside the extension as well, see [The command line and agents](#the-command-line-and-agents).
 
 To build a package yourself, set up a clone of the repository as in
 [Getting started](getting-started.md#build-from-source) and install what it builds:
@@ -99,3 +100,23 @@ in the panel before using its keyboard shortcuts, so they reach the diagram rath
 The panel follows VS Code's theme. A click on a diagnostic in the panel's diagnostics bar opens its
 file at its position. The palette and inspector start hidden in a narrow panel; the toolbar's
 Palette and Inspector buttons show them. Closing the panel stops its server.
+
+## The command line and agents
+
+The extension runs the `dg` in its package and no other, and it does not put that `dg` on your
+`PATH`. A `dg` you install yourself is never used by the extension, and the extension's is not
+there for your terminal or your agents, so they need the
+[command line](getting-started.md#command-line):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/nvcnvn/dg/main/install.sh | bash
+```
+
+An agent then reaches the project through [`dg mcp`](reference/cli.md#dg-mcp) or by running `dg`
+in a terminal, while you keep the panel open. The two copies work on the same files, so what the
+agent writes appears in your text editors and the panel redraws, as when you save a file yourself.
+
+Each copy is updated on its own: VS Code updates the extension, and running the script again
+updates the command line. Keep them close. A project that uses a feature newer than a copy is an
+error in that copy, so an agent on an old `dg` can fail on a project the panel draws. `dg version`
+prints the command line's version; the Extensions view shows the extension's.

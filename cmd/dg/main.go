@@ -98,9 +98,16 @@ func run(args []string, stdout, stderr io.Writer) int {
 	}
 }
 
-// version returns the version the Go toolchain stamped in the binary, from the build's module or
-// its Git checkout.
+// stampedVersion is the version the Makefile links into the binaries of a release, whose Git
+// checkout the release workflow leaves modified.
+var stampedVersion string
+
+// version returns the version the Makefile or the Go toolchain stamped in the binary, the latter
+// from the build's module or its Git checkout.
 func version() string {
+	if stampedVersion != "" {
+		return stampedVersion
+	}
 	if info, ok := debug.ReadBuildInfo(); ok {
 		return info.Main.Version
 	}

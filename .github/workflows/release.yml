@@ -85,6 +85,13 @@ jobs:
             --title "dg $GITHUB_REF_NAME" --generate-notes \
             $(find dist -type f ! -name dg.rb | sort)
 
+  # Runs install.sh on each platform against the published release.
+  install:
+    needs: github-release
+    uses: ./.github/workflows/install.yml
+    with:
+      version: ${{ github.ref_name }}
+
   # Trades GitHub's OIDC token for a Marketplace credential; docs/development.md (Releasing) says
   # how the publisher's Trusted Publishing policy is set up.
   vs-marketplace:

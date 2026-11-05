@@ -16,6 +16,7 @@ exclude:
   - LICENSE
   - THIRD_PARTY_NOTICES
   - Makefile
+  - install.sh
   - go.mod
   - go.sum
   - cmd

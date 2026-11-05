@@ -15,7 +15,7 @@ Diagram-as-code: HCL model, browser-arranged layout, arrows routed at render tim
   writes atomic (temporary files, then rename), every operation with its inverse for undo. A file
   matched by `read_only` is never written; the operation fails naming the file.
 - Everything but `cmd/` lives under `internal/`, except `packs/generic`, `web/`, `vscode/`,
-  `testdata/` and `examples/` (spec 12).
+  `testdata/`, `examples/` and `install.sh` (spec 12).
 
 ## Determinism
 - The same files produce byte-identical layout writes and exports (spec 11). In Go, never let map
