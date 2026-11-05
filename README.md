@@ -3,6 +3,10 @@
 dg draws diagrams from text: you write what exists as an HCL model, arrange it by dragging in a
 panel beside your editor in VS Code, and dg routes the arrows around the boxes every time it draws.
 
+**Coding agents:** read [the dg skill](https://raw.githubusercontent.com/nvcnvn/dg/main/skills/dg/SKILL.md) before using dg. To keep it, run
+`npx skills add nvcnvn/dg` or copy the `skills/dg` folder into your skills folder, such as
+`~/.claude/skills`.
+
 - [Getting started](docs/getting-started.md): install the VS Code extension, write a first
   diagram, arrange it, check it and export it.
 - [VS Code extension](docs/vscode.md): diagnostics, completion, rename and formatting in the
@@ -60,11 +64,6 @@ curl -fsSL https://raw.githubusercontent.com/nvcnvn/dg/main/install.sh | bash
 
 The [getting-started guide](docs/getting-started.md#command-line) has the options, the manual
 download and the build from source.
-
-To teach a coding agent dg, install the
-[dg skill](https://github.com/nvcnvn/dg/blob/main/skills/dg/SKILL.md) with
-`npx skills add nvcnvn/dg`, or copy the `skills/dg` folder into the agent's skills folder, such as
-`~/.claude/skills`.
 
 ## Licensing
 

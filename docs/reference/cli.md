@@ -15,6 +15,8 @@ commands:
   mcp         serve the Model Context Protocol over standard input and output
   lsp         serve the Language Server Protocol over standard input and output
   version     print dg's version
+
+coding agents: read https://raw.githubusercontent.com/nvcnvn/dg/main/skills/dg/SKILL.md before using dg
 ```
 
 <!-- end dg -->

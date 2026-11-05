@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/nvcnvn/dg/internal/mcp"
 	"github.com/nvcnvn/dg/internal/ops"
 )
 
@@ -36,6 +37,25 @@ func TestSkillFrontMatter(t *testing.T) {
 	desc := skillDescRE.FindStringSubmatch(front)
 	if desc == nil || len(desc[1]) > 1024 {
 		t.Errorf("description missing or over 1024 characters: %v", desc)
+	}
+}
+
+// TestSkillURL checks that the URL dg gives agents names the skill, and that the README's top
+// gives the same one.
+func TestSkillURL(t *testing.T) {
+	rel, ok := strings.CutPrefix(mcp.SkillURL, "https://raw.githubusercontent.com/nvcnvn/dg/main/")
+	if !ok {
+		t.Fatalf("SkillURL = %s, not a raw file of the repository", mcp.SkillURL)
+	}
+	if filepath.Join(repoRoot, rel) != filepath.Clean(skillFile) {
+		t.Errorf("SkillURL names %s, not %s", rel, skillFile)
+	}
+	readme, err := os.ReadFile(filepath.Join(repoRoot, "README.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(readme), mcp.SkillURL) {
+		t.Error("the README does not give SkillURL")
 	}
 }
 

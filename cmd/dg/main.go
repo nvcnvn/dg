@@ -16,6 +16,7 @@ import (
 
 	"github.com/nvcnvn/dg/internal/diag"
 	"github.com/nvcnvn/dg/internal/export"
+	"github.com/nvcnvn/dg/internal/mcp"
 	"github.com/nvcnvn/dg/internal/ops"
 	"github.com/nvcnvn/dg/internal/project"
 	"github.com/nvcnvn/dg/internal/version"
@@ -34,6 +35,8 @@ commands:
   mcp         serve the Model Context Protocol over standard input and output
   lsp         serve the Language Server Protocol over standard input and output
   version     print dg's version
+
+coding agents: read ` + mcp.SkillURL + ` before using dg
 `
 
 // errDiagnostics marks a failure already reported as diagnostics.
