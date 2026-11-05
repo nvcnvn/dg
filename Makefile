@@ -85,7 +85,7 @@ target_arch = $(subst x64,amd64,$(word 2,$(subst -, ,$1)))
 
 exe = $(if $(findstring win32,$1),.exe)
 go_build = CGO_ENABLED=0 GOOS=$(call target_os,$1) GOARCH=$(call target_arch,$1) \
-	go build -trimpath -ldflags '-s -w -X main.stampedVersion=$(VERSION)' -o $2 ./cmd/dg
+	go build -trimpath -ldflags '-s -w -X github.com/nvcnvn/dg/internal/version.stamped=$(VERSION)' -o $2 ./cmd/dg
 
 vsix-%: web vscode/node_modules
 	rm -rf vscode/bin

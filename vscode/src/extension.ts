@@ -31,6 +31,8 @@ export interface API {
 
 export async function activate(context: vscode.ExtensionContext): Promise<API> {
   const dg = context.asAbsolutePath(path.join("bin", process.platform === "win32" ? "dg.exe" : "dg"));
+  context.environmentVariableCollection.description = "Puts the dg of this extension first on the PATH.";
+  context.environmentVariableCollection.prepend("PATH", path.dirname(dg) + path.delimiter);
   const projectFiles = vscode.workspace.createFileSystemWatcher("**/dg.hcl", false, true, false);
   context.subscriptions.push(
     vscode.commands.registerCommand("dg.openDiagram", (uri?: vscode.Uri) => openDiagram(dg, uri)),

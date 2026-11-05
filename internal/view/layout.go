@@ -19,6 +19,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"go.yaml.in/yaml/v3"
 
+	"github.com/nvcnvn/dg/internal/diag"
 	"github.com/nvcnvn/dg/internal/spec"
 	"github.com/nvcnvn/dg/internal/style"
 )
@@ -235,7 +236,7 @@ func DecodeLayout(src []byte, file string) (*Layout, hcl.Diagnostics) {
 		case "version":
 			version = true
 			if n := d.intp(v); n != nil && *n != 1 {
-				d.errorf(v, "Version %d is not supported; the version is 1.", *n)
+				d.errorf(v, "Version %d is not supported; the version is 1. %s", *n, diag.Newer())
 			}
 		case "place":
 			d.entries(v, func(id string, lift *[2]string, k, v *yaml.Node) {
@@ -311,7 +312,7 @@ func (d *decoder) fields(n *yaml.Node, allowed []string, f func(key string, k, v
 		k, v := n.Content[i], n.Content[i+1]
 		switch {
 		case !slices.Contains(allowed, k.Value):
-			d.errorf(k, "Unknown field %q; expected one of %s.", k.Value, strings.Join(allowed, ", "))
+			d.errorf(k, "Unknown field %q; expected one of %s. %s", k.Value, strings.Join(allowed, ", "), diag.Newer())
 		case seen[k.Value]:
 			d.errorf(k, "Field %q is repeated.", k.Value)
 		default:

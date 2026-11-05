@@ -48,10 +48,11 @@ or Venn diagrams.
 ## Install
 
 Install [dg Diagrams](https://marketplace.visualstudio.com/items?itemName=nvcnvn.dg-diagrams) from
-the VS Code Marketplace. It holds everything it needs, its own `dg` binary included.
+the VS Code Marketplace. It holds everything it needs, and its own `dg` binary is on the `PATH` of
+VS Code's terminals.
 
-To use dg in a terminal, in CI or from an agent through MCP, install the command line as well, on
-Linux and macOS or in Git Bash on Windows:
+To use dg outside those terminals, such as in CI or from an MCP client that starts it itself,
+install the command line as well, on Linux and macOS or in Git Bash on Windows:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/nvcnvn/dg/main/install.sh | bash

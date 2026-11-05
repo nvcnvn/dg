@@ -139,7 +139,7 @@ git tag v0.1.0 && git push origin v0.1.0
 Linux, runs `dg check` and `dg export` from each archive on its own platform, publishes the
 GitHub release, runs `install.sh` against it on each platform, and publishes to each channel below
 that is set up. `make release` fills `dist/` with what the release holds, and works on any machine.
-It links `VERSION` into each binary, because the workflow's change to `vscode/package.json` would
+It links `VERSION` into each binary (`internal/version`), because the workflow's change to `vscode/package.json` would
 make the Go toolchain stamp the version `+dirty`:
 
 - `dg-<version>-<os>-<arch>.tar.gz` (`.zip` for Windows) for darwin, linux and windows on amd64

@@ -19,6 +19,14 @@ export async function run(): Promise<void> {
   assert.ok(ext, "the dg extension is installed");
   const api = await ext.activate();
   const top = vscode.workspace.workspaceFolders![0].uri;
+  // CI has no other dg, so a terminal that runs one found the extension's.
+  const versionFile = vscode.Uri.joinPath(top, "dg-version.txt");
+  const terminal = vscode.window.createTerminal({ cwd: top });
+  terminal.sendText("dg version > dg-version.txt");
+  await waitFor("a terminal to run dg", () => fs.existsSync(versionFile.fsPath) && fs.statSync(versionFile.fsPath).size > 0);
+  terminal.dispose();
+  fs.rmSync(versionFile.fsPath);
+
   const folder = vscode.Uri.joinPath(top, "c4");
   const model = vscode.Uri.joinPath(folder, "model.hcl");
   const doc = await vscode.workspace.openTextDocument(model);
