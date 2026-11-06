@@ -1,12 +1,10 @@
 import type { Connect, Diagnostic, Request, ServerMessage } from '../protocol/client';
 import type { Project } from './examples';
 
-// PageMessage is what the page itself wants from Go: what only the playground sends
-// (internal/playground), and the diagnostics, which the text editors show too.
-export type PageMessage = { type: 'ready' } | { type: 'loaded' } | { type: 'files'; files: Project } | { type: 'zip'; seq?: number; data: string } | { type: 'diagnostics'; diagnostics: Diagnostic[] };
+// PageMessage is what the page itself wants from Go (internal/playground).
+export type PageMessage = { type: 'ready' } | { type: 'loaded' } | { type: 'files'; files?: Project } | { type: 'zip'; seq?: number; data: string } | { type: 'diagnostics'; diagnostics: Diagnostic[] };
 
-// Transport is the client's second transport (FR-19): the session's messages to and from Go in
-// this page, through post and receive.
+// Transport carries the session's messages to and from Go in this page (FR-19).
 export interface Transport {
   connect: Connect;
   // receive takes a message from Go.

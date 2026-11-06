@@ -197,11 +197,43 @@ var (
 	typeErrorLine = regexp.MustCompile(`^line \d+: `)
 )
 
+// maxNesting bounds how far a layout file may nest, in brackets or indentation. The YAML parser
+// recurses that deep, and in WebAssembly a few hundred levels overflow the browser's stack.
+const maxNesting = 100
+
+// tooDeep reports whether src goes past maxNesting. It need not know strings: a layout file holds
+// IDs, numbers and short text, and a false alarm takes more brackets than any of them has.
+func tooDeep(src []byte) bool {
+	depth, indent, atStart := 0, 0, true
+	for _, c := range src {
+		switch {
+		case c == '\n':
+			indent, atStart = 0, true
+			continue
+		case c == ' ' && atStart:
+			indent++
+		case c == '[' || c == '{':
+			depth++
+		case c == ']' || c == '}':
+			depth--
+		}
+		atStart = atStart && c == ' '
+		if depth > maxNesting || indent > 2*maxNesting {
+			return true
+		}
+	}
+	return false
+}
+
 // DecodeLayout decodes a layout file; file names it in diagnostics.
 func DecodeLayout(src []byte, file string) (*Layout, hcl.Diagnostics) {
 	d := &decoder{file: file, src: src}
 	l := &Layout{Place: map[string]*Place{}, EdgeHints: map[string]*Hint{}, LiftHints: map[[2]string]*Hint{}}
 	l.Range = hcl.Range{Filename: file, Start: hcl.InitialPos, End: hcl.InitialPos}
+	if tooDeep(src) {
+		d.errorf(&yaml.Node{Line: 1, Column: 1}, "This file nests past %d levels.", maxNesting)
+		return l, d.diags
+	}
 	dec := yaml.NewDecoder(bytes.NewReader(src))
 	var doc, extra yaml.Node
 	err := dec.Decode(&doc)

@@ -8,20 +8,16 @@
   border-bottom: 1px solid var(--border);
 }
 #brand {
+  margin: 0;
   font-size: var(--type-l);
-  font-weight: var(--weight-strong);
+}
+#brand a {
   color: var(--text);
   text-decoration: none;
 }
 #tagline {
   color: var(--text-muted);
   margin-right: var(--space-2);
-}
-#examples {
-  width: auto;
-  min-height: var(--control);
-  background: var(--bg-control);
-  border: 1px solid var(--border);
 }
 #message {
   flex: 1;
@@ -99,8 +95,15 @@ body.loading #work {
   #editor {
     min-height: 0;
   }
-  #tagline,
-  #site nav {
+  #site {
+    flex-wrap: wrap;
+  }
+  #tagline {
     display: none;
+  }
+  #message {
+    order: 1;
+    flex-basis: 100%;
+    white-space: normal;
   }
 }

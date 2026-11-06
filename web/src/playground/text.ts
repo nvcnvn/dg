@@ -22,15 +22,21 @@ const theme = EditorView.theme({
   '.cm-scroller': { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontSize: 'var(--type-m)', lineHeight: '1.5' },
   '.cm-content': { caretColor: 'var(--text)' },
   '.cm-cursor': { borderLeftColor: 'var(--text)' },
+  '.cm-tooltip': { background: 'var(--bg-panel)', color: 'var(--text)', borderColor: 'var(--border)' },
   '.cm-gutters': { background: 'var(--bg-panel)', color: 'var(--text-muted)', borderRight: '1px solid var(--border)' },
   '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection': { background: 'var(--bg-selected)' },
 });
 
-// positionIn returns the offset of a 1-based line and column of a diagnostic, within doc.
+const graphemes = new Intl.Segmenter();
+
+// positionIn returns the offset of a 1-based line and column of a diagnostic within doc. HCL counts
+// columns in grapheme clusters, the characters a reader sees.
 export function positionIn(doc: Text, line: number, column: number): number {
   if (line > doc.lines) return doc.length;
   const l = doc.line(Math.max(line, 1));
-  return Math.min(l.from + Math.max(column, 1) - 1, l.to);
+  let at = 1;
+  for (const { index } of graphemes.segment(l.text)) if (at++ === column) return l.from + index;
+  return column <= 1 ? l.from : l.to;
 }
 
 // marks returns the errors and warnings of a file as the text editor underlines them, each at
@@ -54,28 +60,27 @@ export interface TextEditor {
   diagnostics(all: Diagnostic[]): void;
   // reveal moves the cursor to a line and column.
   reveal(line: number, column: number): void;
+  // forget drops the undo history, when the text starts a new project.
+  forget(): void;
 }
 
 // textEditor makes an editor of file in parent; typed gets each change the visitor makes.
 export function textEditor(parent: HTMLElement, file: string, label: string, typed: () => void): TextEditor {
-  const view = new EditorView({
-    parent,
-    state: EditorState.create({
-      extensions: [
-        lineNumbers(),
-        lintGutter(),
-        history(),
-        keymap.of([...defaultKeymap, ...historyKeymap]),
-        hcl,
-        syntaxHighlighting(highlight),
-        theme,
-        EditorView.contentAttributes.of({ 'aria-label': label }),
-        EditorView.updateListener.of((u) => {
-          if (u.docChanged && !u.transactions.some((t) => t.annotation(fromGo))) typed();
-        }),
-      ],
+  const extensions = [
+    lineNumbers(),
+    lintGutter(),
+    history(),
+    keymap.of([...defaultKeymap, ...historyKeymap]),
+    hcl,
+    syntaxHighlighting(highlight),
+    theme,
+    EditorView.contentAttributes.of({ 'aria-label': label }),
+    EditorView.updateListener.of((u) => {
+      if (u.docChanged && !u.transactions.some((t) => t.annotation(fromGo))) typed();
     }),
-  });
+  ];
+  const view = new EditorView({ parent, state: EditorState.create({ extensions }) });
+  view.scrollDOM.tabIndex = 0;
   return {
     text: () => view.state.doc.toString(),
     show(text) {
@@ -94,6 +99,9 @@ export function textEditor(parent: HTMLElement, file: string, label: string, typ
       const at = positionIn(view.state.doc, line, column);
       view.dispatch({ selection: { anchor: at }, effects: EditorView.scrollIntoView(at, { y: 'center' }) });
       view.focus();
+    },
+    forget() {
+      view.setState(EditorState.create({ doc: view.state.doc, extensions }));
     },
   };
 }

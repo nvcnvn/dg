@@ -18,11 +18,12 @@ web: web/node_modules
 build: web
 	go build -o bin/dg ./cmd/dg
 
-# The playground (FR-19): the page, dg.wasm and the Go runtime's loader, at /playground/ of the site.
+# The playground (FR-19): the page, dg.wasm and the Go runtime's loader, at /playground/ of the
+# site. Without inlining dg.wasm compresses a seventh smaller, which its size limit needs.
 playground: web/node_modules
 	cd web && npm run build:playground
 	mv dist/playground/playground.html dist/playground/index.html
-	GOOS=js GOARCH=wasm go build -trimpath -ldflags="-s -w" -o dist/playground/dg.wasm ./cmd/dgwasm
+	GOOS=js GOARCH=wasm go build -trimpath -gcflags=all=-l -ldflags="-s -w" -o dist/playground/dg.wasm ./cmd/dgwasm
 	cp "$$(go env GOROOT)/lib/wasm/wasm_exec.js" dist/playground/
 
 test: web playground
@@ -34,6 +35,8 @@ lint: web vscode/node_modules
 	go vet ./...
 	GOOS=js GOARCH=wasm go vet ./cmd/dgwasm
 	go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...
+	GOBIN="$(CURDIR)/bin" go install honnef.co/go/tools/cmd/staticcheck@v0.8.2
+	GOOS=js GOARCH=wasm bin/staticcheck -tests=false ./cmd/dgwasm
 	go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
 	cd web && npm run typecheck
 	cd vscode && npm run typecheck

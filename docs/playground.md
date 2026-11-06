@@ -13,6 +13,6 @@ same editor as `dg serve`, with every gesture, and what you do in one half shows
 Your last project stays in this browser. Nothing leaves it: after the page loads it uses no
 network, and it writes only to memory and to the files you download.
 
-A playground project is one view and the kinds of the generic pack: `model.hcl`, `style.hcl` and a
-layout that the canvas writes. Packs, more views and your own kinds need the
-[VS Code extension or the command line](getting-started.md).
+A playground project uses the kinds of the generic pack: you edit `model.hcl` and `style.hcl`, and
+the canvas writes the layout, and any views you add, out of sight. Packs, your own kinds and
+editing views as text need the [VS Code extension or the command line](getting-started.md).

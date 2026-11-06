@@ -224,7 +224,7 @@ Every HCL file can call:
 duplicate or invalid IDs; references to nodes, ports, rows, kinds, edge kinds or selectors that do
 not exist; `extends` and containment cycles; a `parent` that is not a container; rows on a kind
 without `rows = true`; undeclared or mistyped properties; unknown style properties or bad values;
-`of` or `collapse` naming a node that is not a container; and layout files of views that do not
-exist. Warnings include layout entries naming IDs that no longer exist, style labels naming no
+`of` or `collapse` naming a node that is not a container; layout files of views that do not
+exist; and files nested past 100 levels, or a statement of more than 100 operators. Warnings include layout entries naming IDs that no longer exist, style labels naming no
 kind, selectors that match nothing, and positions stored relative to a container the node is no
 longer in.

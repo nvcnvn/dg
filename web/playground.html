@@ -3,16 +3,16 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; worker-src 'self'; img-src 'self' data: blob:; object-src 'none'; base-uri 'none'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; worker-src 'self'; img-src 'self' data: blob:; object-src 'none'; base-uri 'none'; form-action 'none'" />
     <title>dg playground</title>
     <meta name="description" content="Write a diagram as code and arrange it by dragging, with nothing installed." />
     <script type="module" src="./src/playground/main.ts"></script>
   </head>
   <body class="loading">
     <header id="site">
-      <a id="brand" href="../">dg</a>
+      <h1 id="brand"><a href="../">dg</a></h1>
       <span id="tagline">playground</span>
-      <select id="examples" aria-label="Open an example"><option value="" selected>Examples</option></select>
+      <button id="examples" type="button" aria-haspopup="menu">Examples</button>
       <button id="share" type="button">Share</button>
       <p id="message" role="status"></p>
       <nav aria-label="About">
@@ -27,7 +27,7 @@
         <div class="pane style"><h2>Style</h2><div id="style-text"></div></div>
       </section>
       <div id="editor">
-        <header id="bar" aria-label="Toolbar"></header>
+        <div id="bar" role="region" aria-label="Toolbar"></div>
         <main id="main">
           <aside id="palette" aria-label="Palette"><h2>Kinds</h2><input id="palette-filter" type="search" placeholder="Filter" aria-label="Filter kinds" /><div id="kinds"></div></aside>
           <div id="stage">

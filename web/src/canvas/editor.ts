@@ -28,9 +28,9 @@ const WIDE = 1000;
 // MENU_GAP is the space, in pixels, between a toolbar button and its menu.
 const MENU_GAP = 4;
 
-// Page is what the page around the editor changes: the transport, what a click on a diagnostic
-// opens, and more entries for the Export menu.
+// Page is what a page other than dg serve's changes in the editor.
 export interface Page {
+  name: string;
   connect?: Connect;
   openDiagnostic?: (d: Diagnostic) => void;
   saves?: () => Entry[];
@@ -42,7 +42,7 @@ export interface Page {
 // (canvas/panels.ts) and the toolbar send operations; undo and redo go to the server, whose
 // history the clients share (FR-10). While the project has errors the last good drawing stays,
 // read-only. The view switcher, the breadcrumbs and the drill-down badges select views (spec 8.2).
-export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: Drawing; family: string }>, page: Page = {}) {
+export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: Drawing; family: string }>, page: Page = { name: 'dg serve' }) {
   const bar = toolbar(document.getElementById('bar')!, document.getElementById('overflow-menu')!);
   const select = bar.views;
   const crumbs = bar.crumbs;
@@ -123,7 +123,7 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
   let canUndo = false;
   let canRedo = false;
   // blocked says why nothing can be edited now.
-  const blocked = () => (!open ? 'Waiting for dg serve' : stale() ? 'Fix the errors in the project first' : current ? 'Saving…' : 'Loading…');
+  const blocked = () => (!open ? `Waiting for ${page.name}` : stale() ? 'Fix the errors in the project first' : current ? 'Saving…' : 'Loading…');
   const controls = () => {
     const on = editable();
     document.body.classList.toggle('editable', on);
@@ -437,7 +437,7 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
         waiting = undefined;
         redraw = false;
       }
-      setStatus(up ? '' : 'Disconnected from dg serve.');
+      setStatus(up ? '' : `Disconnected from ${page.name}.`);
       controls();
     },
   );

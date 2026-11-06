@@ -12,18 +12,28 @@ import (
 	"fmt"
 	"io/fs"
 	"maps"
+	"path"
 	"slices"
 
 	"github.com/nvcnvn/dg/internal/fsys"
+	"github.com/nvcnvn/dg/internal/ops"
 	"github.com/nvcnvn/dg/internal/session"
 )
 
-// The files of a playground project; the page shows the first two.
+// The files of a playground project; the page shows the first two. Hiding a node or making a view
+// adds ViewsFile and more layout files.
 const (
 	ModelFile  = "model.hcl"
 	StyleFile  = "style.hcl"
 	LayoutFile = "views/main.layout.yaml"
+	ViewsFile  = "views.hcl"
 )
+
+// projectFile reports whether name is a file a playground project can hold.
+func projectFile(name string) bool {
+	layout, _ := path.Match("views/*.layout.yaml", name)
+	return layout || name == ModelFile || name == StyleFile || name == ViewsFile
+}
 
 // Playground is the project of one page. Messages reach it one at a time.
 type Playground struct {
@@ -96,9 +106,12 @@ func (p *Playground) reply(m message) {
 
 // load replaces the project, and with it the undo history.
 func (p *Playground) load(project map[string]string) error {
+	if len(project) == 0 {
+		return errors.New("a project needs a file")
+	}
 	out := map[string][]byte{}
 	for name, text := range project {
-		if name != ModelFile && name != StyleFile && name != LayoutFile {
+		if !projectFile(name) {
 			return fmt.Errorf("a playground project has no file %q", name)
 		}
 		out[name] = []byte(text)
@@ -130,7 +143,7 @@ func (p *Playground) writeFile(ctx context.Context, m message) error {
 	if m.Text == nil {
 		return errors.New("write-file takes a text")
 	}
-	if err := p.files.Write(map[string][]byte{m.Path: []byte(*m.Text)}); err != nil {
+	if err := ops.Save(p.files, m.Path, []byte(*m.Text)); err != nil {
 		return err
 	}
 	p.shown[m.Path] = *m.Text

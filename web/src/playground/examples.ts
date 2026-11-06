@@ -4,15 +4,25 @@ export const exampleNames = ['hello', 'class', 'er'];
 
 export type Project = Record<string, string>;
 
-// PROJECT_FILES are the files a project can hold; the page shows the first two.
+// The page shows these two files. A project can also hold views.hcl and more layouts, which hiding
+// a node or making a view adds.
 export const MODEL_FILE = 'model.hcl';
 export const STYLE_FILE = 'style.hcl';
-const PROJECT_FILES = [MODEL_FILE, STYLE_FILE, 'views/main.layout.yaml'];
 
-// asProject returns value when it is a project, and throws otherwise.
+const projectFile = (path: string) => path === MODEL_FILE || path === STYLE_FILE || path === 'views.hcl' || /^views\/[^/]+\.layout\.yaml$/.test(path);
+
+// asProject returns value when it is a project of at least one file, and throws otherwise.
 export function asProject(value: unknown): Project {
-  if (typeof value !== 'object' || value === null || Array.isArray(value) || Object.entries(value).some(([path, text]) => !PROJECT_FILES.includes(path) || typeof text !== 'string')) throw new Error('not a project');
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) throw new Error('not a project');
+  const files = Object.entries(value);
+  if (!files.length || files.some(([path, text]) => !projectFile(path) || typeof text !== 'string')) throw new Error('not a project');
   return value as Project;
+}
+
+// sameProject reports whether a and b hold the same files.
+export function sameProject(a: Project, b: Project): boolean {
+  const sorted = (p: Project) => JSON.stringify(Object.entries(p).sort(([x], [y]) => (x < y ? -1 : 1)));
+  return sorted(a) === sorted(b);
 }
 
 const sources = import.meta.glob('../../../examples/{hello,class,er}/{model.hcl,style.hcl,views/main.layout.yaml}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;

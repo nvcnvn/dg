@@ -3,10 +3,26 @@ import { asProject, type Project } from './examples';
 // LONG is the length from which a link may not survive a chat app.
 export const LONG = 8000;
 
+// MAX_BYTES bounds what a link can inflate to, since a short one can hold a great deal.
+const MAX_BYTES = 8_000_000;
+
 const FRAGMENT = '#p=';
 
 async function through(data: Uint8Array<ArrayBuffer>, stream: CompressionStream | DecompressionStream): Promise<Uint8Array<ArrayBuffer>> {
-  return new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(stream)).arrayBuffer());
+  const chunks: Uint8Array<ArrayBuffer>[] = [];
+  let size = 0;
+  const reader = new Blob([data]).stream().pipeThrough(stream).getReader();
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.length;
+    if (size > MAX_BYTES) {
+      await reader.cancel();
+      throw new Error('too large');
+    }
+    chunks.push(value as Uint8Array<ArrayBuffer>);
+  }
+  return new Uint8Array(await new Blob(chunks).arrayBuffer());
 }
 
 function base64url(data: Uint8Array): string {

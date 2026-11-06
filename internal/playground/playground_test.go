@@ -15,25 +15,26 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/nvcnvn/dg/internal/fsys"
 	"github.com/nvcnvn/dg/internal/project"
 )
 
 const testModel = "node \"a\" {\n  label = \"Alpha\"\n}\n"
 
-// page is what the page gets from a playground.
-type page struct {
+// visitor is what the page gets from a playground.
+type visitor struct {
 	p        *Playground
 	messages []json.RawMessage
 }
 
-func open(t *testing.T) *page {
+func open(t *testing.T) *visitor {
 	t.Helper()
-	pg := &page{}
+	pg := &visitor{}
 	pg.p = New(func(data []byte) { pg.messages = append(pg.messages, bytes.Clone(data)) })
 	return pg
 }
 
-func (pg *page) receive(m any) {
+func (pg *visitor) receive(m any) {
 	data, err := json.Marshal(m)
 	if err != nil {
 		panic(err)
@@ -42,7 +43,7 @@ func (pg *page) receive(m any) {
 }
 
 // got returns the messages since the last call, by type, the last of each.
-func (pg *page) got(t *testing.T) (types []string, last map[string]message) {
+func (pg *visitor) got(t *testing.T) (types []string, last map[string]message) {
 	t.Helper()
 	types, last = []string{}, map[string]message{}
 	for _, data := range pg.messages {
@@ -70,9 +71,73 @@ func TestLoad(t *testing.T) {
 	if got := last["files"].Files; !maps.Equal(got, map[string]string{ModelFile: testModel}) {
 		t.Errorf("files: %v", got)
 	}
-	pg.receive(load(map[string]string{"dg.hcl": ""}))
-	if types, last := pg.got(t); !slices.Equal(types, []string{"error"}) || !strings.Contains(last["error"].Message, "dg.hcl") {
-		t.Errorf("a file a project has not: %v %v", types, last)
+	for _, files := range []map[string]string{{"dg.hcl": ""}, {"views/a/b.layout.yaml": ""}, {"../x": ""}, {}} {
+		pg.receive(load(files))
+		if types, _ := pg.got(t); !slices.Equal(types, []string{"error"}) {
+			t.Errorf("%v: got %v", files, types)
+		}
+	}
+}
+
+// TestViewGestures checks that what hiding a node and making a view write can be loaded again.
+func TestViewGestures(t *testing.T) {
+	pg := open(t)
+	pg.receive(load(map[string]string{ModelFile: testModel}))
+	pg.got(t)
+	pg.receive(map[string]any{"type": "op", "op": map[string]any{"op": "create_view", "id": "other", "title": "Other"}})
+	pg.receive(map[string]any{"type": "op", "op": map[string]any{"op": "move", "view": "other", "id": "a", "x": 40, "y": 40}})
+	pg.receive(map[string]any{"type": "op", "op": map[string]any{"op": "hide_node", "view": "main", "id": "a"}})
+	_, last := pg.got(t)
+	files := last["files"].Files
+	if _, ok := files[ViewsFile]; !ok || files["views/other.layout.yaml"] == "" {
+		t.Fatalf("files: %v", files)
+	}
+	pg.receive(load(files))
+	if types, last := pg.got(t); !slices.Equal(types, []string{"files", "loaded"}) || !maps.Equal(last["files"].Files, files) {
+		t.Errorf("got %v %v", types, last)
+	}
+}
+
+// TestSameInMemory checks that each example of the menu resolves in memory, without its dg.hcl, as
+// it does on disk: the geometry and the SVG are functions of that view.
+func TestSameInMemory(t *testing.T) {
+	for _, name := range []string{"hello", "class", "er"} {
+		t.Run(name, func(t *testing.T) {
+			dir := filepath.Join("../../examples", name)
+			want, _, err := project.Load(dir)
+			if err != nil {
+				t.Fatal(err)
+			}
+			files := map[string][]byte{}
+			for _, f := range want.Files {
+				if f.Path != project.ProjectFile {
+					if files[f.Path], err = os.ReadFile(filepath.Join(dir, filepath.FromSlash(f.Path))); err != nil {
+						t.Fatal(err)
+					}
+				}
+			}
+			memory, err := fsys.NewMemory(files)
+			if err != nil {
+				t.Fatal(err)
+			}
+			got, _, err := project.LoadFS(memory)
+			if err != nil {
+				t.Fatal(err)
+			}
+			a, _ := got.Resolve("main")
+			b, _ := want.Resolve("main")
+			x, err := json.Marshal(a)
+			if err != nil {
+				t.Fatal(err)
+			}
+			y, err := json.Marshal(b)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.Equal(x, y) {
+				t.Errorf("in memory %s, on disk %s", x, y)
+			}
+		})
 	}
 }
 
@@ -246,13 +311,29 @@ func fits(t *testing.T, dir string) bool {
 func FuzzReceive(f *testing.F) {
 	for _, s := range []string{
 		`{"type":"load","files":{"model.hcl":"node \"a\" {}\n"}}`, `{"type":"load"}`, `{"type":"load","files":{"../x":""}}`,
-		`{"type":"write-file","path":"model.hcl","text":"node {"}`, `{"type":"write-file"}`, `{"type":"zip"}`, `{"type":"select-view"}`, `[]`, `{"files":3}`,
+		`{"type":"write-file","path":"model.hcl","text":"node {"}`, `{"type":"write-file"}`, `{"type":"zip"}`, `{"type":"select-view"}`, `[]`, `{"files":3}`, `{"type":"load","files":{}}`,
 	} {
 		f.Add([]byte(s))
 	}
 	f.Fuzz(func(t *testing.T, data []byte) {
 		pg := open(t)
 		pg.receive(load(map[string]string{ModelFile: testModel}))
+		pg.messages = nil
 		pg.p.Receive(context.Background(), data)
+		var m struct {
+			Type string `json:"type"`
+		}
+		if json.Unmarshal(data, &m) == nil && len(pg.messages) == 0 && m.Type != "write-file" {
+			t.Fatalf("no answer to %s", data)
+		}
+		for _, reply := range pg.messages {
+			var r message
+			if err := json.Unmarshal(reply, &r); err != nil {
+				t.Fatalf("answer %s: %v", reply, err)
+			}
+			if r.Type == "files" && len(r.Files) == 0 {
+				t.Fatalf("a project without files after %s", data)
+			}
+		}
 	})
 }

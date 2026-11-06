@@ -105,6 +105,11 @@ func (l *loader) parse(fsys fs.FS, rel, name string, decode decodeFunc) error {
 	if err != nil {
 		return err
 	}
+	if d := TooDeep(src, name); d.HasErrors() {
+		l.diags = append(l.diags, d...)
+		l.p.Unparsed = append(l.p.Unparsed, name)
+		return nil
+	}
 	f, d := hclsyntax.ParseConfig(src, name, hcl.InitialPos)
 	l.diags = append(l.diags, d...)
 	if d.HasErrors() {

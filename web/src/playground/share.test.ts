@@ -26,11 +26,21 @@ describe('share links', () => {
     const notFiles = await compress('{"model.hcl":1}');
     await expect(sharedFiles(notFiles)).rejects.toThrow('not a project');
     await expect(sharedFiles(await compress('{"dg.hcl":""}'))).rejects.toThrow('not a project');
+    await expect(sharedFiles(await compress('{}'))).rejects.toThrow('not a project');
+  });
+
+  it('holds what the view gestures add', async () => {
+    const more = { ...files, 'views.hcl': 'view "other" {}\n', 'views/other.layout.yaml': 'version: 1\n' };
+    expect(await sharedFiles(await shareFragment(more))).toEqual(more);
+  });
+
+  it('refuses a link that inflates past its limit', async () => {
+    await expect(sharedFiles(await compress(JSON.stringify({ 'model.hcl': ' '.repeat(9_000_000) })))).rejects.toThrow('too large');
   });
 });
 
 async function compress(json: string): Promise<string> {
   const stream = new Blob([json]).stream().pipeThrough(new CompressionStream('deflate-raw'));
   const data = new Uint8Array(await new Response(stream).arrayBuffer());
-  return '#p=' + btoa(String.fromCharCode(...data)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return '#p=' + btoa(Array.from(data, (b) => String.fromCharCode(b)).join('')).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }

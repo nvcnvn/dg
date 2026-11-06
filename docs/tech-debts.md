@@ -115,3 +115,10 @@ to remove it.
 - **Remove when:** `hashicorp/syntax` publishes the grammar as a package; then depend on it and
   write the `source.dg` copy at `make vsix`. Until then, a new release is copied by hand and the
   two changes made again.
+
+## dg.wasm built without inlining
+
+- **Where:** `-gcflags=all=-l` in `make playground`.
+- **Why:** FR-19 limits `dg.wasm` to 3 MB compressed with gzip. It is 3.15 MB with Go's default
+  inlining and 2.70 MB without; the Go tests' redraw limit still holds.
+- **Remove when:** `TestSize` in `internal/playground` passes without the flag.

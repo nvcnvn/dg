@@ -65,6 +65,9 @@ func FormatFile(f project.File, src []byte) ([]byte, hcl.Diagnostics) {
 		}
 		return l.Encode(), d
 	}
+	if d := project.TooDeep(src, f.Path); d.HasErrors() {
+		return nil, d
+	}
 	if _, d := hclsyntax.ParseConfig(src, f.Path, hcl.InitialPos); d.HasErrors() {
 		return nil, d
 	}
