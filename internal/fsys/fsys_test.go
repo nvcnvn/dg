@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 )
@@ -75,7 +76,7 @@ func TestWrite(t *testing.T) {
 		{"through a file", map[string][]byte{"a.hcl": []byte("a"), model + "/b.hcl": []byte("b")}, original, true},
 		{"over a directory", map[string][]byte{"a.hcl": []byte("a"), "views": []byte("b")}, original, true},
 		{"remove a directory", map[string][]byte{"a.hcl": []byte("a"), "views": nil}, original, true},
-		{"remove through a file", map[string][]byte{"a.hcl": []byte("a"), model + "/b.hcl": nil}, original, true},
+		{"remove through a file", map[string][]byte{"a.hcl": []byte("a"), model + "/b.hcl": nil}, map[string]string{model: "model", layout: "layout", "a.hcl": "a"}, false},
 		{"under a file it removes", map[string][]byte{model: nil, model + "/b.hcl": []byte("b")}, original, true},
 		{"over a directory it empties", map[string][]byte{"views": []byte("a"), layout: nil}, original, true},
 		{"a file and what is under it", map[string][]byte{"a": []byte("a"), "a/b.hcl": []byte("b")}, original, true},
@@ -106,7 +107,8 @@ func TestRead(t *testing.T) {
 			if _, err := fs.ReadFile(files, "../outside"); !errors.Is(err, fs.ErrInvalid) {
 				t.Errorf("a path out of the project: %v", err)
 			}
-			if _, err := fs.ReadFile(files, model+"/b.hcl"); err == nil || errors.Is(err, fs.ErrNotExist) {
+			// Windows reports a path through a file as a missing one; other systems do not.
+			if _, err := fs.ReadFile(files, model+"/b.hcl"); err == nil || errors.Is(err, fs.ErrNotExist) != errors.Is(syscall.ENOTDIR, fs.ErrNotExist) {
 				t.Errorf("a path through a file: %v", err)
 			}
 			if err := files.Write(map[string][]byte{"b.hcl": {}, "a.hcl": {}}); err != nil {

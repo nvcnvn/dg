@@ -51,6 +51,9 @@ func (m *Memory) Write(files map[string][]byte) error {
 	defer m.mu.Unlock()
 	next := maps.Clone(m.files)
 	for _, name := range slices.Sorted(maps.Keys(files)) {
+		if files[name] == nil && throughFile(m.files, name) {
+			continue
+		}
 		if err := writable(m.files, name); err != nil {
 			return err
 		}

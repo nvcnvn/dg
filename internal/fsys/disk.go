@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"syscall"
 )
 
 // Disk is the project in a directory, which reads and writes do not leave through links.
@@ -110,7 +111,10 @@ func WriteFiles(files map[string][]byte) error {
 		if files[path] == nil {
 			info, err := os.Lstat(path)
 			switch {
-			case errors.Is(err, fs.ErrNotExist):
+			// Windows has no error of its own for a path through a file: there it is missing, so it
+			// is missing everywhere.
+			case errors.Is(err, fs.ErrNotExist), errors.Is(err, syscall.ENOTDIR):
+				continue
 			case err != nil:
 				return cleanup(err)
 			case info.IsDir():
