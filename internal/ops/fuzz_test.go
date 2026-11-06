@@ -82,6 +82,6 @@ func FuzzOp(f *testing.F) {
 		if _, err := DecodeOp(again); err != nil {
 			t.Fatalf("%s does not decode again: %v", again, err)
 		}
-		plan(fsys, ".", op, NewSession())
+		plan(fsys, op, NewSession())
 	})
 }

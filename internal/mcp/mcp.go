@@ -16,6 +16,7 @@ import (
 
 	"github.com/nvcnvn/dg/internal/diag"
 	"github.com/nvcnvn/dg/internal/export"
+	"github.com/nvcnvn/dg/internal/fsys"
 	"github.com/nvcnvn/dg/internal/ops"
 	"github.com/nvcnvn/dg/internal/project"
 	"github.com/nvcnvn/dg/internal/version"
@@ -124,7 +125,7 @@ func (s *Server) op(_ context.Context, args json.RawMessage) *sdk.CallToolResult
 	op, err := ops.DecodeOp(args)
 	var c *ops.Change
 	if err == nil {
-		c, err = ops.Apply(s.Dir, op, ops.NewSession())
+		c, err = ops.Apply(fsys.Disk(s.Dir), op, ops.NewSession())
 	}
 	return jsonResult(ops.NewOutcome(c, err), err != nil)
 }

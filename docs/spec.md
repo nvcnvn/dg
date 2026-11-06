@@ -1036,7 +1036,7 @@ A fetch takes one revision into a temporary directory, without submodules, and w
 ```
 /cmd/dg/                  # serve, check, fmt, export, op, pack, vocabulary, mcp, lsp, version
 /cmd/dgwasm/              # the playground's Go half, GOOS=js GOARCH=wasm (FR-19)
-/internal/fsys/           # the file system project and ops use: a directory on disk (os.Root), or memory
+/internal/fsys/           # the files project and ops read and write: a directory on disk (os.Root, locks, atomic writes), or memory
 /internal/session/        # the editor session of FR-10 (model, snapshots, operations, undo), whatever carries its messages
 /internal/project/        # dg.hcl, dg.lock, packs, file discovery, read-only rules
 /internal/pack/           # dg pack: fetching, the index, copies (FR-21)
@@ -1046,7 +1046,7 @@ A fetch takes one revision into a temporary directory, without submodules, and w
 /internal/diag/           # diagnostics as dg check, dg serve and the language server report them
 /internal/version/        # the version of this build
 /internal/view/           # views.hcl, selectors, collapse and lifting, layout YAML, resolve (FR-4)
-/internal/ops/            # operation API, hclwrite edits, undo log, atomic writes
+/internal/ops/            # operation API, hclwrite edits, undo log
 /internal/server/         # HTTP, WebSocket, fsnotify: carries internal/session's messages
 /internal/export/         # chromedp, GIF encoding
 /internal/mcp/            # MCP tools (FR-16)

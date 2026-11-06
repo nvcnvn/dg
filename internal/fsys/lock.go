@@ -1,4 +1,4 @@
-package ops
+package fsys
 
 import (
 	"fmt"
@@ -15,11 +15,11 @@ var (
 	writers   = map[string]chan struct{}{}
 )
 
-// lockProject makes the caller the only writer of the project in dir, within this process and
-// across processes (an advisory lock, see lockDir), until unlock is called. It waits up to
-// lockTimeout for another writer to finish.
-func lockProject(dir string) (unlock func(), err error) {
-	abs, err := filepath.Abs(dir)
+// Lock makes the caller the only writer of the project, within this process and across processes
+// (an advisory lock, see lockDir), until unlock is called. It waits up to lockTimeout for another
+// writer to finish.
+func (d Disk) Lock() (unlock func(), err error) {
+	abs, err := filepath.Abs(string(d))
 	if err == nil {
 		abs, err = filepath.EvalSymlinks(abs)
 	}

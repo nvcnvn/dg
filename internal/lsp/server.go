@@ -11,7 +11,6 @@ import (
 	"io/fs"
 	"maps"
 	"net/url"
-	"os"
 	"path/filepath"
 	"runtime"
 	"slices"
@@ -19,6 +18,7 @@ import (
 	"testing/fstest"
 
 	"github.com/nvcnvn/dg/internal/diag"
+	"github.com/nvcnvn/dg/internal/fsys"
 	"github.com/nvcnvn/dg/internal/project"
 )
 
@@ -277,14 +277,9 @@ func (s *Server) positionRequest(params json.RawMessage, f func(*loaded, string,
 	return f(l, rel, p.Position)
 }
 
-// fsys returns the project's files with the open buffers over them, and a function that closes
-// it.
-func (s *Server) fsys() (*overlay, func(), error) {
-	root, err := os.OpenRoot(s.dir)
-	if err != nil {
-		return nil, nil, err
-	}
-	return &overlay{base: root.FS(), docs: s.docs, read: map[string]string{}}, func() { root.Close() }, nil
+// files returns the project's files with the open buffers over them.
+func (s *Server) files() *overlay {
+	return &overlay{base: fsys.Disk(s.dir), docs: s.docs, read: map[string]string{}}
 }
 
 // overlay is a project's files with the open buffers in place of the files they edit. It
@@ -321,16 +316,12 @@ func (s *Server) load() (*loaded, error) {
 	if s.loaded != nil {
 		return s.loaded, nil
 	}
-	fsys, done, err := s.fsys()
+	files := s.files()
+	p, diags, err := project.LoadFS(files)
 	if err != nil {
 		return nil, err
 	}
-	defer done()
-	p, diags, err := project.LoadFS(fsys, s.dir)
-	if err != nil {
-		return nil, err
-	}
-	l := &loaded{p: p, diags: diags, texts: fsys.read, lines: map[string]*lines{}}
+	l := &loaded{p: p, diags: diags, texts: files.read, lines: map[string]*lines{}}
 	for rel, d := range s.docs {
 		if _, ok := l.texts[rel]; !ok {
 			l.texts[rel] = d.text

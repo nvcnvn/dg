@@ -29,7 +29,7 @@ func TestStyleCascade(t *testing.T) {
 		"style.hcl": {Data: []byte("style \"zone\" {\n  shape = \"rounded\"\n}\n")},
 		"model.hcl": {},
 	}
-	p, diags, err := load(fsys, ".")
+	p, diags, err := LoadFS(fsys)
 	if err != nil || diags.HasErrors() {
 		t.Fatal(err, diags)
 	}
@@ -45,7 +45,7 @@ func TestStyleCascade(t *testing.T) {
 // default of its own (spec 8.4): icon and image have none, and the sub_ properties take the
 // label's.
 func TestGenericDefaults(t *testing.T) {
-	p, diags, err := load(fstest.MapFS{"model.hcl": {}}, ".")
+	p, diags, err := LoadFS(fstest.MapFS{"model.hcl": {}})
 	if err != nil || diags.HasErrors() {
 		t.Fatal(err, diags)
 	}
@@ -92,7 +92,7 @@ func TestVocabularyPacks(t *testing.T) {
 		"spec.hcl":            {Data: []byte("kind \"mine\" {}\nkind \"moved\" {}\n")},
 		"model.hcl":           {},
 	}
-	p, diags, err := load(fsys, ".")
+	p, diags, err := LoadFS(fsys)
 	if err != nil || diags.HasErrors() {
 		t.Fatal(err, diags)
 	}

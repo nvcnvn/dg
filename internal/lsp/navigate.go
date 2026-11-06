@@ -75,12 +75,7 @@ func (s *Server) rename(l *loaded, rel string, pos Position, newID string) (any,
 	if err != nil {
 		return nil, err
 	}
-	fsys, done, err := s.fsys()
-	if err != nil {
-		return nil, err
-	}
-	defer done()
-	c, err := ops.Plan(fsys, s.dir, ops.Op{Op: "rename_id", Type: o.typ, Old: o.id, New: newID})
+	c, err := ops.Plan(s.files(), ops.Op{Op: "rename_id", Type: o.typ, Old: o.id, New: newID})
 	if err != nil {
 		return nil, err
 	}

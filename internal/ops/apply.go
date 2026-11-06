@@ -6,9 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"maps"
-	"os"
 	"path"
-	"path/filepath"
 	"slices"
 	"strings"
 
@@ -16,6 +14,7 @@ import (
 	"github.com/hashicorp/hcl/v2/hclwrite"
 
 	"github.com/nvcnvn/dg/internal/diag"
+	"github.com/nvcnvn/dg/internal/fsys"
 	"github.com/nvcnvn/dg/internal/project"
 	"github.com/nvcnvn/dg/internal/view"
 )
@@ -93,32 +92,27 @@ var beforeWrite func()
 
 const attempts = 3
 
-// Apply applies op to the project in dir and writes the files it changes, all together. If a
-// file changes between reading and writing, it reloads and applies op again (spec FR-12).
-func Apply(dir string, op Op, sess *Session) (*Change, error) {
-	unlock, err := lockProject(dir)
+// Apply applies op to the project and writes the files it changes, all together. If a file
+// changes between reading and writing, it reloads and applies op again (spec FR-12).
+func Apply(files fsys.FS, op Op, sess *Session) (*Change, error) {
+	unlock, err := files.Lock()
 	if err != nil {
 		return nil, err
 	}
 	defer unlock()
-	root, err := os.OpenRoot(dir)
-	if err != nil {
-		return nil, err
-	}
-	defer root.Close()
 	for range attempts {
 		trial := &Session{kindIDs: maps.Clone(sess.kindIDs)}
-		c, f, err := plan(root.FS(), dir, op, trial)
+		c, f, err := plan(files, op, trial)
 		if err != nil {
 			return nil, err
 		}
 		if beforeWrite != nil {
 			beforeWrite()
 		}
-		if !unchanged(root.FS(), f.read) {
+		if !unchanged(files, f.read) {
 			continue
 		}
-		if err := commit(dir, c.Files, func(fc FileChange) []byte { return fc.After }); err != nil {
+		if err := commit(files, c.Files, func(fc FileChange) []byte { return fc.After }); err != nil {
 			return nil, err
 		}
 		c.sessions = [2]map[string]bool{maps.Clone(sess.kindIDs), maps.Clone(trial.kindIDs)}
@@ -139,59 +133,17 @@ func unchanged(fsys fs.FS, read map[string][]byte) bool {
 	return true
 }
 
-// commit writes content(f) to each file, or removes it when that is nil, all together. Paths
-// that lead out of the project through a symbolic link are refused before anything is written,
-// and directories created for new files are removed again if the write fails.
-func commit(dir string, changes []FileChange, content func(FileChange) []byte) error {
-	realRoot, err := filepath.EvalSymlinks(dir)
-	if err != nil {
-		return err
-	}
+// commit writes content(f) to each file, or removes it when that is nil, all together.
+func commit(files fsys.FS, changes []FileChange, content func(FileChange) []byte) error {
 	out := map[string][]byte{}
-	var missing []string
 	for _, fc := range changes {
-		p := filepath.Join(dir, filepath.FromSlash(fc.Path))
-		existing := p
-		for {
-			if _, err := os.Lstat(existing); err == nil {
-				break
-			}
-			if content(fc) != nil && existing != p && !slices.Contains(missing, existing) {
-				missing = append(missing, existing)
-			}
-			existing = filepath.Dir(existing)
-		}
-		real, err := filepath.EvalSymlinks(existing)
-		if err != nil {
-			return err
-		}
-		if rel, err := filepath.Rel(realRoot, real); err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
-			return fmt.Errorf("%s links outside the project", fc.Path)
-		}
-		out[p] = content(fc)
+		out[fc.Path] = content(fc)
 	}
-	slices.Sort(missing)
-	var created []string
-	for _, d := range missing {
-		if err = os.Mkdir(d, 0o755); err != nil {
-			break
-		}
-		created = append(created, d)
-	}
-	if err == nil {
-		err = WriteFiles(out)
-	}
-	if err != nil {
-		for _, d := range slices.Backward(created) {
-			os.Remove(d)
-		}
-	}
-	return err
+	return files.Write(out)
 }
 
 // state is a project while an operation is applied to it.
 type state struct {
-	dir       string
 	layoutDir string
 	viewsPath string
 	f         *files
@@ -201,18 +153,18 @@ type state struct {
 	out       []Result
 }
 
-// Plan applies op to the project whose files fsys holds, as Apply would but writing nothing, and
-// returns the change it would make. dir is recorded as the project's directory.
-func Plan(fsys fs.FS, dir string, op Op) (*Change, error) {
-	c, _, err := plan(fsys, dir, op, NewSession())
+// Plan applies op to the project whose files base holds, as Apply would but writing nothing, and
+// returns the change it would make.
+func Plan(base fs.FS, op Op) (*Change, error) {
+	c, _, err := plan(base, op, NewSession())
 	return c, err
 }
 
 // plan applies op to the project in base without writing, returning the change and the files
 // it read.
-func plan(base fs.FS, dir string, op Op, sess *Session) (*Change, *files, error) {
+func plan(base fs.FS, op Op, sess *Session) (*Change, *files, error) {
 	f := newFiles(base)
-	p, before, err := project.LoadFS(f, dir)
+	p, before, err := project.LoadFS(f)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -222,7 +174,7 @@ func plan(base fs.FS, dir string, op Op, sess *Session) (*Change, *files, error)
 	if len(p.Unparsed) > 0 {
 		return nil, nil, fmt.Errorf("%s does not parse; fix it before applying operations", strings.Join(p.Unparsed, ", "))
 	}
-	s := &state{dir: dir, layoutDir: p.LayoutDir, viewsPath: p.ViewsFile, f: f, p: p, before: before, sess: sess}
+	s := &state{layoutDir: p.LayoutDir, viewsPath: p.ViewsFile, f: f, p: p, before: before, sess: sess}
 	if err := s.apply(op); err != nil {
 		return nil, nil, err
 	}
@@ -241,7 +193,7 @@ func plan(base fs.FS, dir string, op Op, sess *Session) (*Change, *files, error)
 	if len(c.Files) == 0 {
 		return c, f, nil
 	}
-	_, after, err := project.LoadFS(f, dir)
+	_, after, err := project.LoadFS(f)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -286,7 +238,7 @@ func added(before, after diag.Diagnostics, sev diag.Severity) diag.Diagnostics {
 
 func (s *state) project() (*project.Project, error) {
 	if s.p == nil {
-		p, _, err := project.LoadFS(s.f, s.dir)
+		p, _, err := project.LoadFS(s.f)
 		if err != nil {
 			return nil, err
 		}

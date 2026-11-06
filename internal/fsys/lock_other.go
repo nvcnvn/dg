@@ -1,6 +1,6 @@
 //go:build !(darwin || linux || freebsd || netbsd || openbsd || dragonfly || windows)
 
-package ops
+package fsys
 
 import "time"
 

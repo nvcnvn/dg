@@ -27,7 +27,7 @@ func FuzzLoad(f *testing.F) {
 			"views/v.layout.yaml":    {Data: layout},
 			"views/main.layout.yaml": {Data: layout},
 		}
-		p, _, err := load(fsys, ".")
+		p, _, err := LoadFS(fsys)
 		if err != nil {
 			t.Fatal(err)
 		}

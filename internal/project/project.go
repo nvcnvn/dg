@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 
 	"github.com/nvcnvn/dg/internal/diag"
+	"github.com/nvcnvn/dg/internal/fsys"
 	"github.com/nvcnvn/dg/internal/model"
 	"github.com/nvcnvn/dg/internal/spec"
 	"github.com/nvcnvn/dg/internal/style"
@@ -40,7 +41,6 @@ type File struct {
 
 // Project is a loaded project.
 type Project struct {
-	Dir      string
 	Name     string
 	Files    []File
 	ReadOnly []string
@@ -55,6 +55,7 @@ type Project struct {
 	// Unparsed names the HCL files with syntax errors, as diagnostics name them.
 	Unparsed []string
 	view.Sources
+	source fs.FS
 }
 
 // ProjectFile is the name of the project file.
@@ -86,17 +87,7 @@ func Load(dir string) (*Project, diag.Diagnostics, error) {
 	if !info.IsDir() {
 		return nil, nil, fmt.Errorf("%s is not a directory", dir)
 	}
-	root, err := os.OpenRoot(dir)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer root.Close()
-	return LoadFS(root.FS(), dir)
-}
-
-// LoadFS is Load reading the project's files from fsys; dir is only recorded as Project.Dir.
-func LoadFS(fsys fs.FS, dir string) (*Project, diag.Diagnostics, error) {
-	return load(fsys, dir)
+	return LoadFS(fsys.Disk(dir))
 }
 
 type loader struct {
@@ -139,11 +130,15 @@ func (l *loader) parseProject(rel, role string, decode decodeFunc) error {
 	return err
 }
 
-func load(fsys fs.FS, dir string) (*Project, diag.Diagnostics, error) {
-	p := &Project{Dir: dir, ViewsFile: "views.hcl", LayoutDir: "views", Sources: view.Sources{
+// LoadFS is Load reading the project's files from source, which Resolve reads too.
+func LoadFS(source fs.FS) (*Project, diag.Diagnostics, error) {
+	if _, err := fs.Stat(source, "."); err != nil {
+		return nil, nil, err
+	}
+	p := &Project{source: source, ViewsFile: "views.hcl", LayoutDir: "views", Sources: view.Sources{
 		Spec: spec.New(), Styles: style.New(), Model: model.New(), Views: view.Views{}, Layouts: map[string]*view.Layout{}, Grid: 10,
 	}}
-	l := &loader{fsys: fsys, p: p}
+	l := &loader{fsys: source, p: p}
 
 	var cfg *projectBlock
 	var cfgCtx *hcl.EvalContext
@@ -439,7 +434,7 @@ func (p *Project) Resolve(id string) (*view.Resolved, diag.Diagnostics) {
 			r.Edges[i].ReadOnly = !slices.ContainsFunc(ids, func(id string) bool { return !p.IsReadOnly(p.Model.Edges[id].Range.Filename) })
 		}
 		if p.Font != "" {
-			data, err := readFile(p.Dir, p.Font)
+			data, err := fs.ReadFile(p.source, p.Font)
 			if err != nil {
 				hdiags = append(hdiags, spec.Errorf(p.FontRange, "File not found", "The font file %q cannot be read: %v.", p.Font, err))
 			}
@@ -450,16 +445,6 @@ func (p *Project) Resolve(id string) (*view.Resolved, diag.Diagnostics) {
 	diags := diag.FromHCL(hdiags)
 	diags.Sort()
 	return r, diags
-}
-
-// readFile reads file rel of the project in dir without following links out of it.
-func readFile(dir, rel string) ([]byte, error) {
-	root, err := os.OpenRoot(dir)
-	if err != nil {
-		return nil, err
-	}
-	defer root.Close()
-	return fs.ReadFile(root.FS(), rel)
 }
 
 // TooSmall is the warning for container id, pinned in view too small for its children; the

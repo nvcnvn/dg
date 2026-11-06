@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/nvcnvn/dg/internal/fsys"
 	"github.com/nvcnvn/dg/internal/ops"
 )
 
@@ -121,7 +122,7 @@ func runOp(args []string, stdout, stderr io.Writer) error {
 	if _, err := os.Stat(*dir); err != nil {
 		return internalError{err}
 	}
-	c, err := applyOp(*dir, op, ops.NewSession())
+	c, err := applyOp(fsys.Disk(*dir), op, ops.NewSession())
 	return reportOp(stdout, stderr, *asJSON, c, err)
 }
 

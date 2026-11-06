@@ -14,6 +14,7 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/nvcnvn/dg/internal/fsys"
 	"github.com/nvcnvn/dg/internal/mcp"
 	"github.com/nvcnvn/dg/internal/ops"
 )
@@ -24,7 +25,7 @@ import (
 func TestMain(m *testing.M) {
 	if os.Getenv("DG_TEST_AS_DG") != "" {
 		if record := os.Getenv("DG_TEST_RECORD"); record != "" {
-			applyOp = func(_ string, op ops.Op, _ *ops.Session) (*ops.Change, error) {
+			applyOp = func(_ fsys.FS, op ops.Op, _ *ops.Session) (*ops.Change, error) {
 				data, err := json.Marshal(op)
 				if err != nil {
 					return nil, err

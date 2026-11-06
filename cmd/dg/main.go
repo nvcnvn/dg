@@ -16,6 +16,7 @@ import (
 
 	"github.com/nvcnvn/dg/internal/diag"
 	"github.com/nvcnvn/dg/internal/export"
+	"github.com/nvcnvn/dg/internal/fsys"
 	"github.com/nvcnvn/dg/internal/mcp"
 	"github.com/nvcnvn/dg/internal/ops"
 	"github.com/nvcnvn/dg/internal/project"
@@ -191,7 +192,7 @@ func runFmt(args []string, stdout, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	changed, diags, err := ops.Format(p, check)
+	changed, diags, err := ops.Format(fsys.Disk(dir), p, check)
 	if errors.Is(err, ops.ErrConfigInvalid) {
 		report(stderr, loadDiags)
 		return err
