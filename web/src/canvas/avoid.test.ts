@@ -118,5 +118,31 @@ describe('avoidRouter', () => {
       live.destroy();
       expect((await route(boxes, centers())).get('e')![0]).toEqual({ x: 50, y: 20 });
     });
+    it('leaves a live router of the old module harmless, and the new module loaded', async () => {
+      await route(boxes, centers());
+      const stale = liveRouter(boxes, new Set(), centers())!;
+      await expect(route(boxes, bad)).rejects.toThrow();
+      await route(boxes, centers());
+      const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+      expect(stale.route(centers(), { x: 0, y: 0 })).toEqual(new Map());
+      stale.destroy();
+      expect(error).not.toHaveBeenCalled();
+      error.mockRestore();
+      const fresh = liveRouter(boxes, new Set(), centers())!;
+      expect(fresh.route(centers(), { x: 0, y: 0 }).get('e')![0]).toEqual({ x: 50, y: 20 });
+      fresh.destroy();
+    });
+    it('gives no live router while the module loads again', async () => {
+      await expect(route(boxes, bad)).rejects.toThrow();
+      const loading = route(boxes, centers());
+      expect(liveRouter(boxes, new Set(), centers())).toBeUndefined();
+      await loading;
+    });
+    it('reloads for a route that was waiting when another aborted', async () => {
+      await expect(route(boxes, bad)).rejects.toThrow();
+      const [first, second] = await Promise.allSettled([route(boxes, bad), route(boxes, centers())]);
+      expect(first.status).toBe('rejected');
+      expect(second.status).toBe('fulfilled');
+    });
   });
 });

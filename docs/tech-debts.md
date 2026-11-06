@@ -43,9 +43,9 @@ to remove it.
 
 ## libavoid aborts on a leg from a pin to a free point it sees
 
-- **Where:** `seesPin`, `pinToFree`, `restart` and the reversed legs of `session` in
-  `web/src/canvas/avoid.ts`, including `restart` clearing the `avoidLib` field that `AvoidLib.load`
-  guards on, which is not public.
+- **Where:** `seesPin`, `pinToFree`, `current`, `restart` and the reversed legs of `session` in
+  `web/src/canvas/avoid.ts`, including `current` reading and `restart` clearing the `avoidLib` field
+  that `AvoidLib.load` guards on, which is not public.
 - **Why:** `AStarPathPrivate::search` in libavoid's `makepath.cpp` follows an edge from an
   orthogonal connector's free target to a connection pin as if the pin were the target's own, and
   for the connector whose source is that pin it reaches the zero-length edge to the source, so the

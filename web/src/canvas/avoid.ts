@@ -73,6 +73,9 @@ const UNIFY_MAX_EDGES = 60;
 
 let loaded: Promise<void> | undefined;
 
+// current returns the libavoid module, or nothing while it loads or after an abort.
+const current = () => (AvoidLib as unknown as { avoidLib?: Avoid }).avoidLib;
+
 // avoidRouter returns a router that runs libavoid, loaded once from wasmUrl. Each call routes
 // every request with a fresh libavoid router, obstacles and connectors added in sorted ID
 // order so the result depends only on the input. An end at an obstacle connects to a pin at its
@@ -83,7 +86,7 @@ let loaded: Promise<void> | undefined;
 // caller gives an end with a direction as a free point outside the obstacle's buffer instead.
 export function avoidRouter(wasmUrl: string): Router {
   return async (obstacles, edges) => {
-    await (loaded ??= AvoidLib.load(wasmUrl));
+    while (!current()) await (loaded ??= AvoidLib.load(wasmUrl));
     const r = session(obstacles, edges, (e) => {
       const to = pinToFree(e);
       return to !== undefined && seesPin(obstacles.get(e.from.obstacle!)!, to);
@@ -118,11 +121,12 @@ export interface LiveRouter {
 }
 
 // liveRouter returns a live router for the obstacles and requests, or undefined while libavoid
-// is not loaded yet. Obstacles and free ends move every frame, so each leg from a pin to a free
-// point runs the other way around. After a failure the router routes nothing, which draws the
-// rest of the drag as lines; the drawing after the drop reports it.
+// is not loaded. Obstacles and free ends move every frame, so each leg from a pin to a free point
+// runs the other way around. After a failure, its own or one elsewhere that took the module with
+// it, the router routes nothing, which draws the rest of the drag as lines; the drawing after the
+// drop reports it.
 export function liveRouter(obstacles: Map<string, Box>, moving: Set<string>, requests: RouteRequest[]): LiveRouter | undefined {
-  if (!loaded) return undefined;
+  if (!current()) return undefined;
   const r = session(obstacles, requests, (e) => pinToFree(e) !== undefined);
   let applied = { x: 0, y: 0 };
   let last = requests;
@@ -147,6 +151,7 @@ export function liveRouter(obstacles: Map<string, Box>, moving: Set<string>, req
   };
   return {
     route(next, d) {
+      failed ||= r.A !== current();
       if (failed) return new Map();
       try {
         move(next, d);
@@ -158,7 +163,7 @@ export function liveRouter(obstacles: Map<string, Box>, moving: Set<string>, req
       }
     },
     destroy() {
-      if (!failed) r.destroy();
+      if (!failed && r.A === current()) r.destroy();
     },
   };
 }
@@ -167,7 +172,7 @@ export function liveRouter(obstacles: Map<string, Box>, moving: Set<string>, req
 // request, all added in sorted ID order so the result depends only on the input. The first leg of
 // a request reverse holds for is routed from its far end.
 function session(obstacles: Map<string, Box>, edges: RouteRequest[], reverse: (e: RouteRequest) => boolean) {
-  const A = AvoidLib.getInstance() as unknown as Avoid;
+  const A = current()!;
   const polyline = edges.some((e) => e.type === 'polyline');
   const router = new A.Router(A.OrthogonalRouting | (polyline ? A.PolyLineRouting : 0));
   const temporaries: unknown[] = [];
@@ -230,5 +235,5 @@ function session(obstacles: Map<string, Box>, edges: RouteRequest[], reverse: (e
     for (const o of temporaries) A.destroy(o);
     A.destroy(router);
   };
-  return { router, shapes, legs, reversed, end, routes, destroy };
+  return { A, router, shapes, legs, reversed, end, routes, destroy };
 }
