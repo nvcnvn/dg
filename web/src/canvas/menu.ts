@@ -127,7 +127,7 @@ const ZOOMS = [0.25, 0.33, 0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 2, 3, 4];
 
 // UI is where the canvas's keys do not apply: controls, which use the keys themselves, and the
 // toolbar, panels, menus, dialogs and toast around the canvas.
-const UI = 'button, input, select, textarea, a, dialog, #bar, #palette, #inspector, #context-menu, #drill-menu, #tool-menu, #overflow-menu, #toast';
+const UI = 'button, input, select, textarea, a, dialog, #bar, #palette, #inspector, #context-menu, #drill-menu, #tool-menu, #overflow-menu, #toast, #text';
 
 // menuAndKeys runs the context menu and the editor's keys (FR-11).
 export function menuAndKeys(menu: HTMLElement, c: Commands, act: Actions) {

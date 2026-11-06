@@ -2,7 +2,7 @@ import { dia } from '@joint/core';
 import { scene, type Op, type Scene } from '../edit/edit';
 import { clearOf, createOps, nodeSelector, type DecorationType } from '../edit/model';
 import type { Point } from '../geometry/geometry';
-import type { Diagnostic, ModelInfo, Result, ServerMessage, ViewInfo } from '../protocol/client';
+import type { Connect, Diagnostic, ModelInfo, Result, ServerMessage, ViewInfo } from '../protocol/client';
 import { connect } from '../protocol/client';
 import type { ResolvedView } from '../protocol/view';
 import { actions, type Selection } from './actions';
@@ -28,13 +28,21 @@ const WIDE = 1000;
 // MENU_GAP is the space, in pixels, between a toolbar button and its menu.
 const MENU_GAP = 4;
 
+// Page is what the page around the editor changes: the transport, what a click on a diagnostic
+// opens, and more entries for the Export menu.
+export interface Page {
+  connect?: Connect;
+  openDiagnostic?: (d: Diagnostic) => void;
+  saves?: () => Entry[];
+}
+
 // startEditor runs the editor: it draws each snapshot the server sends on a JointJS paper, with
 // the markup the SVG export uses, fading unpinned nodes in a view with pinned ones, and lists
 // diagnostics. Gestures on the canvas (canvas/interact.ts), the palette, the inspector
 // (canvas/panels.ts) and the toolbar send operations; undo and redo go to the server, whose
 // history the clients share (FR-10). While the project has errors the last good drawing stays,
 // read-only. The view switcher, the breadcrumbs and the drill-down badges select views (spec 8.2).
-export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: Drawing; family: string }>) {
+export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: Drawing; family: string }>, page: Page = {}) {
   const bar = toolbar(document.getElementById('bar')!, document.getElementById('overflow-menu')!);
   const select = bar.views;
   const crumbs = bar.crumbs;
@@ -48,7 +56,7 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
   const ctxMenu = document.getElementById('context-menu')!;
   const toastEl = document.getElementById('toast')!;
   const diagnosticsEl = document.getElementById('diagnostics')!;
-  const opener = inPanel ? openDiagnostic : undefined;
+  const opener = page.openDiagnostic ?? (inPanel ? openDiagnostic : undefined);
   const diagBar = diagnosticsBar(diagnosticsEl, opener);
   bindMenu(menu);
   bindMenu(toolMenu);
@@ -384,7 +392,7 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
     controls();
   };
 
-  const conn = connect(
+  const conn = (page.connect ?? connect)(
     (m: ServerMessage) => {
       switch (m.type) {
         case 'model':
@@ -483,6 +491,7 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
     return [
       { label: 'Export SVG', on: true, run: () => void save(`${d.view}.svg`, () => new Blob([toSVG(d)], { type: 'image/svg+xml' })) },
       { label: 'Export PNG', on: true, run: () => void save(`${d.view}.png`, () => toPNG(d, view.font)) },
+      ...(page.saves?.() ?? []),
     ];
   });
   select.addEventListener('change', () => conn.selectView(select.value));
@@ -497,8 +506,8 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
   bar.click('fit', () => ui.fit());
   bar.click('help', help);
   document.addEventListener('keydown', (ev) => {
-    const tag = (ev.target as Element).tagName;
-    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || !(ev.ctrlKey || ev.metaKey)) return;
+    const target = ev.target as HTMLElement;
+    if (['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName) || target.isContentEditable || !(ev.ctrlKey || ev.metaKey)) return;
     const key = ev.key.toLowerCase();
     if (key === 'z' && !ev.shiftKey) request({ type: 'undo' });
     else if ((key === 'z' && ev.shiftKey) || key === 'y') request({ type: 'redo' });

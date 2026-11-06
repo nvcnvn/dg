@@ -21,7 +21,7 @@ to remove it.
 
 ## libavoid.wasm imported by path
 
-- **Where:** `web/src/main.ts` imports `../node_modules/libavoid-js/dist/libavoid.wasm?url`.
+- **Where:** `web/src/renderer.ts` imports `../node_modules/libavoid-js/dist/libavoid.wasm?url`.
 - **Why:** the `exports` field of `libavoid-js` does not export the `.wasm` file, so Vite cannot
   resolve it by package name.
 - **Remove when:** `libavoid-js` exports `./dist/libavoid.wasm`.

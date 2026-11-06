@@ -13,6 +13,7 @@ titles_from_headings:
 optional_front_matter:
   remove_originals: true
 header_pages:
+  - docs/playground.md
   - docs/getting-started.md
   - docs/vscode.md
   - docs/examples.md

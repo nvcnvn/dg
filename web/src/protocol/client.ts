@@ -10,6 +10,8 @@ export interface Diagnostic {
   file?: string;
   line?: number;
   column?: number;
+  end_line?: number;
+  end_column?: number;
 }
 
 export interface ViewInfo {
@@ -96,11 +98,14 @@ export interface Connection {
   send(r: Request): number | undefined;
 }
 
+// Connect opens a transport to the session; onOpen tells when it comes up and goes down.
+export type Connect = (onMessage: (m: ServerMessage) => void, onOpen: (open: boolean) => void) => Connection;
+
 const RETRY_MS = 1000;
 
 // connect opens the WebSocket of the server that served the page and reopens it when it
 // closes. On every open it asks for the current view ("" for the server's default).
-export function connect(onMessage: (m: ServerMessage) => void, onOpen: (open: boolean) => void): Connection {
+export const connect: Connect = (onMessage, onOpen) => {
   let view = '';
   let seq = 0;
   let ws: WebSocket | undefined;
@@ -129,4 +134,4 @@ export function connect(onMessage: (m: ServerMessage) => void, onOpen: (open: bo
       return seq;
     },
   };
-}
+};

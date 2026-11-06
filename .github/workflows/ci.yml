@@ -47,6 +47,9 @@ jobs:
       - if: runner.os == 'Linux'
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - run: cd web && npm ci && npm run build && npm test
+      # The playground's tests open the built site, on one system: it is the same files on all.
+      - if: runner.os == 'Linux'
+        run: make playground
       - run: go test ./...
       - name: VS Code extension test
         run: |
