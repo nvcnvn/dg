@@ -51,7 +51,7 @@ trace of drags in a view of 200 nodes and 400 edges (frames per second, longest 
 itself where the environment variable `CI` is set.
 
 Fuzz targets: `FuzzLoad` (`internal/project`), `FuzzDecodeLayout` (`internal/view`),
-`FuzzDecodeMessage` (`internal/server`, the WebSocket protocol), `FuzzOp` (`internal/ops`,
+`FuzzDecodeMessage` (`internal/session`, the messages of the editor), `FuzzOp` (`internal/ops`,
 operations as JSON), `FuzzDiff` and `FuzzMerge3` (`internal/ops`, the line diff and merge of
 undo), `FuzzOpArgs` (`cmd/dg`, `dg op` command lines), `FuzzTools` (`internal/mcp`, MCP tool
 calls), and `FuzzMessage` and `FuzzBuffer` (`internal/lsp`, any message, and every request at any

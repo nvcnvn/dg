@@ -1,7 +1,7 @@
 import type { Op } from './ops';
 import type { Compartment, CustomShape, End, Labels, NodeStyle, Port, ResolvedView } from './view';
 
-// Messages of the dg serve WebSocket protocol (internal/server).
+// Messages of the editor session (internal/session), over a WebSocket from dg serve.
 
 export interface Diagnostic {
   severity: 'error' | 'warning' | 'info';
