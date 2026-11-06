@@ -194,12 +194,15 @@ as the secret `HOMEBREW_TAP_TOKEN`. Each release commits `Formula/dg.rb` there, 
 
 The site at <https://nvcnvn.github.io/dg/> is GitHub Pages' built-in Jekyll build of the
 repository's root on `main`, with the `minima` theme: `README.md` is the home page and `docs/`
-holds the pages. `_config.yml` sets the theme and the header links, and excludes everything
-else: source code, the examples, test data other than the pictures, `open-decisions.md` and
-`tech-debts.md`. Pages link to each other with relative links to Markdown files, which work on
-GitHub and on the site, and to source files with links to their page on GitHub. Publishing is
-enabled once, in the repository's Settings → Pages: Source "Deploy from a branch", branch `main`,
-folder `/ (root)`. Every push to `main` then rebuilds the site.
+holds the pages. `_config.yml` sets the theme, the plugins and the header links, and excludes
+everything else: source code, the examples, test data other than the pictures,
+`open-decisions.md` and `tech-debts.md`. `jekyll-sitemap` writes `/dg/sitemap.xml` from the
+published pages; search engines get it through Google Search Console and Bing Webmaster Tools,
+since a project site has no `robots.txt` of its own at the root of `nvcnvn.github.io`. Pages link
+to each other with relative links to Markdown files, which work on GitHub and on the site, and to
+source files with links to their page on GitHub. Publishing is enabled once, in the
+repository's Settings → Pages: Source "Deploy from a branch", branch `main`, folder `/ (root)`.
+Every push to `main` then rebuilds the site.
 
 The pictures are the export goldens in `testdata/export`, so the export test that keeps them equal
 to a fresh `dg export` keeps the documentation's pictures current too. Tests in `cmd/dg` keep the

@@ -2,6 +2,12 @@
 title: dg
 description: Diagram-as-code with an HCL model, a layout arranged in the browser, and arrows routed every time it draws.
 theme: minima
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-sitemap
+webmaster_verifications:
+  google: N9iFKuvFud-Nh0X26v1Fn4Upy0UrpY-q0Tm9u3nfkHM
 titles_from_headings:
   strip_title: true
 optional_front_matter:
