@@ -11,24 +11,41 @@ import (
 	"strings"
 )
 
-// Disk is the project in a directory. Reads do not follow links out of it, and writes are refused
-// where a link would lead out of it.
+// Disk is the project in a directory, which reads and writes do not leave through links.
 type Disk string
 
-// Open opens file name of the project, through an os.Root held only as long as the call, so that
-// a long-lived Disk neither pins the directory nor misses it being replaced.
-func (d Disk) Open(name string) (fs.File, error) {
+// root opens the directory for one call, so that a long-lived Disk neither pins it nor misses it
+// being replaced.
+func (d Disk) root() (fs.FS, func() error, error) {
 	root, err := os.OpenRoot(string(d))
+	if err != nil {
+		return nil, nil, err
+	}
+	return root.FS(), root.Close, nil
+}
+
+// Open opens file name of the project.
+func (d Disk) Open(name string) (fs.File, error) {
+	root, done, err := d.root()
 	if err != nil {
 		return nil, err
 	}
-	defer root.Close()
-	return root.FS().Open(name)
+	defer done()
+	return root.Open(name)
 }
 
-// Write writes files through WriteFiles. Paths that lead out of the project through a symbolic
-// link are refused before anything is written, and directories created for new files are removed
-// again if the write fails.
+// Stat describes file name of the project. Without it fs.Stat opens the file, and a file that
+// exists but cannot be opened would read as missing, or block if it is a FIFO.
+func (d Disk) Stat(name string) (fs.FileInfo, error) {
+	root, done, err := d.root()
+	if err != nil {
+		return nil, err
+	}
+	defer done()
+	return fs.Stat(root, name)
+}
+
+// Write writes files through WriteFiles, removing directories it created if that fails.
 func (d Disk) Write(files map[string][]byte) error {
 	dir := string(d)
 	realRoot, err := filepath.EvalSymlinks(dir)
@@ -91,6 +108,14 @@ func WriteFiles(files map[string][]byte) error {
 	}
 	for _, path := range slices.Sorted(maps.Keys(files)) {
 		if files[path] == nil {
+			info, err := os.Lstat(path)
+			switch {
+			case errors.Is(err, fs.ErrNotExist):
+			case err != nil:
+				return cleanup(err)
+			case info.IsDir():
+				return cleanup(fmt.Errorf("%s is a directory", path))
+			}
 			removed = append(removed, path)
 			continue
 		}

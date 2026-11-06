@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-	"sync"
 	"testing"
+	"time"
 )
 
 const model, layout = "model.hcl", "views/main.layout.yaml"
@@ -74,6 +74,11 @@ func TestWrite(t *testing.T) {
 		{"replace and remove", map[string][]byte{model: nil, layout: []byte("new")}, map[string]string{layout: "new"}, false},
 		{"through a file", map[string][]byte{"a.hcl": []byte("a"), model + "/b.hcl": []byte("b")}, original, true},
 		{"over a directory", map[string][]byte{"a.hcl": []byte("a"), "views": []byte("b")}, original, true},
+		{"remove a directory", map[string][]byte{"a.hcl": []byte("a"), "views": nil}, original, true},
+		{"remove through a file", map[string][]byte{"a.hcl": []byte("a"), model + "/b.hcl": nil}, original, true},
+		{"under a file it removes", map[string][]byte{model: nil, model + "/b.hcl": []byte("b")}, original, true},
+		{"over a directory it empties", map[string][]byte{"views": []byte("a"), layout: nil}, original, true},
+		{"a file and what is under it", map[string][]byte{"a": []byte("a"), "a/b.hcl": []byte("b")}, original, true},
 		{"out of the project", map[string][]byte{"a.hcl": []byte("a"), "../b.hcl": []byte("b")}, original, true},
 	}
 	for _, tt := range tests {
@@ -98,8 +103,11 @@ func TestRead(t *testing.T) {
 			if _, err := fs.ReadFile(files, "gone.hcl"); !errors.Is(err, fs.ErrNotExist) {
 				t.Errorf("a missing file: %v", err)
 			}
-			if _, err := fs.ReadFile(files, "../outside"); err == nil {
-				t.Error("read a path out of the project")
+			if _, err := fs.ReadFile(files, "../outside"); !errors.Is(err, fs.ErrInvalid) {
+				t.Errorf("a path out of the project: %v", err)
+			}
+			if _, err := fs.ReadFile(files, model+"/b.hcl"); err == nil || errors.Is(err, fs.ErrNotExist) {
+				t.Errorf("a path through a file: %v", err)
 			}
 			if err := files.Write(map[string][]byte{"b.hcl": {}, "a.hcl": {}}); err != nil {
 				t.Fatal(err)
@@ -119,29 +127,48 @@ func TestRead(t *testing.T) {
 	}
 }
 
-// TestLock checks that writers hold the lock one at a time: the race detector reports them if not.
 func TestLock(t *testing.T) {
 	for _, p := range projects {
 		t.Run(p.name, func(t *testing.T) {
 			files := p.open(t)
-			var wg sync.WaitGroup
-			count := 0
-			for range 8 {
-				wg.Go(func() {
-					unlock, err := files.Lock()
-					if err != nil {
-						t.Error(err)
-						return
-					}
-					defer unlock()
-					count++
-				})
+			unlock, err := files.Lock()
+			if err != nil {
+				t.Fatal(err)
 			}
-			wg.Wait()
-			if count != 8 {
-				t.Errorf("%d writers ran, want 8", count)
+			second := make(chan func(), 1)
+			go func() {
+				unlock, err := files.Lock()
+				if err != nil {
+					t.Error(err)
+				}
+				second <- unlock
+			}()
+			select {
+			case <-second:
+				t.Fatal("a second writer got the lock")
+			case <-time.After(50 * time.Millisecond):
+			}
+			unlock()
+			select {
+			case unlock := <-second:
+				unlock()
+			case <-time.After(5 * time.Second):
+				t.Fatal("the second writer did not get the lock")
 			}
 		})
+	}
+}
+
+// TestDiskStat checks that a file is described without being opened: a file nobody may read
+// still exists.
+func TestDiskStat(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, model)
+	if err := errors.Join(os.WriteFile(path, nil, 0o644), os.Chmod(path, 0)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := fs.Stat(Disk(dir), model); err != nil {
+		t.Error(err)
 	}
 }
 

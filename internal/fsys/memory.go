@@ -10,7 +10,7 @@ import (
 	"testing/fstest"
 )
 
-// Memory is a project held in memory.
+// Memory is a project held in memory, where a directory exists only while it holds a file.
 type Memory struct {
 	writer sync.Mutex
 	mu     sync.RWMutex
@@ -30,6 +30,12 @@ func NewMemory(files map[string][]byte) (*Memory, error) {
 func (m *Memory) Open(name string) (fs.File, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
+	if !fs.ValidPath(name) {
+		return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrInvalid}
+	}
+	if throughFile(m.files, name) {
+		return nil, &fs.PathError{Op: "open", Path: name, Err: syscall.ENOTDIR}
+	}
 	return m.files.Open(name)
 }
 
@@ -39,14 +45,14 @@ func (m *Memory) Lock() (unlock func(), err error) {
 	return m.writer.Unlock, nil
 }
 
-// Write writes files; a path that is not valid, or that passes through a file, refuses them all.
+// Write writes files, or none of them.
 func (m *Memory) Write(files map[string][]byte) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	next := maps.Clone(m.files)
 	for _, name := range slices.Sorted(maps.Keys(files)) {
-		if !fs.ValidPath(name) || name == "." {
-			return &fs.PathError{Op: "write", Path: name, Err: fs.ErrInvalid}
+		if err := writable(m.files, name); err != nil {
+			return err
 		}
 		if files[name] == nil {
 			delete(next, name)
@@ -55,12 +61,34 @@ func (m *Memory) Write(files map[string][]byte) error {
 		next[name] = &fstest.MapFile{Data: slices.Clone(files[name]), Mode: 0o644}
 	}
 	for _, name := range slices.Sorted(maps.Keys(next)) {
-		for d := path.Dir(name); d != "."; d = path.Dir(d) {
-			if _, isFile := next[d]; isFile {
-				return &fs.PathError{Op: "write", Path: name, Err: syscall.ENOTDIR}
-			}
+		if err := writable(next, name); err != nil {
+			return err
 		}
 	}
 	m.files = next
 	return nil
+}
+
+// writable returns why name cannot be written or removed in files.
+func writable(files fstest.MapFS, name string) error {
+	if !fs.ValidPath(name) || name == "." {
+		return &fs.PathError{Op: "write", Path: name, Err: fs.ErrInvalid}
+	}
+	if throughFile(files, name) {
+		return &fs.PathError{Op: "write", Path: name, Err: syscall.ENOTDIR}
+	}
+	if info, err := files.Stat(name); err == nil && info.IsDir() {
+		return &fs.PathError{Op: "write", Path: name, Err: syscall.EISDIR}
+	}
+	return nil
+}
+
+// throughFile reports whether a directory on the way to name is a file.
+func throughFile(files fstest.MapFS, name string) bool {
+	for d := path.Dir(name); d != "."; d = path.Dir(d) {
+		if _, isFile := files[d]; isFile {
+			return true
+		}
+	}
+	return false
 }

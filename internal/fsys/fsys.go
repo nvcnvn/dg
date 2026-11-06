@@ -8,7 +8,8 @@ type FS interface {
 	fs.FS
 	// Lock makes the caller the only writer of the project until unlock is called.
 	Lock() (unlock func(), err error)
-	// Write writes every file, all together, with the directories they need, and removes the
-	// files whose content is nil. A refused write changes nothing.
+	// Write writes every file, with the directories they need, and removes the files whose
+	// content is nil. A path it cannot write refuses them all, before any changes; only the file
+	// system failing during the final renames and removals can leave some of them done.
 	Write(files map[string][]byte) error
 }
