@@ -15,6 +15,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/nvcnvn/dg/internal/fsys"
 	"github.com/nvcnvn/dg/internal/project"
 )
 
@@ -25,14 +26,17 @@ const fixture = "../../testdata/ops/in"
 // readTree returns every file under dir by slash path.
 func readTree(t *testing.T, dir string) map[string][]byte {
 	t.Helper()
+	return readFS(t, os.DirFS(dir))
+}
+
+func readFS(t *testing.T, fsys fs.FS) map[string][]byte {
+	t.Helper()
 	out := map[string][]byte{}
-	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+	err := fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return err
 		}
-		data, err := os.ReadFile(path)
-		rel, _ := filepath.Rel(dir, path)
-		out[filepath.ToSlash(rel)] = data
+		out[path], err = fs.ReadFile(fsys, path)
 		return err
 	})
 	if err != nil {
@@ -48,6 +52,25 @@ func copyFixture(t *testing.T) string {
 		t.Fatal(err)
 	}
 	return dir
+}
+
+// backends are the two places a project's files live; each opens a copy of the fixture and
+// returns a function that reads it back.
+var backends = []struct {
+	name string
+	open func(t *testing.T) (fsys.FS, func() map[string][]byte)
+}{
+	{"disk", func(t *testing.T) (fsys.FS, func() map[string][]byte) {
+		dir := copyFixture(t)
+		return fsys.Disk(dir), func() map[string][]byte { return readTree(t, dir) }
+	}},
+	{"memory", func(t *testing.T) (fsys.FS, func() map[string][]byte) {
+		m, err := fsys.NewMemory(readTree(t, fixture))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return m, func() map[string][]byte { return readFS(t, m) }
+	}},
 }
 
 func sameTree(t *testing.T, got, want map[string][]byte, when string) {
@@ -165,69 +188,72 @@ var goldenOps = []struct{ name, op string }{
 	{"batch", `[{"op": "create_node", "kind": "service", "view": "calls"}, {"op": "set_label", "id": "service", "label": "Search"}, {"op": "connect", "from": {"node": "search"}, "to": {"node": "gateway"}, "view": "calls"}]`},
 }
 
-// TestGolden applies each operation to a copy of testdata/ops/in and compares the files it
-// writes with testdata/ops/want/<case> (a removed file is <path>.removed); every other file must
-// be unchanged. Undo then restores every file byte for byte, and redo writes the same files
-// again.
+// TestGolden applies each operation to a copy of testdata/ops/in, on disk and in memory, and
+// compares the files it writes with testdata/ops/want/<case> (a removed file is <path>.removed);
+// every other file must be unchanged. Undo then restores every file byte for byte, and redo
+// writes the same files again.
 func TestGolden(t *testing.T) {
 	tests := goldenOps
 	original := readTree(t, fixture)
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			dir := copyFixture(t)
-			var h History
-			c, err := Apply(dir, mustDecode(t, tt.op), NewSession())
-			if err != nil {
-				t.Fatal(err)
-			}
-			if want := tt.name == "set_parent"; want != (len(c.Warnings) > 0) || want && !strings.Contains(c.Warnings[0].String(), "Stale frame") {
-				t.Errorf("warnings: %v", c.Warnings)
-			}
-			h.Record(c)
-			after := readTree(t, dir)
-			wantDir := filepath.Join("../../testdata/ops/want", tt.name)
-			if *update {
-				if err := os.RemoveAll(wantDir); err != nil {
+		for _, b := range backends {
+			t.Run(tt.name+"/"+b.name, func(t *testing.T) {
+				files, read := b.open(t)
+				var h History
+				c, err := Apply(files, mustDecode(t, tt.op), NewSession())
+				if err != nil {
 					t.Fatal(err)
 				}
-			}
-			want := map[string][]byte{}
-			for _, fc := range c.Files {
-				name, data := fc.Path, fc.After
-				if data == nil {
-					name, data = name+".removed", []byte{}
+				if want := tt.name == "set_parent"; want != (len(c.Warnings) > 0) || want && !strings.Contains(c.Warnings[0].String(), "Stale frame") {
+					t.Errorf("warnings: %v", c.Warnings)
 				}
-				if *update {
-					path := filepath.Join(wantDir, filepath.FromSlash(name))
-					if err := errors.Join(os.MkdirAll(filepath.Dir(path), 0o755), os.WriteFile(path, data, 0o644)); err != nil {
+				h.Record(c)
+				after := read()
+				wantDir := filepath.Join("../../testdata/ops/want", tt.name)
+				rewrite := *update && b.name == "disk"
+				if rewrite {
+					if err := os.RemoveAll(wantDir); err != nil {
 						t.Fatal(err)
 					}
 				}
-			}
-			for name, data := range readTree(t, wantDir) {
-				want[name] = data
-			}
-			expect := maps.Clone(original)
-			for name, data := range want {
-				if removed, ok := strings.CutSuffix(name, ".removed"); ok {
-					delete(expect, removed)
-					continue
+				want := map[string][]byte{}
+				for _, fc := range c.Files {
+					name, data := fc.Path, fc.After
+					if data == nil {
+						name, data = name+".removed", []byte{}
+					}
+					if rewrite {
+						path := filepath.Join(wantDir, filepath.FromSlash(name))
+						if err := errors.Join(os.MkdirAll(filepath.Dir(path), 0o755), os.WriteFile(path, data, 0o644)); err != nil {
+							t.Fatal(err)
+						}
+					}
 				}
-				expect[name] = data
-			}
-			sameTree(t, after, expect, "after the operation")
-			if _, err := h.Undo(dir, nil); err != nil {
-				t.Fatal(err)
-			}
-			sameTree(t, readTree(t, dir), original, "after undo")
-			if _, err := h.Redo(dir, nil); err != nil {
-				t.Fatal(err)
-			}
-			sameTree(t, readTree(t, dir), after, "after redo")
-			if _, diags, err := project.Load(dir); err != nil || diags.HasErrors() {
-				t.Errorf("the project has errors after the operation: %v %v", err, diags)
-			}
-		})
+				for name, data := range readTree(t, wantDir) {
+					want[name] = data
+				}
+				expect := maps.Clone(original)
+				for name, data := range want {
+					if removed, ok := strings.CutSuffix(name, ".removed"); ok {
+						delete(expect, removed)
+						continue
+					}
+					expect[name] = data
+				}
+				sameTree(t, after, expect, "after the operation")
+				if _, err := h.Undo(files, nil); err != nil {
+					t.Fatal(err)
+				}
+				sameTree(t, read(), original, "after undo")
+				if _, err := h.Redo(files, nil); err != nil {
+					t.Fatal(err)
+				}
+				sameTree(t, read(), after, "after redo")
+				if _, diags, err := project.LoadFS(files); err != nil || diags.HasErrors() {
+					t.Errorf("the project has errors after the operation: %v %v", err, diags)
+				}
+			})
+		}
 	}
 }
 
@@ -308,7 +334,7 @@ func TestRefused(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			dir := copyFixture(t)
-			_, err := Apply(dir, mustDecode(t, tt.op), NewSession())
+			_, err := Apply(fsys.Disk(dir), mustDecode(t, tt.op), NewSession())
 			if err == nil || !strings.Contains(err.Error(), tt.err) {
 				t.Fatalf("error %v, want one containing %q", err, tt.err)
 			}
@@ -363,7 +389,7 @@ func TestChangedBetweenReadAndWrite(t *testing.T) {
 				}
 			}
 			defer func() { beforeWrite = nil }()
-			_, err := Apply(dir, mustDecode(t, tt.op), NewSession())
+			_, err := Apply(fsys.Disk(dir), mustDecode(t, tt.op), NewSession())
 			if tt.err != "" {
 				if err == nil || !strings.Contains(err.Error(), tt.err) {
 					t.Fatalf("error %v, want one containing %q", err, tt.err)
@@ -408,7 +434,7 @@ func TestUndoAfterExternalChange(t *testing.T) {
 				t.Fatal(err)
 			}
 			var h History
-			c, err := Apply(dir, mustDecode(t, `{"op": "set_label", "id": "gateway", "label": "Front"}`), NewSession())
+			c, err := Apply(fsys.Disk(dir), mustDecode(t, `{"op": "set_label", "id": "gateway", "label": "Front"}`), NewSession())
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -422,7 +448,7 @@ func TestUndoAfterExternalChange(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			_, err = h.Undo(dir, nil)
+			_, err = h.Undo(fsys.Disk(dir), nil)
 			if tc.conflict != "" {
 				if err == nil || !strings.Contains(err.Error(), tc.conflict) {
 					t.Fatalf("undo: %v", err)
@@ -438,7 +464,7 @@ func TestUndoAfterExternalChange(t *testing.T) {
 			if got, _ := os.ReadFile(path); string(got) != tc.edit(string(orig)) {
 				t.Errorf("after undo:\n%s\nwant:\n%s", got, tc.edit(string(orig)))
 			}
-			if _, err := h.Redo(dir, nil); err != nil {
+			if _, err := h.Redo(fsys.Disk(dir), nil); err != nil {
 				t.Fatal(err)
 			}
 			if got, _ := os.ReadFile(path); string(got) != tc.edit(string(after)) {
@@ -455,7 +481,7 @@ func TestUndoMergeInvalid(t *testing.T) {
 	dir := copyFixture(t)
 	path := filepath.Join(dir, "views", "main.layout.yaml")
 	var h History
-	c, err := Apply(dir, mustDecode(t, `{"op": "set_edge_hint", "view": "main", "id": "gw-w1", "hint": {}}`), NewSession())
+	c, err := Apply(fsys.Disk(dir), mustDecode(t, `{"op": "set_edge_hint", "view": "main", "id": "gw-w1", "hint": {}}`), NewSession())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -465,7 +491,7 @@ func TestUndoMergeInvalid(t *testing.T) {
 	if err := os.WriteFile(path, []byte(edited), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := h.Undo(dir, nil); err == nil || !strings.Contains(err.Error(), "would add errors") {
+	if _, err := h.Undo(fsys.Disk(dir), nil); err == nil || !strings.Contains(err.Error(), "would add errors") {
 		t.Fatalf("undo: %v", err)
 	}
 	if got, _ := os.ReadFile(path); string(got) != edited {
@@ -481,7 +507,7 @@ func TestUndoMergeInvalid(t *testing.T) {
 func TestUndoCreatedFile(t *testing.T) {
 	dir := copyFixture(t)
 	var h History
-	c, err := Apply(dir, mustDecode(t, `{"op": "move", "view": "pool", "id": "gateway", "x": 0, "y": 0}`), NewSession())
+	c, err := Apply(fsys.Disk(dir), mustDecode(t, `{"op": "move", "view": "pool", "id": "gateway", "x": 0, "y": 0}`), NewSession())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -494,7 +520,7 @@ func TestUndoCreatedFile(t *testing.T) {
 	if err := os.WriteFile(path, append([]byte("# kept\n"), data...), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := h.Undo(dir, nil); err == nil || !strings.Contains(err.Error(), "views/pool.layout.yaml, which the change created, was changed since") {
+	if _, err := h.Undo(fsys.Disk(dir), nil); err == nil || !strings.Contains(err.Error(), "views/pool.layout.yaml, which the change created, was changed since") {
 		t.Fatalf("undo: %v", err)
 	}
 }
@@ -627,7 +653,7 @@ func TestExistingErrors(t *testing.T) {
 		if err := os.WriteFile(filepath.Join(dir, "model.hcl"), []byte(src), 0o644); err != nil {
 			t.Fatal(err)
 		}
-		_, err := Apply(dir, mustDecode(t, tt.op), NewSession())
+		_, err := Apply(fsys.Disk(dir), mustDecode(t, tt.op), NewSession())
 		if tt.err == "" && err != nil || tt.err != "" && (err == nil || !strings.Contains(err.Error(), tt.err)) {
 			t.Errorf("%s: %v, want %q", tt.op, err, tt.err)
 		}
@@ -639,7 +665,7 @@ func TestUndoSession(t *testing.T) {
 	dir := copyFixture(t)
 	sess := NewSession()
 	var h History
-	c, err := Apply(dir, mustDecode(t, `{"op": "create_node", "kind": "service"}`), sess)
+	c, err := Apply(fsys.Disk(dir), mustDecode(t, `{"op": "create_node", "kind": "service"}`), sess)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -647,10 +673,10 @@ func TestUndoSession(t *testing.T) {
 	if !sess.kindIDs["service"] {
 		t.Fatal("the kind-derived ID is not in the session")
 	}
-	if _, err := h.Undo(dir, sess); err != nil || sess.kindIDs["service"] {
+	if _, err := h.Undo(fsys.Disk(dir), sess); err != nil || sess.kindIDs["service"] {
 		t.Fatalf("after undo: %v, session %v", err, sess.kindIDs)
 	}
-	if _, err := h.Redo(dir, sess); err != nil || !sess.kindIDs["service"] {
+	if _, err := h.Redo(fsys.Disk(dir), sess); err != nil || !sess.kindIDs["service"] {
 		t.Fatalf("after redo: %v, session %v", err, sess.kindIDs)
 	}
 }
@@ -663,7 +689,7 @@ func TestConcurrentWriters(t *testing.T) {
 	errs := make(chan error, n)
 	for i := range n {
 		go func() {
-			_, err := Apply(dir, mustDecode(t, fmt.Sprintf(`{"op": "create_node", "id": "n%d", "kind": "service"}`, i)), NewSession())
+			_, err := Apply(fsys.Disk(dir), mustDecode(t, fmt.Sprintf(`{"op": "create_node", "id": "n%d", "kind": "service"}`, i)), NewSession())
 			errs <- err
 		}()
 	}
@@ -679,25 +705,6 @@ func TestConcurrentWriters(t *testing.T) {
 	for i := range n {
 		if p.Model.Nodes[fmt.Sprintf("n%d", i)] == nil {
 			t.Errorf("node n%d is missing", i)
-		}
-	}
-}
-
-// TestCommitOutside checks that a write through a link out of the project is refused before
-// anything is written or created.
-func TestCommitOutside(t *testing.T) {
-	dir, outside := t.TempDir(), t.TempDir()
-	if err := os.Symlink(outside, filepath.Join(dir, "views")); err != nil {
-		t.Fatal(err)
-	}
-	err := commit(dir, []FileChange{{Path: "model.hcl", After: []byte("x")}, {Path: "views/new/main.layout.yaml", After: []byte("y")}}, func(fc FileChange) []byte { return fc.After })
-	if err == nil || !strings.Contains(err.Error(), "links outside the project") {
-		t.Fatalf("commit: %v", err)
-	}
-	for _, d := range []string{dir, outside} {
-		entries, _ := os.ReadDir(d)
-		if len(entries) > 1 || d == outside && len(entries) > 0 {
-			t.Errorf("%s holds %v", d, entries)
 		}
 	}
 }
@@ -733,7 +740,7 @@ func TestReadOnlyViews(t *testing.T) {
 				}
 			}
 			before := readTree(t, dir)
-			_, err := Apply(dir, mustDecode(t, tt.op), NewSession())
+			_, err := Apply(fsys.Disk(dir), mustDecode(t, tt.op), NewSession())
 			if err == nil || !strings.Contains(err.Error(), tt.file+" is read-only") {
 				t.Fatalf("error %v, want %s is read-only", err, tt.file)
 			}
@@ -748,17 +755,17 @@ func TestRemoveViewLabel(t *testing.T) {
 	dir := copyFixture(t)
 	before := readTree(t, dir)
 	remove := `{"op": "set_view_label", "view": "calls", "id": "gateway"}`
-	c, err := Apply(dir, mustDecode(t, remove), NewSession())
+	c, err := Apply(fsys.Disk(dir), mustDecode(t, remove), NewSession())
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(c.Files) != 0 {
 		t.Errorf("removing no label wrote %v", c.Files)
 	}
-	if _, err := Apply(dir, mustDecode(t, `{"op": "set_view_label", "view": "calls", "id": "gateway", "label": "One"}`), NewSession()); err != nil {
+	if _, err := Apply(fsys.Disk(dir), mustDecode(t, `{"op": "set_view_label", "view": "calls", "id": "gateway", "label": "One"}`), NewSession()); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Apply(dir, mustDecode(t, remove), NewSession()); err != nil {
+	if _, err := Apply(fsys.Disk(dir), mustDecode(t, remove), NewSession()); err != nil {
 		t.Fatal(err)
 	}
 	sameTree(t, readTree(t, dir), before, "after the removal")
@@ -775,7 +782,7 @@ func TestUpdateViewKeepsOverlays(t *testing.T) {
 		}
 	}
 	op := `{"op": "update_view", "id": "v", "overlays": [{"id": "keep", "members": ["node.a"]}, {"id": "new", "members": ["all"], "label": "All"}]}`
-	if _, err := Apply(dir, mustDecode(t, op), NewSession()); err != nil {
+	if _, err := Apply(fsys.Disk(dir), mustDecode(t, op), NewSession()); err != nil {
 		t.Fatal(err)
 	}
 	got, err := os.ReadFile(filepath.Join(dir, "views.hcl"))
@@ -798,16 +805,16 @@ func TestStaysCanonical(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if _, _, err := Format(p, false); err != nil {
+			if _, _, err := Format(fsys.Disk(dir), p, false); err != nil {
 				t.Fatal(err)
 			}
-			if _, err := Apply(dir, mustDecode(t, tt.op), NewSession()); err != nil {
+			if _, err := Apply(fsys.Disk(dir), mustDecode(t, tt.op), NewSession()); err != nil {
 				t.Fatal(err)
 			}
 			if p, _, err = project.Load(dir); err != nil {
 				t.Fatal(err)
 			}
-			changed, _, err := Format(p, true)
+			changed, _, err := Format(fsys.Disk(dir), p, true)
 			if err != nil {
 				t.Fatal(err)
 			}

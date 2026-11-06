@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 
+	"github.com/nvcnvn/dg/internal/fsys"
 	"github.com/nvcnvn/dg/internal/ops"
 	"github.com/nvcnvn/dg/internal/style"
 	"github.com/nvcnvn/dg/packs/generic"
@@ -245,7 +246,7 @@ func firstDragLayout(t *testing.T) string {
 	}
 	x += 100
 	batch = append(batch, ops.Op{Op: "move", View: "main", ID: "worker", X: &x, Y: &y})
-	if _, err := ops.Apply(dir, ops.Op{Op: "batch", Ops: batch}, ops.NewSession()); err != nil {
+	if _, err := ops.Apply(fsys.Disk(dir), ops.Op{Op: "batch", Ops: batch}, ops.NewSession()); err != nil {
 		t.Fatal(err)
 	}
 	layout, err := os.ReadFile(filepath.Join(dir, "views", "main.layout.yaml"))

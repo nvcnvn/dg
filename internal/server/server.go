@@ -22,6 +22,7 @@ import (
 	ctyjson "github.com/zclconf/go-cty/cty/json"
 
 	"github.com/nvcnvn/dg/internal/diag"
+	"github.com/nvcnvn/dg/internal/fsys"
 	"github.com/nvcnvn/dg/internal/model"
 	"github.com/nvcnvn/dg/internal/ops"
 	"github.com/nvcnvn/dg/internal/project"
@@ -178,13 +179,13 @@ func (s *Server) change(ctx context.Context, c *client, m Message) {
 	var err error
 	switch m.Type {
 	case "op":
-		if ch, err = ops.Apply(s.dir, *m.Op, s.sess); err == nil {
+		if ch, err = ops.Apply(fsys.Disk(s.dir), *m.Op, s.sess); err == nil {
 			s.hist.Record(ch)
 		}
 	case "undo":
-		ch, err = s.hist.Undo(s.dir, s.sess)
+		ch, err = s.hist.Undo(fsys.Disk(s.dir), s.sess)
 	case "redo":
-		ch, err = s.hist.Redo(s.dir, s.sess)
+		ch, err = s.hist.Redo(fsys.Disk(s.dir), s.sess)
 	}
 	if err == nil && len(ch.Files) > 0 {
 		s.Reload(ctx)

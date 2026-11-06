@@ -1001,7 +1001,7 @@ A fetch takes one revision into a temporary directory, without submodules, and w
 **FR-19 Playground (`web/playground.html`, `cmd/dgwasm`).** A page of the documentation site, at `/playground/`, where a visitor writes a diagram and arranges it with nothing installed: two text editors, Model and Style, beside the canvas, which is the editor of FR-11 with every gesture.
 - **The project.** `model.hcl`, which the Model editor shows; `style.hcl`, which the Style editor shows; and the layout file of the one view, `main`, which the canvas writes and the page never shows. There is no `dg.hcl`, `views.hcl` or `spec.hcl`, so the kinds are the generic pack's and `main` is the default view of every node.
 - **One session, two transports.** `internal/session` holds what `dg serve` does per project: load and reload, `model`, `snapshot`, `diagnostics` and `history` messages, operations, undo and redo (FR-10, FR-12). `dg serve` carries its messages over a WebSocket and gets outside changes from fsnotify (FR-13); `cmd/dgwasm`, built with `GOOS=js GOARCH=wasm` as `dg.wasm`, carries them through two JavaScript functions over a project in memory (`internal/fsys`). The web app's client chooses the transport, so the canvas, editing and undo code are the same in both.
-- **Files in memory.** `internal/project` and `internal/ops` read and write through `internal/fsys`: a directory on disk through `os.Root`, as before, or files in memory with the same atomic writes, sorted listings and errors. The memory files hold one project and live as long as the page.
+- **Files in memory.** `internal/project` and `internal/ops` read and write through `internal/fsys`: a directory on disk through `os.Root`, as before, or files in memory with the same atomic writes, sorted listings and kinds of error. The memory files hold one project and live as long as the page.
 - **Text editors.** Both are CodeMirror, with dg's HCL highlighting and the FR-2 diagnostics at their positions; a diagnostic of the layout file is shown above the canvas. Two messages exist only in the playground: the client's `write-file` (`{path, text}`, for `model.hcl` or `style.hcl`), which the page sends 300 milliseconds after the last keystroke and Go handles as FR-13 handles an outside save; and the session's `files` (`{path: text}`), sent after every write, so a node created or relabeled in the canvas shows in the Model editor and an undo restores it there.
 - **Examples.** A menu with every project of `examples/` made of `model.hcl`, `style.hcl`, the layout of `main` and a `dg.hcl` without fields alone (`hello`, `class` and `er`), bundled at build time; the page opens `examples/hello`.
 - **Share.** The Share button puts the three files in the URL's fragment (`#p=`: the files as JSON, compressed with the browser's `CompressionStream("deflate-raw")`, in base64url), which never reaches the host; opening the link loads those files. The page warns when the link is longer than 8,000 characters, which some chat apps cut. The last project is kept in `localStorage` for that browser only.
@@ -1036,7 +1036,7 @@ A fetch takes one revision into a temporary directory, without submodules, and w
 ```
 /cmd/dg/                  # serve, check, fmt, export, op, pack, vocabulary, mcp, lsp, version
 /cmd/dgwasm/              # the playground's Go half, GOOS=js GOARCH=wasm (FR-19)
-/internal/fsys/           # the file system project and ops use: a directory on disk (os.Root), or memory
+/internal/fsys/           # the files project and ops read and write: a directory on disk (os.Root, locks, atomic writes), or memory
 /internal/session/        # the editor session of FR-10 (model, snapshots, operations, undo), whatever carries its messages
 /internal/project/        # dg.hcl, dg.lock, packs, file discovery, read-only rules
 /internal/pack/           # dg pack: fetching, the index, copies (FR-21)
@@ -1046,7 +1046,7 @@ A fetch takes one revision into a temporary directory, without submodules, and w
 /internal/diag/           # diagnostics as dg check, dg serve and the language server report them
 /internal/version/        # the version of this build
 /internal/view/           # views.hcl, selectors, collapse and lifting, layout YAML, resolve (FR-4)
-/internal/ops/            # operation API, hclwrite edits, undo log, atomic writes
+/internal/ops/            # operation API, hclwrite edits, undo log
 /internal/server/         # HTTP, WebSocket, fsnotify: carries internal/session's messages
 /internal/export/         # chromedp, GIF encoding
 /internal/mcp/            # MCP tools (FR-16)

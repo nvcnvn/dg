@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"io/fs"
 	"maps"
-	"os"
 
 	"github.com/nvcnvn/dg/internal/diag"
+	"github.com/nvcnvn/dg/internal/fsys"
 	"github.com/nvcnvn/dg/internal/project"
 )
 
@@ -38,16 +38,16 @@ func (h *History) CanRedo() bool { return len(h.undone) > 0 }
 // change is taken out of it by a three-way merge. If that conflicts or would add validation
 // errors, or a file the change created or removed was changed since, the change is dropped and
 // Undo fails; on other failures it is kept.
-func (h *History) Undo(dir string, sess *Session) (*Change, error) {
-	return replay(dir, sess, &h.done, &h.undone, "undo", 0)
+func (h *History) Undo(files fsys.FS, sess *Session) (*Change, error) {
+	return replay(files, sess, &h.done, &h.undone, "undo", 0)
 }
 
 // Redo applies the last undone change again, under the same conditions as Undo.
-func (h *History) Redo(dir string, sess *Session) (*Change, error) {
-	return replay(dir, sess, &h.undone, &h.done, "redo", 1)
+func (h *History) Redo(files fsys.FS, sess *Session) (*Change, error) {
+	return replay(files, sess, &h.undone, &h.done, "redo", 1)
 }
 
-func replay(dir string, sess *Session, from, to *[]*Change, verb string, side int) (*Change, error) {
+func replay(files fsys.FS, sess *Session, from, to *[]*Change, verb string, side int) (*Change, error) {
 	if len(*from) == 0 {
 		return nil, fmt.Errorf("nothing to %s", verb)
 	}
@@ -58,34 +58,29 @@ func replay(dir string, sess *Session, from, to *[]*Change, verb string, side in
 		return fc.After
 	}
 	c := (*from)[len(*from)-1]
-	unlock, err := lockProject(dir)
+	unlock, err := files.Lock()
 	if err != nil {
 		return nil, err
 	}
 	defer unlock()
-	p, before, err := project.Load(dir)
+	p, before, err := project.LoadFS(files)
 	if err != nil {
 		return nil, err
 	}
 	if p.ConfigInvalid {
 		return nil, fmt.Errorf("cannot %s: dg.hcl has errors, so read_only may be incomplete", verb)
 	}
-	root, err := os.OpenRoot(dir)
-	if err != nil {
-		return nil, err
-	}
-	defer root.Close()
 	drop := func(format string, args ...any) (*Change, error) {
 		*from = (*from)[:len(*from)-1]
 		return nil, fmt.Errorf("cannot %s: %s; the change is dropped", verb, fmt.Sprintf(format, args...))
 	}
-	f := newFiles(root.FS())
+	f := newFiles(files)
 	merges := false
 	for _, fc := range c.Files {
 		if p.IsReadOnly(fc.Path) {
 			return nil, fmt.Errorf("cannot %s: %s is read-only (read_only in dg.hcl)", verb, fc.Path)
 		}
-		got, err := fs.ReadFile(root.FS(), fc.Path)
+		got, err := fs.ReadFile(files, fc.Path)
 		if err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return nil, err
 		}
@@ -115,7 +110,7 @@ func replay(dir string, sess *Session, from, to *[]*Change, verb string, side in
 	// A merge can be clean line by line and still make the project invalid, such as a key
 	// added twice; like an operation (FR-12), it may not add errors.
 	if merges {
-		_, after, err := project.LoadFS(f, dir)
+		_, after, err := project.LoadFS(f)
 		if err != nil {
 			return nil, err
 		}
@@ -124,7 +119,7 @@ func replay(dir string, sess *Session, from, to *[]*Change, verb string, side in
 		}
 	}
 	out := f.changed
-	if err := commit(dir, c.Files, func(fc FileChange) []byte { return out[fc.Path] }); err != nil {
+	if err := commit(files, c.Files, func(fc FileChange) []byte { return out[fc.Path] }); err != nil {
 		return nil, err
 	}
 	*from = (*from)[:len(*from)-1]
