@@ -3,6 +3,8 @@
 dg draws diagrams from text: you write what exists as an HCL model, arrange it by dragging in a
 panel beside your editor in VS Code, and dg routes the arrows around the boxes every time it draws.
 
+![Editing a dg model and arranging its diagram](https://raw.githubusercontent.com/nvcnvn/dg/main/docs/media/editor-demo.gif)
+
 **Coding agents:** read [the dg skill](https://raw.githubusercontent.com/nvcnvn/dg/main/skills/dg/SKILL.md) before using dg. To keep it, run
 `npx skills add nvcnvn/dg` or copy the `skills/dg` folder into your skills folder, such as
 `~/.claude/skills`.
