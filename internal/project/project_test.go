@@ -107,3 +107,48 @@ func TestVocabularyPacks(t *testing.T) {
 		}
 	}
 }
+
+func TestTooDeep(t *testing.T) {
+	deep := func(open string, n int, end string) string {
+		return "x = " + strings.Repeat(open, n) + end + "\n"
+	}
+	tests := []struct {
+		name, src string
+		want      bool
+	}{
+		{"lists", deep("[", 101, ""), true},
+		{"lists within the limit", deep("[", 100, "1"+strings.Repeat("]", 100)), false},
+		{"parentheses", deep("(", 101, ""), true},
+		{"blocks", strings.Repeat("a {\n", 101), true},
+		{"not", deep("!", 101, "true"), true},
+		{"negation", deep("-", 101, "1"), true},
+		{"templates", deep(`"${`, 101, ""), true},
+		{"sum", "x = 1" + strings.Repeat(" + 1", 101) + "\n", true},
+		{"conditions", "x = a" + strings.Repeat(" ? b : a", 101) + "\n", true},
+		{"indexes", "x = a" + strings.Repeat("[0]", 101) + "\n", true},
+		{"a chain over lines within parentheses", "x = (1" + strings.Repeat("\n+ 1", 101) + ")\n", true},
+		{"many statements", strings.Repeat("x = a.b + 1\n", 200), false},
+		{"a long list", "x = [" + strings.Repeat("-1, ", 200) + "]\n", false},
+		{"brackets in a string", `x = "` + strings.Repeat("[", 200) + `"` + "\n", false},
+		{"brackets in a comment", "# " + strings.Repeat("(", 200) + "\n", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := TooDeep([]byte(tt.src), "model.hcl")
+			if d.HasErrors() != tt.want {
+				t.Errorf("TooDeep: %v", d)
+			}
+		})
+	}
+}
+
+// TestDeepFile checks that a project with a file too deep to parse loads with an error in it.
+func TestDeepFile(t *testing.T) {
+	p, diags, err := LoadFS(fstest.MapFS{"model.hcl": {Data: []byte("node \"a\" {\n  label = " + strings.Repeat("[", 1_000_000) + "\n}\n")}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !diags.HasErrors() || !strings.Contains(diags[0].String(), "Nested too deeply") || !slices.Contains(p.Unparsed, "model.hcl") {
+		t.Errorf("diagnostics %v, unparsed %v", diags, p.Unparsed)
+	}
+}

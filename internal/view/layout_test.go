@@ -1,6 +1,9 @@
 package view
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestDecodeID(t *testing.T) {
 	tests := []struct {
@@ -24,5 +27,24 @@ func TestDecodeID(t *testing.T) {
 		if tt.ok && EncodeID(got) != EncodeID(tt.want) {
 			t.Errorf("EncodeID(%q) = %q", got, EncodeID(got))
 		}
+	}
+}
+
+func TestDecodeLayoutTooDeep(t *testing.T) {
+	tests := []struct {
+		name, src string
+		want      bool
+	}{
+		{"brackets", "version: 1\nplace: " + strings.Repeat("[", 101), true},
+		{"indentation", "version: 1\n" + strings.Repeat(" ", 201) + "a: 1\n", true},
+		{"within the limit", "version: 1\nplace:\n  a: {x: 0, y: 0}\n", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, d := DecodeLayout([]byte(tt.src), "main.layout.yaml")
+			if got := strings.Contains(d.Error(), "nests past"); got != tt.want {
+				t.Errorf("diagnostics: %v", d)
+			}
+		})
 	}
 }

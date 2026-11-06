@@ -9,6 +9,8 @@ panel beside your editor in VS Code, and dg routes the arrows around the boxes e
 `npx skills add nvcnvn/dg` or copy the `skills/dg` folder into your skills folder, such as
 `~/.claude/skills`.
 
+- [Playground](https://nvcnvn.github.io/dg/playground/): try dg in your browser, with nothing to
+  install.
 - [Getting started](docs/getting-started.md): install the VS Code extension, write a first
   diagram, arrange it, check it and export it.
 - [VS Code extension](docs/vscode.md): diagnostics, completion, rename and formatting in the
@@ -75,6 +77,9 @@ dg is licensed under the [Apache License 2.0](https://github.com/nvcnvn/dg/blob/
 packages of the web app and of the extension, libavoid, and the HCL grammar (with its scope name
 changed), each listed with its copyright and license in
 [`THIRD_PARTY_NOTICES`](https://github.com/nvcnvn/dg/blob/main/THIRD_PARTY_NOTICES).
+
+The [playground](https://nvcnvn.github.io/dg/playground/) holds the same npm packages of the web
+app, with CodeMirror among them, and the same libavoid.
 
 The arrows are routed by libavoid, Copyright (C) 2004-2015 Monash University (author Michael
 Wybrow), parts Copyright (C) 1998 Joseph O'Rourke, under the GNU Lesser General Public License 2.1

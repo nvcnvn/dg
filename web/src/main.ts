@@ -2,17 +2,11 @@ import '@fontsource/inter/400.css';
 import '@fontsource/inter/700.css';
 import './theme.css';
 import './app.css';
-import ELK from 'elkjs/lib/elk-api.js';
-import elkWorkerUrl from 'elkjs/lib/elk-worker.min.js?url';
-import libavoidUrl from '../node_modules/libavoid-js/dist/libavoid.wasm?url';
-import { avoidRouter } from './canvas/avoid';
 import { startEditor } from './canvas/editor';
-import { mountSVG, picture, setClock, toJSON, toSVG, type Drawing } from './canvas/export';
+import { mountSVG, picture, setClock, toJSON, toSVG } from './canvas/export';
 import { followHost } from './canvas/host';
-import { canvasMeasure, loadFonts } from './canvas/measure';
-import type { Elk } from './place/elk';
 import type { ResolvedView } from './protocol/view';
-import { draw } from './render';
+import { newElk, render } from './renderer';
 
 declare global {
   interface Window {
@@ -23,19 +17,12 @@ declare global {
   }
 }
 
-const router = avoidRouter(libavoidUrl);
-
-async function render(view: ResolvedView, elk: Elk): Promise<{ drawing: Drawing; family: string }> {
-  const font = await loadFonts(view);
-  return { drawing: await draw(view, canvasMeasure(font.family), font.name, elk, router), family: font.family };
-}
-
 if (new URLSearchParams(location.search).has('export')) {
   const blocked: string[] = [];
   document.addEventListener('securitypolicyviolation', (e) => blocked.push(e.blockedURI));
   window.dg = {
     async render(view) {
-      const elk = new ELK({ workerUrl: elkWorkerUrl });
+      const elk = newElk();
       try {
         const { drawing: d, family } = await render(view, elk);
         const drawing = picture(d);
@@ -51,6 +38,6 @@ if (new URLSearchParams(location.search).has('export')) {
   };
 } else {
   followHost();
-  const elk = new ELK({ workerUrl: elkWorkerUrl });
+  const elk = newElk();
   startEditor((view) => render(view, elk));
 }

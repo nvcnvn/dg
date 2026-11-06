@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; worker-src 'self'; img-src 'self' data: blob:; object-src 'none'; base-uri 'none'; form-action 'none'" />
+    <title>dg playground</title>
+    <meta name="description" content="Write a diagram as code and arrange it by dragging, with nothing installed." />
+    <script type="module" src="./src/playground/main.ts"></script>
+  </head>
+  <body class="loading">
+    <header id="site">
+      <h1 id="brand"><a href="../">dg</a></h1>
+      <span id="tagline">playground</span>
+      <button id="examples" type="button" aria-haspopup="menu">Examples</button>
+      <button id="share" type="button">Share</button>
+      <p id="message" role="status"></p>
+      <nav aria-label="About">
+        <a href="../docs/getting-started.html">Get dg</a>
+        <a href="https://github.com/nvcnvn/dg/blob/main/THIRD_PARTY_NOTICES">Licenses</a>
+        <a href="../#licensing">libavoid source</a>
+      </nav>
+    </header>
+    <div id="work">
+      <section id="text" aria-label="Text editors">
+        <div class="pane model"><h2>Model</h2><div id="model-text"></div></div>
+        <div class="pane style"><h2>Style</h2><div id="style-text"></div></div>
+      </section>
+      <div id="editor">
+        <div id="bar" role="region" aria-label="Toolbar"></div>
+        <main id="main">
+          <aside id="palette" aria-label="Palette"><h2>Kinds</h2><input id="palette-filter" type="search" placeholder="Filter" aria-label="Filter kinds" /><div id="kinds"></div></aside>
+          <div id="stage">
+            <div id="canvas" tabindex="0" role="region" aria-label="Canvas"><div id="paper"></div></div>
+            <div id="top">
+              <section id="diagnostics" aria-label="Diagnostics" hidden></section>
+              <p id="guide" hidden>Drag from a node, port or row to another. Esc to finish.</p>
+              <p id="hint" hidden>Placed automatically. Drag a node to keep this arrangement.</p>
+            </div>
+            <p id="empty" hidden>Drag a kind from the palette, or click one, to add a node</p>
+            <section id="broken" aria-label="Errors" hidden></section>
+            <div id="status" role="status"></div>
+          </div>
+          <aside id="inspector" aria-label="Inspector"></aside>
+        </main>
+      </div>
+    </div>
+    <div id="overflow-menu" role="group" aria-label="More tools" hidden></div>
+    <div id="tool-menu" role="menu" aria-label="Tool menu" hidden></div>
+    <div id="drill-menu" role="menu" aria-label="Views" hidden></div>
+    <div id="context-menu" role="menu" aria-label="Context menu" hidden></div>
+    <div id="tip" role="tooltip" hidden></div>
+    <div id="toast" role="status" hidden></div>
+    <dialog id="dialog"></dialog>
+  </body>
+</html>

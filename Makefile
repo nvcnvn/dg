@@ -1,6 +1,6 @@
 # The Go packages embed web/dist, so build the web app before any go command.
 
-.PHONY: all build web test lint test-vscode test-vsix vsix vsix-all dist-all release notices
+.PHONY: all build web playground test lint test-vscode test-vsix vsix vsix-all dist-all release notices
 
 all: lint test build
 
@@ -18,14 +18,25 @@ web: web/node_modules
 build: web
 	go build -o bin/dg ./cmd/dg
 
-test: web
+# The playground (FR-19): the page, dg.wasm and the Go runtime's loader, at /playground/ of the
+# site. Without inlining dg.wasm compresses a seventh smaller, which its size limit needs.
+playground: web/node_modules
+	cd web && npm run build:playground
+	mv dist/playground/playground.html dist/playground/index.html
+	GOOS=js GOARCH=wasm go build -trimpath -gcflags=all=-l -ldflags="-s -w" -o dist/playground/dg.wasm ./cmd/dgwasm
+	cp "$$(go env GOROOT)/lib/wasm/wasm_exec.js" dist/playground/
+
+test: web playground
 	go test ./...
 	cd web && npm test
 
 lint: web vscode/node_modules
 	@test -z "$$(gofmt -l .)" || (gofmt -l .; exit 1)
 	go vet ./...
+	GOOS=js GOARCH=wasm go vet ./cmd/dgwasm
 	go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...
+	GOBIN="$(CURDIR)/bin" go install honnef.co/go/tools/cmd/staticcheck@v0.8.2
+	GOOS=js GOARCH=wasm bin/staticcheck -tests=false ./cmd/dgwasm
 	go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
 	cd web && npm run typecheck
 	cd vscode && npm run typecheck
@@ -49,8 +60,9 @@ define NOTICES
 	licenses() { find "$$1" -maxdepth 1 -type f \( -iname 'licen[cs]e*' -o -iname 'copying*' -o -iname 'notice*' \) | LC_ALL=C sort; }; \
 	echo 'Third-party notices for dg'; echo; \
 	echo 'The dg binary holds the Go standard library, the Go modules and the npm packages of the web'; \
-	echo 'app listed below; the VS Code extension adds its npm packages and the HCL grammar. Each is'; \
-	echo 'followed by its license.'; \
+	echo 'app listed below, and the playground holds them too, with its text editor among those npm'; \
+	echo 'packages; the VS Code extension adds its npm packages and the HCL grammar. Each is followed'; \
+	echo 'by its license.'; \
 	notice "Go standard library $$(go env GOVERSION)" "$$(go env GOROOT)/LICENSE"; \
 	go list -deps -f '{{with .Module}}{{if not .Main}}{{.Path}} {{.Version}} {{.Dir}}{{end}}{{end}}' ./cmd/dg | LC_ALL=C sort -u | \
 		while read -r mod version dir; do notice "$$mod $$version" "$$(licenses "$$dir")"; done; \
