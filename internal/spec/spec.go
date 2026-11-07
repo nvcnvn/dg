@@ -25,6 +25,7 @@ var Sides = []string{"top", "right", "bottom", "left", "auto"}
 type Kind struct {
 	Name            string
 	Extends         string
+	Category        string
 	Container       *bool
 	Rows            *bool
 	Ports           []Name
@@ -76,6 +77,7 @@ func New() *Spec {
 type kindBlock struct {
 	Name            string          `hcl:"name,label"`
 	Extends         *string         `hcl:"extends,optional"`
+	Category        string          `hcl:"category,optional"`
 	Container       *bool           `hcl:"container,optional"`
 	Rows            *bool           `hcl:"rows,optional"`
 	Ports           *hcl.Attribute  `hcl:"ports,optional"`
@@ -139,7 +141,7 @@ func (s *Spec) Decode(body hcl.Body, ctx *hcl.EvalContext) hcl.Diagnostics {
 
 func decodeKind(b kindBlock, ctx *hcl.EvalContext) (*Kind, hcl.Diagnostics) {
 	var diags hcl.Diagnostics
-	k := &Kind{Name: b.Name, Container: b.Container, Rows: b.Rows, Range: b.Range}
+	k := &Kind{Name: b.Name, Category: b.Category, Container: b.Container, Rows: b.Rows, Range: b.Range}
 	if b.Name != RootKind {
 		k.Extends = RootKind
 	}

@@ -1,0 +1,3 @@
+packs/b/style.hcl:5:1: warning: Tag styled by two packs: The style "tag.legacy" is also set at packs/a/style.hcl:1:1; this pack loads later, so its properties win.
+packs/b/style.hcl:9:1: warning: Tag styled by two packs: The edge_style "tag.legacy" is also set at packs/a/style.hcl:5:1; this pack loads later, so its properties win.
+exit 0

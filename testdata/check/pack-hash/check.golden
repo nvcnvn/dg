@@ -1,0 +1,2 @@
+dg.hcl:2:3: warning: Pack changed: The files of the pack "aws" no longer match their hash in dg.lock, so this is not the pack that was installed. Run dg pack install to restore it.
+exit 0

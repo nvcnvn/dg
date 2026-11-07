@@ -1,0 +1,13 @@
+[
+  {
+    "severity": "error",
+    "summary": "Unclosed configuration block",
+    "detail": "There is no closing brace for this block before the end of the file. This may be caused by incorrect brace nesting elsewhere in this file.",
+    "file": "packs/aws/spec.hcl",
+    "line": 1,
+    "column": 12,
+    "end_line": 1,
+    "end_column": 13
+  }
+]
+exit 1

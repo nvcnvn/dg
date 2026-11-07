@@ -1,0 +1,8 @@
+project "p" {
+  grid = 20
+
+  pack "aws" {
+    source  = "github.com/dg-packs/aws"
+    version = "v1.2.0"
+  }
+}

@@ -1,0 +1,7 @@
+version: 1
+packs:
+  aws:
+    source: example.com/packs/aws
+    version: v1.0.0
+    commit: 9fceb02d0ae598e95dc970b74767f19372d61af8
+    hash: sha256:8a02239aea61e56b8d17ca16a4fe2fb93d3928b55441d24da8c0067d074c775a

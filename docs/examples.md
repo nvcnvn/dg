@@ -17,6 +17,7 @@ draws it.
 - [Incident board: overlays and decorations](#incident-board-overlays-and-decorations)
 - [Shapes and styles](#shapes-and-styles)
 - [Labels: subtitles, and a label per view](#labels-subtitles-and-a-label-per-view)
+- [An installed pack](#an-installed-pack)
 
 ## Architecture: a C4 container diagram
 
@@ -456,3 +457,51 @@ view "sizing" {
 ```
 
 ![The labels example's sizing view](../testdata/export/labels-sizing.svg)
+
+## An installed pack
+
+[`examples/installed-pack`](https://github.com/nvcnvn/dg/blob/main/examples/installed-pack/dg.hcl) draws a home network with a pack that
+`dg pack add` installed. The pack is the example's own, with original icons. Its source is
+illustrative: `example.com` holds no repository, so `dg pack install` and `dg pack update` cannot
+reach it. What draws the example is the copy in `packs/homelab`, which `dg check` compares with the
+hash in `dg.lock`:
+
+```hcl
+project "installed-pack" {
+  pack "homelab" {
+    source  = "example.com/homelab"
+    version = "v1.0.0"
+  }
+}
+```
+
+The pack writes short names and sorts its kinds into the palette's categories:
+
+```hcl
+kind "router" {
+  category = "Network"
+}
+```
+
+To the project each name has the pack's prefix, in the model as in its own `style.hcl`, which
+overrides the fill of the pack's `server`:
+
+```hcl
+node "hypervisor" {
+  kind   = "homelab-server"
+  parent = node.cabinet
+  label  = "Hypervisor"
+}
+```
+
+```hcl
+style "homelab-server" {
+  fill = "#E6F4EA"
+}
+```
+
+The cabinet is a container drawn with the pack's custom shape, and the edges use its edge kinds:
+
+![A home network drawn with an installed pack](../testdata/export/installed-pack.svg)
+
+[Packs](packs.md) covers installing packs and writing one.

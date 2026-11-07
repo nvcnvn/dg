@@ -2,7 +2,7 @@ import { dia } from '@joint/core';
 import { scene, type Op, type Scene } from '../edit/edit';
 import { clearOf, createOps, nodeSelector, type DecorationType } from '../edit/model';
 import type { Point } from '../geometry/geometry';
-import type { Connect, Diagnostic, ModelInfo, Result, ServerMessage, ViewInfo } from '../protocol/client';
+import type { Connect, Diagnostic, ModelInfo, Pictures, Result, ServerMessage, ViewInfo } from '../protocol/client';
 import { connect } from '../protocol/client';
 import type { ResolvedView } from '../protocol/view';
 import { actions, type Selection } from './actions';
@@ -78,6 +78,7 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
   let tooSmall: string[] = [];
   let overflowing: string[] = [];
   let model: ModelInfo = { kinds: [], edge_kinds: [], tags: [], nodes: [], edges: [] };
+  let pictures: Pictures = { kinds: {}, shapes: {} };
   let pending: { view: ResolvedView; model: ModelInfo } | undefined;
   let drawing = false;
   let shown: ResolvedView | undefined;
@@ -139,7 +140,7 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
     guide.hidden = !ui.connecting();
     const s = current?.scene;
     hint.hidden = !s || ui.connecting() || s.drawing.nodes.length === 0 || s.drawing.nodes.some((n) => n.pinned);
-    pal.update(s?.model, on);
+    pal.update(s?.model, pictures, on);
     panel.show(s, ui.selection(), !open || stale() || !s);
   };
 
@@ -395,6 +396,10 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
   const conn = (page.connect ?? connect)(
     (m: ServerMessage) => {
       switch (m.type) {
+        case 'pictures':
+          pictures = m;
+          controls();
+          break;
         case 'model':
           model = m.model;
           if (current) current = { ...current, scene: { ...current.scene, model } };

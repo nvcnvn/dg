@@ -33,7 +33,7 @@ export function newID(base: string, taken: Set<string>): string {
   return id;
 }
 
-// nodeID is the ID of a new node of kind labeled label (spec 6.2).
+// nodeID is the ID of a new node labeled label, of kind, named without an installed pack's prefix (spec 6.2).
 export function nodeID(kind: string, label: string, taken: Set<string>): string {
   return newID(slug(label) || slug(kind), taken);
 }
@@ -168,8 +168,9 @@ export function copy(s: Scene, ids: Iterable<string>): Clip | undefined {
 export function pasteOps(s: Scene, clip: Clip, p: Point): Op | undefined {
   const taken = new Set(s.model.nodes.map((n) => n.id));
   const ids = new Map<string, string>();
+  const short = new Map(s.model.kinds.map((k) => [k.name, k.short]));
   for (const c of clip.nodes) {
-    const id = nodeID(c.node.kind, c.node.label, taken);
+    const id = nodeID(short.get(c.node.kind) ?? c.node.kind, c.node.label, taken);
     taken.add(id);
     ids.set(c.node.id, id);
   }

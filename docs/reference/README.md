@@ -12,6 +12,8 @@
 - [Operations](operations.md): every change `dg op`, the editor and agents make to the files.
 - [Editor](editor.md): the gestures and keyboard shortcuts of `dg serve` and the VS Code panel.
 
+[Packs](../packs.md) is the guide to installing packs and writing one.
+
 [Design and rationale](../spec.md), the design specification, gives the reasons behind each rule,
 and the exact geometry: how sizes, placement and routing are computed.
 

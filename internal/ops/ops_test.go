@@ -103,6 +103,10 @@ var goldenOps = []struct{ name, op string }{
 	{"create_node-in-one-line-view", `{"op": "create_node", "kind": "service", "label": "Solo", "view": "solo"}`},
 	{"create_node-quoted-id", `{"op": "create_node", "id": "ns/cache", "kind": "database"}`},
 	{"create_node-from-kind", `{"op": "create_node", "kind": "service"}`},
+	{"create_node-from-pack-kind", `{"op": "create_node", "kind": "aws-dynamodb", "view": "calls", "x": 24, "y": 36}`},
+	{"create_node-from-pack-kind-taken", `[{"op": "create_node", "kind": "aws-dynamodb"}, {"op": "create_node", "kind": "aws-dynamodb"}]`},
+	{"create_node-from-pack-kind-labeled", `[{"op": "create_node", "kind": "aws-dynamodb"}, {"op": "set_label", "id": "dynamodb", "label": "Orders table"}]`},
+	{"create_node-from-own-kind-with-a-pack-prefix", `{"op": "create_node", "kind": "aws-own"}`},
 	{"delete_node", `{"op": "delete_node", "id": "worker-1"}`},
 	{"delete_node-children", `{"op": "delete_node", "id": "rack"}`},
 	{"delete_node-in-list", `{"op": "delete_node", "id": "worker-2"}`},
@@ -707,6 +711,32 @@ func TestConcurrentWriters(t *testing.T) {
 			t.Errorf("node n%d is missing", i)
 		}
 	}
+}
+
+// TestInstalledPackReadOnly checks that an operation fails naming a file of an installed pack,
+// which no read_only pattern lists.
+func TestInstalledPackReadOnly(t *testing.T) {
+	dir := t.TempDir()
+	lock := project.Lock{Packs: map[string]project.LockEntry{"aws": {
+		Source: "example.com/aws", Version: "v1.0.0", Commit: strings.Repeat("a", 40), Hash: "sha256:" + strings.Repeat("0", 64),
+	}}}
+	files := map[string]string{
+		"dg.hcl":             "project \"p\" {\n  models = [\"packs/aws/more.hcl\"]\n  pack \"aws\" {\n    source  = \"example.com/aws\"\n    version = \"v1.0.0\"\n  }\n}\n",
+		"dg.lock":            string(lock.Encode()),
+		"packs/aws/spec.hcl": "kind \"vpc\" {}\n",
+		"packs/aws/more.hcl": "node \"a\" {\n  kind = \"aws-vpc\"\n}\n",
+	}
+	for name, src := range files {
+		if err := errors.Join(os.MkdirAll(filepath.Dir(filepath.Join(dir, name)), 0o755), os.WriteFile(filepath.Join(dir, name), []byte(src), 0o644)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	before := readTree(t, dir)
+	_, err := Apply(fsys.Disk(dir), mustDecode(t, `{"op": "set_label", "id": "a", "label": "A"}`), NewSession())
+	if err == nil || !strings.Contains(err.Error(), "packs/aws/more.hcl is read-only") {
+		t.Fatalf("error %v, want packs/aws/more.hcl is read-only", err)
+	}
+	sameTree(t, readTree(t, dir), before, "after the refusal")
 }
 
 // TestReadOnlyViews checks that view and decoration operations refuse to write a read-only

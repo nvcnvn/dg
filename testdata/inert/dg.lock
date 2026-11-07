@@ -1,0 +1,7 @@
+version: 1
+packs:
+  evil:
+    source: example.com/packs/evil
+    version: v1.0.0
+    commit: 9fceb02d0ae598e95dc970b74767f19372d61af8
+    hash: sha256:17479941cd592c7669a861e9940c154c4a928e233a69f98be0085290a04772c1

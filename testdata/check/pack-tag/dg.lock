@@ -1,0 +1,12 @@
+version: 1
+packs:
+  a:
+    source: example.com/packs/a
+    version: v1.0.0
+    commit: 9fceb02d0ae598e95dc970b74767f19372d61af8
+    hash: sha256:15415969736f210aaf672108752aa6c9f0cf370d6b26d252671f9db1e7f7180c
+  b:
+    source: example.com/packs/b
+    version: v1.0.0
+    commit: 9fceb02d0ae598e95dc970b74767f19372d61af8
+    hash: sha256:60a6c1fb1158f959860f80fe3874a735bfe5b57d7f792df9a23bb393bcf3675f

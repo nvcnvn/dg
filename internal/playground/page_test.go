@@ -14,6 +14,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"sync/atomic"
@@ -493,19 +494,24 @@ func TestRedraw(t *testing.T) {
 func TestUndoInText(t *testing.T) {
 	ctx, _, _ := tab(t, same)
 	first := `document.querySelector('#model-text .cm-line').textContent`
+	// CodeMirror's Mod-z is Cmd-Z on macOS.
+	undo := chromedp.ModifierCtrl
+	if runtime.GOOS == "darwin" {
+		undo = chromedp.ModifierMeta
+	}
 	err := chromedp.Do(ctx,
 		chromedp.Evaluate[chromedp.Void](`globalThis.dgToGo(JSON.stringify({ type: 'op', seq: 900, op: { op: 'set_label', id: 'user', label: 'Canvas' } }))`),
 		until(modelText+`.includes('Canvas')`),
 		chromedp.Evaluate[chromedp.Void](`document.querySelector('#model-text .cm-content').focus()`),
 		chromedp.KeyEvent("# typed"),
 		until(first+` === '# typednode "user" {'`),
-		chromedp.KeyEvent("z", chromedp.KeyModifiers(chromedp.ModifierCtrl)),
+		chromedp.KeyEvent("z", chromedp.KeyModifiers(undo)),
 		until(first+` === 'node "user" {'`),
 		until(modelText+`.includes('Canvas')`),
 		openExample("er"),
 		drawn(),
 		chromedp.Evaluate[chromedp.Void](`document.querySelector('#model-text .cm-content').focus()`),
-		chromedp.KeyEvent("z", chromedp.KeyModifiers(chromedp.ModifierCtrl)),
+		chromedp.KeyEvent("z", chromedp.KeyModifiers(undo)),
 	)
 	if err != nil {
 		t.Fatal(err)

@@ -1,0 +1,5 @@
+dg.hcl:2:12: error: Invalid pack: "packs/aws" is the directory of the installed pack "aws", which its pack block loads.
+dg.hcl:2:25: error: Invalid pack: "packs/aws/sub" is the directory of the installed pack "aws", which its pack block loads.
+dg.hcl:2:42: error: Invalid pack: "packs/AWS" is the directory of the installed pack "aws", which its pack block loads.
+dg.hcl:2:55: error: Invalid pack: "PACKS/aws/sub" is the directory of the installed pack "aws", which its pack block loads.
+exit 1

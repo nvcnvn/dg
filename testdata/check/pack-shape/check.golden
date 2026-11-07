@@ -1,0 +1,2 @@
+packs/aws/style.hcl:2:11: error: Outside the pack: The shape "gcp-hex" is none of the pack's, a built-in shape or the generic pack's.
+exit 1

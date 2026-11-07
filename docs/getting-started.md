@@ -230,6 +230,7 @@ writes every view.
   one view from another.
 - [Styles](reference/styles.md) lists the shapes, colors and arrowheads, and how to define your
   own kinds.
+- [Packs](packs.md) installs ready-made kinds and icons, and shows how to write your own.
 - [The VS Code extension](vscode.md) covers the language server and the panel.
 - [`dg op`](reference/operations.md) and [`dg mcp`](reference/cli.md#dg-mcp) let scripts and
   agents edit the files with the same operations as the editor.

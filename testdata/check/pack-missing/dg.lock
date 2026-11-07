@@ -1,0 +1,12 @@
+version: 1
+packs:
+  empty:
+    source: example.com/packs/empty
+    version: v1.0.0
+    commit: 9fceb02d0ae598e95dc970b74767f19372d61af8
+    hash: sha256:0000000000000000000000000000000000000000000000000000000000000000
+  gone:
+    source: example.com/packs/gone
+    version: v1.0.0
+    commit: 9fceb02d0ae598e95dc970b74767f19372d61af8
+    hash: sha256:0000000000000000000000000000000000000000000000000000000000000000

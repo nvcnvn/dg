@@ -1,0 +1,17 @@
+version: 1
+packs:
+  bumped:
+    source: example.com/packs/bumped
+    version: v1.0.0
+    commit: 9fceb02d0ae598e95dc970b74767f19372d61af8
+    hash: sha256:ec6d1ab870a18243e8a49a0dd3b946b6dc5db8fd168adf5300b8d7a0df6e102c
+  moved:
+    source: example.com/packs/moved
+    version: v1.0.0
+    commit: 9fceb02d0ae598e95dc970b74767f19372d61af8
+    hash: sha256:ec6d1ab870a18243e8a49a0dd3b946b6dc5db8fd168adf5300b8d7a0df6e102c
+  partial:
+    source: example.com/packs/partial
+    version: v1.0.0
+    commit: 9fceb02d0ae598e95dc970b74767f19372d61af8
+    hash: sha256:ec6d1ab870a18243e8a49a0dd3b946b6dc5db8fd168adf5300b8d7a0df6e102c

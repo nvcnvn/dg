@@ -33,6 +33,7 @@ commands:
   serve       show the views in the browser, redrawn when a file changes
   vocabulary  print the kinds, edge kinds, tags and views the project defines, as JSON
   op          apply an operation to the project's files (dg op --help lists them)
+  pack        install packs from git repositories (dg pack --help lists what it does)
   mcp         serve the Model Context Protocol over standard input and output
   lsp         serve the Language Server Protocol over standard input and output
   version     print dg's version
@@ -75,6 +76,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		err = runServe(args[1:], stdout, stderr)
 	case "op":
 		err = runOp(args[1:], stdout, stderr)
+	case "pack":
+		err = runPack(args[1:], stdout, stderr)
 	case "vocabulary":
 		err = runVocabulary(args[1:], stdout, stderr)
 	case "mcp":

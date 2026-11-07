@@ -79,7 +79,7 @@ func TestMessages(t *testing.T) {
 		name, send string
 		want       []string
 	}{
-		{"select the default view", `{"type":"select-view"}`, []string{"model", "snapshot", "diagnostics", "history"}},
+		{"select the default view", `{"type":"select-view"}`, []string{"pictures", "model", "snapshot", "diagnostics", "history"}},
 		{"select it again", `{"type":"select-view","view":"main"}`, []string{"diagnostics", "history"}},
 		{"an undefined view", `{"type":"select-view","view":"nope","seq":1}`, []string{"error"}},
 		{"not a message", `{"type":"nope","seq":2}`, []string{"error"}},
@@ -109,6 +109,84 @@ func TestMessages(t *testing.T) {
 	}
 	if !slices.EqualFunc(got["disk"], got["memory"], bytes.Equal) {
 		t.Error("the messages differ between disk and memory")
+	}
+}
+
+// TestPictures checks that a client gets the pictures before its first model, that the model
+// leaves them out, and that they come again only when they changed, also when nothing else did.
+func TestPictures(t *testing.T) {
+	const circle, square = `<svg xmlns="http://www.w3.org/2000/svg"><circle r="1"/></svg>`, `<svg xmlns="http://www.w3.org/2000/svg"><rect width="1"/></svg>`
+	const spec = `kind "worker" {}
+kind "plain" {}
+`
+	const styles = `shape "tag" {
+  svg = file("a.svg")
+}
+style "worker" {
+  shape = "tag"
+  icon  = file("a.svg")
+  image = file("a.svg")
+}
+`
+	for _, p := range projects {
+		t.Run(p.name, func(t *testing.T) {
+			files := p.open(t)
+			if err := files.Write(map[string][]byte{"a.svg": []byte(circle), "spec.hcl": []byte(spec), "style.hcl": []byte(styles)}); err != nil {
+				t.Fatal(err)
+			}
+			s := New(files)
+			var in inbox
+			c := s.Connect(in.write)
+			ctx := context.Background()
+			s.Receive(ctx, c, []byte(`{"type":"select-view"}`))
+			var pictures struct {
+				Kinds  map[string]struct{ Icon, Image string }
+				Shapes map[string]struct{ SVG string }
+			}
+			if err := json.Unmarshal(in.messages[0], &pictures); err != nil {
+				t.Fatal(err)
+			}
+			w := pictures.Kinds["worker"]
+			if w.Icon != circle || w.Image != circle || pictures.Shapes["tag"].SVG != circle {
+				t.Errorf("the pictures are %+v", pictures)
+			}
+			if _, ok := pictures.Kinds["plain"]; ok {
+				t.Error("a kind without pictures is in the message")
+			}
+			if bytes.Contains(in.messages[1], []byte("circle")) {
+				t.Errorf("the model holds a picture: %s", in.messages[1])
+			}
+			if got, want := in.types(t), []string{"pictures", "model", "snapshot", "diagnostics", "history"}; !slices.Equal(got, want) {
+				t.Errorf("first: got %v, want %v", got, want)
+			}
+
+			s.Receive(ctx, c, []byte(`{"type":"op","op":{"op":"set_label","id":"a","label":"Omega"}}`))
+			if got, want := in.types(t), []string{"model", "snapshot", "diagnostics", "history", "ack"}; !slices.Equal(got, want) {
+				t.Errorf("a change of the model: got %v, want %v", got, want)
+			}
+
+			if err := files.Write(map[string][]byte{"a.svg": []byte(square)}); err != nil {
+				t.Fatal(err)
+			}
+			s.Reload(ctx)
+			if got, want := in.types(t), []string{"pictures", "diagnostics"}; !slices.Equal(got, want) {
+				t.Errorf("a changed picture: got %v, want %v", got, want)
+			}
+
+			if err := files.Write(map[string][]byte{"spec.hcl": []byte(spec + `kind "more" {}` + "\n"), "a.svg": []byte(circle)}); err != nil {
+				t.Fatal(err)
+			}
+			s.Reload(ctx)
+			if got, want := in.types(t), []string{"pictures", "model", "diagnostics"}; !slices.Equal(got, want) {
+				t.Errorf("both changed: got %v, want %v", got, want)
+			}
+
+			var other inbox
+			s.Receive(ctx, s.Connect(other.write), []byte(`{"type":"select-view"}`))
+			if got := other.types(t); len(got) == 0 || got[0] != "pictures" {
+				t.Errorf("a second client: got %v, the pictures first", got)
+			}
+		})
 	}
 }
 

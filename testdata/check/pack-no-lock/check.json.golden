@@ -1,0 +1,13 @@
+[
+  {
+    "severity": "error",
+    "summary": "Pack not locked",
+    "detail": "dg.lock has no entry for the pack \"aws\", so dg pack install cannot restore it. Run dg pack add to install it.",
+    "file": "dg.hcl",
+    "line": 2,
+    "column": 3,
+    "end_line": 2,
+    "end_column": 13
+  }
+]
+exit 1

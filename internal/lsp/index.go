@@ -91,6 +91,9 @@ func (ix *indexer) layoutKey(typ, id string, rng hcl.Range) {
 }
 
 func (ix *indexer) add(typ, id string, rng hcl.Range, def bool) {
+	if typ == symKind || typ == symEdgeKind {
+		id = ix.l.p.ProjectKind(rng.Filename, id, typ == symEdgeKind)
+	}
 	ix.occs = append(ix.occs, occurrence{typ: typ, id: id, file: rng.Filename, def: def,
 		rng: ix.l.linesOf(rng.Filename).rng(rng.Start.Byte, rng.End.Byte)})
 }

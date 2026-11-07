@@ -17,6 +17,7 @@ header_pages:
   - docs/getting-started.md
   - docs/vscode.md
   - docs/examples.md
+  - docs/packs.md
   - docs/reference/README.md
 exclude:
   - CLAUDE.md
@@ -40,6 +41,7 @@ exclude:
   - testdata/fmt
   - testdata/gif
   - testdata/ids
+  - testdata/inert
   - testdata/lift
   - testdata/lsp
   - testdata/ops

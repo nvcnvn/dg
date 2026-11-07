@@ -621,7 +621,7 @@
   "id": 7,
   "error": {
     "code": -32803,
-    "message": "generated/k8s.hcl is read-only (read_only in dg.hcl); the operation would change it"
+    "message": "generated/k8s.hcl is read-only (read_only in dg.hcl, or in an installed pack); the operation would change it"
   }
 }
 {
@@ -687,7 +687,7 @@
   "id": 10,
   "error": {
     "code": -32803,
-    "message": "node \"kube-system/coredns\" is defined in generated/k8s.hcl, which is read-only (read_only in dg.hcl)"
+    "message": "node \"kube-system/coredns\" is defined in generated/k8s.hcl, which is read-only (read_only in dg.hcl, or in an installed pack)"
   }
 }
 {

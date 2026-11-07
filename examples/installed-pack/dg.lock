@@ -1,0 +1,7 @@
+version: 1
+packs:
+  homelab:
+    source: example.com/homelab
+    version: v1.0.0
+    commit: a1a141506a3af4b849dce300f01994f20fd1a027
+    hash: sha256:49a46d53872ee796d313a32ab18fe80602cce6b308648a61179306660d744617

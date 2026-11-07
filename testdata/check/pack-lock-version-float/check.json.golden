@@ -1,0 +1,13 @@
+[
+  {
+    "severity": "error",
+    "summary": "Invalid lock file",
+    "detail": "\"1.0\" is not a whole number.",
+    "file": "dg.lock",
+    "line": 1,
+    "column": 10,
+    "end_line": 1,
+    "end_column": 10
+  }
+]
+exit 1

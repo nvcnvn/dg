@@ -1,0 +1,23 @@
+[
+  {
+    "severity": "warning",
+    "summary": "Tag styled by two packs",
+    "detail": "The style \"tag.legacy\" is also set at packs/a/style.hcl:1:1; this pack loads later, so its properties win.",
+    "file": "packs/b/style.hcl",
+    "line": 5,
+    "column": 1,
+    "end_line": 5,
+    "end_column": 19
+  },
+  {
+    "severity": "warning",
+    "summary": "Tag styled by two packs",
+    "detail": "The edge_style \"tag.legacy\" is also set at packs/a/style.hcl:5:1; this pack loads later, so its properties win.",
+    "file": "packs/b/style.hcl",
+    "line": 9,
+    "column": 1,
+    "end_line": 9,
+    "end_column": 24
+  }
+]
+exit 0

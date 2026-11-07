@@ -1,0 +1,5 @@
+style.hcl:6:10: error: Invalid style value: The value of icon is not well-formed SVG: line 1: more than one root element.
+style.hcl:10:10: error: Invalid style value: The value of icon is not well-formed SVG: line 1: text outside the root element.
+style.hcl:14:10: error: Invalid style value: The value of icon is not well-formed SVG: line 1: the name of element <x:y> has no namespace bound.
+style.hcl:18:10: error: Invalid style value: The value of icon is not well-formed SVG: line 1: element <svg> repeats attribute width.
+exit 1

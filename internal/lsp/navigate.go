@@ -54,7 +54,7 @@ func renamable(l *loaded, rel string, pos Position) (occurrence, error) {
 	}
 	for _, d := range l.index().of(o.typ, o.id) {
 		if d.def && l.p.IsReadOnly(d.file) {
-			return occurrence{}, &rpcError{codeRequestFailed, fmt.Sprintf("%s %q is defined in %s, which is read-only (read_only in dg.hcl)", o.typ, o.id, d.file)}
+			return occurrence{}, &rpcError{codeRequestFailed, fmt.Sprintf("%s %q is defined in %s, which is read-only (read_only in dg.hcl, or in an installed pack)", o.typ, o.id, d.file)}
 		}
 	}
 	return o, nil

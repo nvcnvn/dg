@@ -154,21 +154,28 @@ func ParseLiftKey(key string) (ends [2]string, isLift bool, err error) {
 	return ends, true, nil
 }
 
-type decoder struct {
-	file  string
-	src   []byte
-	lines []int // the offsets where lines start, once computed
-	diags hcl.Diagnostics
+// YAMLDecoder reads a YAML file by its nodes, reporting problems at their line and column.
+type YAMLDecoder struct {
+	Diags   hcl.Diagnostics
+	file    string
+	summary string
+	src     []byte
+	lines   []int // the offsets where lines start, once computed
 }
 
-func (d *decoder) rng(n *yaml.Node) hcl.Range {
+// NewYAMLDecoder returns a decoder of src; file names it and summary heads its diagnostics.
+func NewYAMLDecoder(src []byte, file, summary string) *YAMLDecoder {
+	return &YAMLDecoder{file: file, summary: summary, src: src}
+}
+
+func (d *YAMLDecoder) rng(n *yaml.Node) hcl.Range {
 	pos := hcl.Pos{Line: n.Line, Column: n.Column, Byte: d.offset(n.Line, n.Column)}
 	return hcl.Range{Filename: d.file, Start: pos, End: pos}
 }
 
 // offset returns the byte offset of a one-based line and column, the column counting characters
 // as the yaml package does.
-func (d *decoder) offset(line, column int) int {
+func (d *YAMLDecoder) offset(line, column int) int {
 	if d.lines == nil {
 		d.lines = []int{0}
 		for i, c := range d.src {
@@ -188,8 +195,9 @@ func (d *decoder) offset(line, column int) int {
 	return off
 }
 
-func (d *decoder) errorf(n *yaml.Node, format string, args ...any) {
-	d.diags = append(d.diags, spec.Errorf(d.rng(n), "Invalid layout", format, args...))
+// Errorf reports an error at n.
+func (d *YAMLDecoder) Errorf(n *yaml.Node, format string, args ...any) {
+	d.Diags = append(d.Diags, spec.Errorf(d.rng(n), d.summary, format, args...))
 }
 
 var (
@@ -225,26 +233,24 @@ func tooDeep(src []byte) bool {
 	return false
 }
 
-// DecodeLayout decodes a layout file; file names it in diagnostics.
-func DecodeLayout(src []byte, file string) (*Layout, hcl.Diagnostics) {
-	d := &decoder{file: file, src: src}
-	l := &Layout{Place: map[string]*Place{}, EdgeHints: map[string]*Hint{}, LiftHints: map[[2]string]*Hint{}}
-	l.Range = hcl.Range{Filename: file, Start: hcl.InitialPos, End: hcl.InitialPos}
-	if tooDeep(src) {
-		d.errorf(&yaml.Node{Line: 1, Column: 1}, "This file nests past %d levels.", maxNesting)
-		return l, d.diags
+// Document returns the root mapping of the one YAML document of the file, or nil, reporting why,
+// when the file has no such thing.
+func (d *YAMLDecoder) Document() *yaml.Node {
+	if tooDeep(d.src) {
+		d.Errorf(&yaml.Node{Line: 1, Column: 1}, "This file nests past %d levels.", maxNesting)
+		return nil
 	}
-	dec := yaml.NewDecoder(bytes.NewReader(src))
+	dec := yaml.NewDecoder(bytes.NewReader(d.src))
 	var doc, extra yaml.Node
 	err := dec.Decode(&doc)
 	if errors.Is(err, io.EOF) {
-		d.errorf(&yaml.Node{Line: 1, Column: 1}, "Missing version: 1.")
-		return l, d.diags
+		d.Errorf(&yaml.Node{Line: 1, Column: 1}, "Missing version: 1.")
+		return nil
 	}
 	if err == nil {
 		if err = dec.Decode(&extra); err == nil {
-			d.errorf(&extra, "A layout file holds one YAML document.")
-			return l, d.diags
+			d.Errorf(&extra, "This file holds more than one YAML document.")
+			return nil
 		}
 		if errors.Is(err, io.EOF) {
 			err = nil
@@ -252,28 +258,39 @@ func DecodeLayout(src []byte, file string) (*Layout, hcl.Diagnostics) {
 	}
 	if err != nil {
 		d.syntaxError(err)
-		return l, d.diags
+		return nil
 	}
 	if len(doc.Content) == 0 {
-		d.errorf(&doc, "Missing version: 1.")
-		return l, d.diags
+		d.Errorf(&doc, "Missing version: 1.")
+		return nil
 	}
-	root := doc.Content[0]
-	if !d.mapping(root) {
-		return l, d.diags
+	if !d.Mapping(doc.Content[0]) {
+		return nil
+	}
+	return doc.Content[0]
+}
+
+// DecodeLayout decodes a layout file; file names it in diagnostics.
+func DecodeLayout(src []byte, file string) (*Layout, hcl.Diagnostics) {
+	d := NewYAMLDecoder(src, file, "Invalid layout")
+	l := &Layout{Place: map[string]*Place{}, EdgeHints: map[string]*Hint{}, LiftHints: map[[2]string]*Hint{}}
+	l.Range = hcl.Range{Filename: file, Start: hcl.InitialPos, End: hcl.InitialPos}
+	root := d.Document()
+	if root == nil {
+		return l, d.Diags
 	}
 	version := false
-	d.fields(root, []string{"version", "place", "edge_hints", "decorations"}, func(key string, k, v *yaml.Node) {
+	d.Fields(root, []string{"version", "place", "edge_hints", "decorations"}, func(key string, k, v *yaml.Node) {
 		switch key {
 		case "version":
 			version = true
-			if n := d.intp(v); n != nil && *n != 1 {
-				d.errorf(v, "Version %d is not supported; the version is 1. %s", *n, diag.Newer())
+			if n := d.Int(v); n != nil && *n != 1 {
+				d.Errorf(v, "Version %d is not supported; the version is 1. %s", *n, diag.Newer())
 			}
 		case "place":
 			d.entries(v, func(id string, lift *[2]string, k, v *yaml.Node) {
 				if lift != nil {
-					d.errorf(k, "A lift: key is only valid in edge_hints.")
+					d.Errorf(k, "A lift: key is only valid in edge_hints.")
 				} else if p := d.place(v); p != nil {
 					p.Range = d.rng(k)
 					l.Place[id] = p
@@ -294,7 +311,7 @@ func DecodeLayout(src []byte, file string) (*Layout, hcl.Diagnostics) {
 			})
 		case "decorations":
 			if v.Kind != yaml.SequenceNode {
-				d.errorf(v, "Expected a list of decorations.")
+				d.Errorf(v, "Expected a list of decorations.")
 				return
 			}
 			seen := map[string]bool{}
@@ -304,7 +321,7 @@ func DecodeLayout(src []byte, file string) (*Layout, hcl.Diagnostics) {
 					continue
 				}
 				if seen[dec.ID] {
-					d.diags = append(d.diags, spec.Errorf(dec.Range, "Duplicate ID", "The decoration ID %q is used twice in this view.", dec.ID))
+					d.Diags = append(d.Diags, spec.Errorf(dec.Range, "Duplicate ID", "The decoration ID %q is used twice in this view.", dec.ID))
 					continue
 				}
 				seen[dec.ID] = true
@@ -313,40 +330,41 @@ func DecodeLayout(src []byte, file string) (*Layout, hcl.Diagnostics) {
 		}
 	})
 	if !version {
-		d.errorf(root, "Missing version: 1.")
+		d.Errorf(root, "Missing version: 1.")
 	}
-	return l, d.diags
+	return l, d.Diags
 }
 
 // syntaxError reports a YAML syntax error. The yaml package gives its line but not its column.
-func (d *decoder) syntaxError(err error) {
+func (d *YAMLDecoder) syntaxError(err error) {
 	line := 1
 	msg := err.Error()
 	if m := yamlLine.FindStringSubmatch(msg); m != nil {
 		line, _ = strconv.Atoi(m[1])
 		msg = strings.TrimPrefix(msg, m[0])
 	}
-	d.errorf(&yaml.Node{Line: line, Column: 1}, "%s.", strings.TrimPrefix(msg, "yaml: "))
+	d.Errorf(&yaml.Node{Line: line, Column: 1}, "%s.", strings.TrimPrefix(msg, "yaml: "))
 }
 
-func (d *decoder) mapping(n *yaml.Node) bool {
+// Mapping reports whether n is a mapping, and an error when it is not.
+func (d *YAMLDecoder) Mapping(n *yaml.Node) bool {
 	if n.Kind != yaml.MappingNode {
-		d.errorf(n, "Expected a mapping.")
+		d.Errorf(n, "Expected a mapping.")
 		return false
 	}
 	return true
 }
 
-// fields calls f for each key of mapping n, reporting keys not in allowed and repeated keys.
-func (d *decoder) fields(n *yaml.Node, allowed []string, f func(key string, k, v *yaml.Node)) {
+// Fields calls f for each key of mapping n, reporting keys not in allowed and repeated keys.
+func (d *YAMLDecoder) Fields(n *yaml.Node, allowed []string, f func(key string, k, v *yaml.Node)) {
 	seen := map[string]bool{}
 	for i := 0; i+1 < len(n.Content); i += 2 {
 		k, v := n.Content[i], n.Content[i+1]
 		switch {
 		case !slices.Contains(allowed, k.Value):
-			d.errorf(k, "Unknown field %q; expected one of %s. %s", k.Value, strings.Join(allowed, ", "), diag.UnknownName())
+			d.Errorf(k, "Unknown field %q; expected one of %s. %s", k.Value, strings.Join(allowed, ", "), diag.UnknownName())
 		case seen[k.Value]:
-			d.errorf(k, "Field %q is repeated.", k.Value)
+			d.Errorf(k, "Field %q is repeated.", k.Value)
 		default:
 			seen[k.Value] = true
 			f(k.Value, k, v)
@@ -356,8 +374,8 @@ func (d *decoder) fields(n *yaml.Node, allowed []string, f func(key string, k, v
 
 // entries calls f for each entry of mapping n with its decoded ID key, or for a key of the form
 // lift:<from>:<to> with its decoded ends, reporting invalid and repeated keys.
-func (d *decoder) entries(n *yaml.Node, f func(id string, lift *[2]string, k, v *yaml.Node)) {
-	if !d.mapping(n) {
+func (d *YAMLDecoder) entries(n *yaml.Node, f func(id string, lift *[2]string, k, v *yaml.Node)) {
+	if !d.Mapping(n) {
 		return
 	}
 	seen := map[string]bool{}
@@ -369,7 +387,7 @@ func (d *decoder) entries(n *yaml.Node, f func(id string, lift *[2]string, k, v 
 		ends, isLift, err := ParseLiftKey(k.Value)
 		switch {
 		case isLift && err != nil:
-			d.errorf(k, "Invalid key %q: %v.", k.Value, err)
+			d.Errorf(k, "Invalid key %q: %v.", k.Value, err)
 			continue
 		case isLift:
 			lift, id = &ends, liftKey(ends[0], ends[1])
@@ -379,7 +397,7 @@ func (d *decoder) entries(n *yaml.Node, f func(id string, lift *[2]string, k, v 
 		switch {
 		case !ok:
 		case seen[id]:
-			d.errorf(k, "The key %q is repeated.", k.Value)
+			d.Errorf(k, "The key %q is repeated.", k.Value)
 		default:
 			seen[id] = true
 			f(id, lift, k, v)
@@ -387,33 +405,34 @@ func (d *decoder) entries(n *yaml.Node, f func(id string, lift *[2]string, k, v 
 	}
 }
 
-func (d *decoder) id(n *yaml.Node, s string) (string, bool) {
+func (d *YAMLDecoder) id(n *yaml.Node, s string) (string, bool) {
 	id, err := DecodeID(s)
 	if err == nil && s == "" {
 		err = fmt.Errorf("an ID is empty")
 	}
 	if err != nil {
-		d.errorf(n, "Invalid ID: %v.", err)
+		d.Errorf(n, "Invalid ID: %v.", err)
 		return "", false
 	}
 	return id, true
 }
 
-func (d *decoder) decode(n *yaml.Node, v any) bool {
+// Decode decodes n into v, reporting whether it could.
+func (d *YAMLDecoder) Decode(n *yaml.Node, v any) bool {
 	if err := n.Decode(v); err != nil {
 		msg := err.Error()
 		if te, ok := err.(*yaml.TypeError); ok {
 			msg = typeErrorLine.ReplaceAllString(te.Errors[0], "")
 		}
-		d.errorf(n, "%s.", strings.TrimPrefix(msg, "yaml: "))
+		d.Errorf(n, "%s.", strings.TrimPrefix(msg, "yaml: "))
 		return false
 	}
 	return true
 }
 
-func (d *decoder) ids(n *yaml.Node) []string {
+func (d *YAMLDecoder) ids(n *yaml.Node) []string {
 	var raw []string
-	if !d.decode(n, &raw) {
+	if !d.Decode(n, &raw) {
 		return nil
 	}
 	var out []string
@@ -425,37 +444,37 @@ func (d *decoder) ids(n *yaml.Node) []string {
 	return out
 }
 
-func (d *decoder) enum(n *yaml.Node, values []string) string {
+func (d *YAMLDecoder) enum(n *yaml.Node, values []string) string {
 	var s string
-	if d.decode(n, &s) && !slices.Contains(values, s) {
-		d.errorf(n, "%q is not one of %s.", s, strings.Join(values, ", "))
+	if d.Decode(n, &s) && !slices.Contains(values, s) {
+		d.Errorf(n, "%q is not one of %s.", s, strings.Join(values, ", "))
 	}
 	return s
 }
 
-func (d *decoder) fraction(n *yaml.Node) *float64 {
+func (d *YAMLDecoder) fraction(n *yaml.Node) *float64 {
 	var f float64
-	if !d.decode(n, &f) {
+	if !d.Decode(n, &f) {
 		return nil
 	}
 	if !(f >= 0 && f <= 1) {
-		d.errorf(n, "%g is not between 0 and 1.", f)
+		d.Errorf(n, "%g is not between 0 and 1.", f)
 	}
 	return &f
 }
 
-func (d *decoder) points(n *yaml.Node) [][2]int {
+func (d *YAMLDecoder) points(n *yaml.Node) [][2]int {
 	if n.Kind != yaml.SequenceNode {
-		d.errorf(n, "Expected a list of [x, y] points.")
+		d.Errorf(n, "Expected a list of [x, y] points.")
 		return nil
 	}
 	var out [][2]int
 	for _, p := range n.Content {
 		if p.Kind != yaml.SequenceNode || len(p.Content) != 2 {
-			d.errorf(p, "A point is [x, y].")
+			d.Errorf(p, "A point is [x, y].")
 			return nil
 		}
-		x, y := d.intp(p.Content[0]), d.intp(p.Content[1])
+		x, y := d.Int(p.Content[0]), d.Int(p.Content[1])
 		if x == nil || y == nil {
 			return nil
 		}
@@ -464,59 +483,59 @@ func (d *decoder) points(n *yaml.Node) [][2]int {
 	return out
 }
 
-func (d *decoder) size(n *yaml.Node) *int {
-	i := d.intp(n)
+func (d *YAMLDecoder) size(n *yaml.Node) *int {
+	i := d.Int(n)
 	if i != nil && *i < 0 {
-		d.errorf(n, "A size is at least 0.")
+		d.Errorf(n, "A size is at least 0.")
 		return nil
 	}
 	return i
 }
 
-// intp decodes a whole number; yaml.v3 would otherwise truncate 1.5 to 1.
-func (d *decoder) intp(n *yaml.Node) *int {
+// Int decodes a whole number; yaml.v3 would otherwise truncate 1.5 to 1.
+func (d *YAMLDecoder) Int(n *yaml.Node) *int {
 	var i int
 	if n.ShortTag() != "!!int" {
-		d.errorf(n, "%q is not a whole number.", n.Value)
+		d.Errorf(n, "%q is not a whole number.", n.Value)
 		return nil
 	}
-	if !d.decode(n, &i) {
+	if !d.Decode(n, &i) {
 		return nil
 	}
 	return &i
 }
 
-func (d *decoder) floatp(n *yaml.Node) *float64 {
+func (d *YAMLDecoder) floatp(n *yaml.Node) *float64 {
 	var f float64
-	if !d.decode(n, &f) {
+	if !d.Decode(n, &f) {
 		return nil
 	}
 	if math.IsInf(f, 0) || math.IsNaN(f) {
-		d.errorf(n, "%q is not a finite number.", n.Value)
+		d.Errorf(n, "%q is not a finite number.", n.Value)
 		return nil
 	}
 	return &f
 }
 
-func (d *decoder) str(n *yaml.Node) string {
+func (d *YAMLDecoder) str(n *yaml.Node) string {
 	var s string
-	d.decode(n, &s)
+	d.Decode(n, &s)
 	return s
 }
 
-func (d *decoder) place(n *yaml.Node) *Place {
-	if !d.mapping(n) {
+func (d *YAMLDecoder) place(n *yaml.Node) *Place {
+	if !d.Mapping(n) {
 		return nil
 	}
 	p := &Place{}
-	d.fields(n, []string{"in", "x", "y", "w", "h", "order", "ports"}, func(key string, k, v *yaml.Node) {
+	d.Fields(n, []string{"in", "x", "y", "w", "h", "order", "ports"}, func(key string, k, v *yaml.Node) {
 		switch key {
 		case "in":
 			p.In, _ = d.id(v, d.str(v))
 		case "x":
-			p.X = d.intp(v)
+			p.X = d.Int(v)
 		case "y":
-			p.Y = d.intp(v)
+			p.Y = d.Int(v)
 		case "w":
 			p.W = d.size(v)
 		case "h":
@@ -524,7 +543,7 @@ func (d *decoder) place(n *yaml.Node) *Place {
 		case "order":
 			p.Order = d.ids(v)
 		case "ports":
-			if !d.mapping(v) {
+			if !d.Mapping(v) {
 				return
 			}
 			p.Ports = map[string]*PortPin{}
@@ -535,13 +554,13 @@ func (d *decoder) place(n *yaml.Node) *Place {
 				case !ok:
 					continue
 				case p.Ports[name] != nil:
-					d.errorf(pk, "The port %q is repeated.", pk.Value)
+					d.Errorf(pk, "The port %q is repeated.", pk.Value)
 					continue
-				case !d.mapping(pv):
+				case !d.Mapping(pv):
 					continue
 				}
 				pin := &PortPin{Range: d.rng(pk)}
-				d.fields(pv, []string{"side", "offset"}, func(key string, _, v *yaml.Node) {
+				d.Fields(pv, []string{"side", "offset"}, func(key string, _, v *yaml.Node) {
 					if key == "side" {
 						pin.Side = d.enum(v, pinSides)
 					} else {
@@ -555,12 +574,12 @@ func (d *decoder) place(n *yaml.Node) *Place {
 	return p
 }
 
-func (d *decoder) hint(n *yaml.Node) *Hint {
-	if !d.mapping(n) {
+func (d *YAMLDecoder) hint(n *yaml.Node) *Hint {
+	if !d.Mapping(n) {
 		return nil
 	}
 	h := &Hint{}
-	d.fields(n, []string{"from_side", "to_side", "via", "label_pos"}, func(key string, _, v *yaml.Node) {
+	d.Fields(n, []string{"from_side", "to_side", "via", "label_pos"}, func(key string, _, v *yaml.Node) {
 		switch key {
 		case "from_side":
 			h.FromSide = d.enum(v, pinSides)
@@ -577,13 +596,13 @@ func (d *decoder) hint(n *yaml.Node) *Hint {
 
 var decorationFields = []string{"id", "type", "in", "attach", "x", "y", "dx", "dy", "w", "h", "z", "text", "src", "points", "path", "fill", "stroke", "stroke_width", "stroke_dash", "opacity", "text_color", "font_size"}
 
-func (d *decoder) decoration(n *yaml.Node) *Decoration {
-	if !d.mapping(n) {
+func (d *YAMLDecoder) decoration(n *yaml.Node) *Decoration {
+	if !d.Mapping(n) {
 		return nil
 	}
 	dec := &Decoration{Range: d.rng(n)}
 	set := map[string]*yaml.Node{}
-	d.fields(n, decorationFields, func(key string, k, v *yaml.Node) {
+	d.Fields(n, decorationFields, func(key string, k, v *yaml.Node) {
 		set[key] = k
 		switch key {
 		case "id":
@@ -595,19 +614,19 @@ func (d *decoder) decoration(n *yaml.Node) *Decoration {
 		case "attach":
 			dec.Attach, _ = d.id(v, d.str(v))
 		case "x":
-			dec.X = d.intp(v)
+			dec.X = d.Int(v)
 		case "y":
-			dec.Y = d.intp(v)
+			dec.Y = d.Int(v)
 		case "dx":
-			dec.DX = d.intp(v)
+			dec.DX = d.Int(v)
 		case "dy":
-			dec.DY = d.intp(v)
+			dec.DY = d.Int(v)
 		case "w":
 			dec.W = d.size(v)
 		case "h":
 			dec.H = d.size(v)
 		case "z":
-			dec.Z = d.intp(v)
+			dec.Z = d.Int(v)
 		case "text":
 			dec.Text = d.str(v)
 		case "src":
@@ -624,7 +643,7 @@ func (d *decoder) decoration(n *yaml.Node) *Decoration {
 			dec.StrokeWidth = d.floatp(v)
 		case "stroke_dash":
 			if v.Kind != yaml.SequenceNode {
-				d.errorf(v, "Expected a list of numbers.")
+				d.Errorf(v, "Expected a list of numbers.")
 				return
 			}
 			for _, e := range v.Content {
@@ -641,11 +660,11 @@ func (d *decoder) decoration(n *yaml.Node) *Decoration {
 		}
 	})
 	if !spec.IsSimpleID(dec.ID) {
-		d.errorf(n, "A decoration needs an id that is a simple ID.")
+		d.Errorf(n, "A decoration needs an id that is a simple ID.")
 		return nil
 	}
 	if dec.Type == "" {
-		d.errorf(n, "Decoration %q needs a type.", dec.ID)
+		d.Errorf(n, "Decoration %q needs a type.", dec.ID)
 		return nil
 	}
 	d.checkDecoration(dec, n, set)
@@ -668,56 +687,56 @@ var svgPath = regexp.MustCompile(`^[MmLlHhVvCcSsQqTtAaZz0-9eE.,+\-\s]*$`)
 
 // checkDecoration reports fields dec's type does not take, missing required ones, and invalid
 // values (spec 5.7).
-func (d *decoder) checkDecoration(dec *Decoration, n *yaml.Node, set map[string]*yaml.Node) {
+func (d *YAMLDecoder) checkDecoration(dec *Decoration, n *yaml.Node, set map[string]*yaml.Node) {
 	geometry := decorationGeometry[dec.Type]
 	if geometry == nil {
 		return
 	}
 	for _, key := range []string{"text", "w", "h", "src", "points", "path"} {
 		if set[key] != nil && !slices.Contains(geometry, key) {
-			d.errorf(set[key], "A %s decoration does not take %s.", dec.Type, key)
+			d.Errorf(set[key], "A %s decoration does not take %s.", dec.Type, key)
 		}
 	}
 	for _, key := range geometry {
 		if set[key] == nil {
-			d.errorf(n, "Decoration %q of type %s needs %s.", dec.ID, dec.Type, key)
+			d.Errorf(n, "Decoration %q of type %s needs %s.", dec.ID, dec.Type, key)
 		}
 	}
 	switch {
 	case dec.Attach != "" && dec.In != "":
-		d.errorf(set["in"], "Decoration %q is attached to a node, so it takes no in.", dec.ID)
+		d.Errorf(set["in"], "Decoration %q is attached to a node, so it takes no in.", dec.ID)
 	case dec.Attach != "" && (set["x"] != nil || set["y"] != nil):
-		d.errorf(n, "Decoration %q is attached to a node: its offset is dx and dy, not x and y.", dec.ID)
+		d.Errorf(n, "Decoration %q is attached to a node: its offset is dx and dy, not x and y.", dec.ID)
 	case dec.Attach == "" && (set["dx"] != nil || set["dy"] != nil):
-		d.errorf(n, "Decoration %q takes dx and dy only with attach.", dec.ID)
+		d.Errorf(n, "Decoration %q takes dx and dy only with attach.", dec.ID)
 	}
 	if dec.Type == "arrow" && set["points"] != nil && len(dec.Points) < 2 {
-		d.errorf(set["points"], "An arrow needs at least two points.")
+		d.Errorf(set["points"], "An arrow needs at least two points.")
 	}
 	if set["path"] != nil && (strings.TrimSpace(dec.Path) == "" || !svgPath.MatchString(dec.Path)) {
-		d.errorf(set["path"], "The path is not SVG path data (commands and numbers).")
+		d.Errorf(set["path"], "The path is not SVG path data (commands and numbers).")
 	}
 	if set["text"] != nil && dec.Text == "" {
-		d.errorf(set["text"], "The text is empty.")
+		d.Errorf(set["text"], "The text is empty.")
 	}
 	if set["src"] != nil && (dec.Src == "" || !fs.ValidPath(path.Clean(dec.Src))) {
-		d.errorf(set["src"], "%q is not a slash-separated path inside the project.", dec.Src)
+		d.Errorf(set["src"], "%q is not a slash-separated path inside the project.", dec.Src)
 	}
 	for _, c := range [][2]string{{"fill", dec.Fill}, {"stroke", dec.Stroke}, {"text_color", dec.TextColor}} {
 		if set[c[0]] != nil {
 			if p := style.ColorProblem(c[1]); p != "" {
-				d.errorf(set[c[0]], "The value of %s %s.", c[0], p)
+				d.Errorf(set[c[0]], "The value of %s %s.", c[0], p)
 			}
 		}
 	}
 	if dec.StrokeWidth != nil && *dec.StrokeWidth < 0 {
-		d.errorf(set["stroke_width"], "The value of stroke_width must be at least 0.")
+		d.Errorf(set["stroke_width"], "The value of stroke_width must be at least 0.")
 	}
 	if dec.FontSize != nil && *dec.FontSize < 1 {
-		d.errorf(set["font_size"], "The value of font_size must be at least 1.")
+		d.Errorf(set["font_size"], "The value of font_size must be at least 1.")
 	}
 	if slices.ContainsFunc(dec.StrokeDash, func(v float64) bool { return v < 0 }) {
-		d.errorf(set["stroke_dash"], "The values of stroke_dash must be at least 0.")
+		d.Errorf(set["stroke_dash"], "The values of stroke_dash must be at least 0.")
 	}
 }
 

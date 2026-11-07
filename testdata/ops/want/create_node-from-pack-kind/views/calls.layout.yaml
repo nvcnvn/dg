@@ -1,0 +1,4 @@
+version: 1
+place:
+  dynamodb: {x: 20, y: 40}
+  gateway: {x: 0, y: 0}

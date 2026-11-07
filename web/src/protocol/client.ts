@@ -31,23 +31,34 @@ export interface Result {
 }
 
 // ModelInfo is what the editor knows of the whole project to edit the model: the loaded packs in
-// load order, the kinds and edge kinds they define, the tags in use, the custom shapes kinds use
-// by default, and every node and edge, drawn or not.
+// load order, the kinds and edge kinds they define, the tags in use, and every node and edge,
+// drawn or not.
 export interface ModelInfo {
   packs?: string[];
   kinds: KindInfo[];
   edge_kinds: string[];
   tags: string[];
-  shapes?: Record<string, CustomShape>;
   nodes: ModelNode[];
   edges: ModelEdge[];
+}
+
+// Pictures are what the palette draws and the model leaves out for its size: each kind's default
+// icon and image, and the custom shapes kinds use by default.
+export interface Pictures {
+  kinds: Record<string, { icon?: string; image?: string }>;
+  shapes: Record<string, CustomShape>;
 }
 
 export interface KindInfo {
   name: string;
   // pack names the pack that defines the kind; the project's own spec.hcl has none.
   pack?: string;
-  // style is what a node of the kind looks like by default; only the model message has it.
+  // short is the name without the prefix of an installed pack, set only for such a kind.
+  short?: string;
+  // category is the kind's group within its pack in the palette.
+  category?: string;
+  // style is what a node of the kind looks like by default, without its pictures; only the model
+  // message has it.
   style?: NodeStyle;
   extends?: string;
   container?: boolean;
@@ -80,9 +91,11 @@ export interface ModelEdge {
   read_only?: boolean;
 }
 
-// A model message comes before the snapshot that needs it, when the model changed. An ack or
-// error answering a request carries the request's seq.
+// A model message comes before the snapshot that needs it, when the model changed, and a pictures
+// message before the first model and whenever the pictures changed. An ack or error answering a
+// request carries the request's seq.
 export type ServerMessage =
+  | ({ type: 'pictures' } & Pictures)
   | { type: 'model'; model: ModelInfo }
   | { type: 'snapshot'; views: ViewInfo[]; resolved: ResolvedView }
   | { type: 'diagnostics'; diagnostics: Diagnostic[] }

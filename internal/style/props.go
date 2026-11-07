@@ -1,6 +1,7 @@
 package style
 
 import (
+	"bytes"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -119,24 +120,135 @@ func picture(v cty.Value) string {
 	if p := isString(v); p != "" {
 		return p
 	}
-	dec := xml.NewDecoder(strings.NewReader(v.AsString()))
-	var root xml.Name
+	root, problem := pictureRoot(v.AsString())
+	if problem != "" {
+		return "is not well-formed SVG: " + problem
+	}
+	if root != (xml.Name{Space: svgNS, Local: "svg"}) {
+		return `must be an SVG picture, whose root element is svg with xmlns="http://www.w3.org/2000/svg"`
+	}
+	return ""
+}
+
+const (
+	svgNS   = "http://www.w3.org/2000/svg"
+	xmlNS   = "http://www.w3.org/XML/1998/namespace"
+	xmlnsNS = "http://www.w3.org/2000/xmlns/"
+)
+
+// pictureRoot returns the root element of the XML document svg, or what is wrong with it.
+// encoding/xml takes a sequence of elements rather than a document, and neither binds prefixes nor
+// looks for duplicate attributes, so this does that over its raw tokens, on the input's own bytes
+// where a token hides them; a browser refuses a file that has any of these wrong.
+func pictureRoot(svg string) (root xml.Name, problem string) {
+	svg = strings.TrimPrefix(svg, "\uFEFF")
+	dec := xml.NewDecoder(strings.NewReader(svg))
+	line := 1
+	wrong := func(format string, args ...any) (xml.Name, string) {
+		return root, fmt.Sprintf("line %d: ", line) + fmt.Sprintf(format, args...)
+	}
+	type element struct {
+		name  xml.Name
+		bound int // len(bound) before this element's declarations
+	}
+	var open []element
+	var bound []string // the prefixes the open elements declare, innermost last
+	ns := map[string][]string{"xml": {xmlNS}, "xmlns": {xmlnsNS}}
+	expand := func(n xml.Name) (xml.Name, bool) {
+		uris := ns[n.Space]
+		if len(uris) == 0 {
+			return n, n.Space == ""
+		}
+		return xml.Name{Space: uris[len(uris)-1], Local: n.Local}, true
+	}
+	attrs := map[xml.Name]bool{}
+	doctype := false
 	for {
-		tok, err := dec.Token()
+		start := dec.InputOffset()
+		line, _ = dec.InputPos()
+		tok, err := dec.RawToken()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return "is not well-formed SVG: " + err.Error()
+			return root, err.Error()
 		}
-		if el, ok := tok.(xml.StartElement); ok && root.Local == "" {
-			root = el.Name
+		switch t := tok.(type) {
+		case xml.StartElement:
+			if len(open) == 0 && root.Local != "" {
+				return wrong("more than one root element")
+			}
+			open = append(open, element{t.Name, len(bound)})
+			for _, a := range t.Attr {
+				prefix, declares := "", a.Name.Space == "" && a.Name.Local == "xmlns"
+				if a.Name.Space == "xmlns" {
+					prefix, declares = a.Name.Local, true
+					if a.Value == "" {
+						return wrong("prefix %s bound to no namespace", prefix)
+					}
+				}
+				if declares {
+					ns[prefix] = append(ns[prefix], a.Value)
+					bound = append(bound, prefix)
+				}
+			}
+			name, ok := expand(t.Name)
+			if !ok || strings.Contains(t.Name.Local, ":") {
+				return wrong("the name of element <%s> has no namespace bound", qualified(t.Name))
+			}
+			if root.Local == "" {
+				root = name
+			}
+			clear(attrs)
+			for _, a := range t.Attr {
+				key := a.Name
+				if key.Space != "" {
+					key, ok = expand(key)
+				}
+				if !ok || strings.Contains(a.Name.Local, ":") {
+					return wrong("the name of attribute %s has no namespace bound", qualified(a.Name))
+				}
+				if attrs[key] {
+					return wrong("element <%s> repeats attribute %s", qualified(t.Name), qualified(a.Name))
+				}
+				attrs[key] = true
+			}
+		case xml.EndElement:
+			if len(open) == 0 || open[len(open)-1].name != t.Name {
+				return wrong("</%s> closes no open element", qualified(t.Name))
+			}
+			last := open[len(open)-1]
+			open = open[:len(open)-1]
+			for _, prefix := range bound[last.bound:] {
+				ns[prefix] = ns[prefix][:len(ns[prefix])-1]
+			}
+			bound = bound[:last.bound]
+		case xml.CharData:
+			if len(open) == 0 && strings.Trim(svg[start:dec.InputOffset()], " \t\r\n") != "" {
+				return wrong("text outside the root element")
+			}
+		case xml.ProcInst:
+			if t.Target == "xml" && start != 0 {
+				return wrong("an XML declaration that does not come first")
+			}
+		case xml.Directive:
+			if doctype || root.Local != "" || !bytes.HasPrefix(t, []byte("DOCTYPE")) {
+				return wrong("a directive that is not one doctype before the root element")
+			}
+			doctype = true
 		}
 	}
-	if root != (xml.Name{Space: "http://www.w3.org/2000/svg", Local: "svg"}) {
-		return `must be an SVG picture, whose root element is svg with xmlns="http://www.w3.org/2000/svg"`
+	if len(open) > 0 {
+		return wrong("element <%s> is not closed", qualified(open[len(open)-1].name))
 	}
-	return ""
+	return root, ""
+}
+
+func qualified(n xml.Name) string {
+	if n.Space == "" {
+		return n.Local
+	}
+	return n.Space + ":" + n.Local
 }
 
 func isBool(v cty.Value) string {

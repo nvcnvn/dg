@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import slugs from '../../../testdata/ids/slug.json';
 import { editScene } from '../fixtures';
 import type { ModelInfo } from '../protocol/client';
+import type { Op } from '../protocol/ops';
 import type { Scene } from './edit';
 import { clearOf, copy, createOps, decorationOp, deleteOps, dropTarget, endAt, hideOps, newID, nodeID, nodeSelector, pasteOps, reparentOps, selectors, slug } from './model';
 
@@ -79,6 +80,14 @@ describe('copy and paste', () => {
     ]);
     expect(clip.edges.map((e) => e.id)).toEqual(['ac']);
   });
+  it('generates the ID of a copy with no slug in its label from its kind without the prefix', () => {
+    const s = editScene({ pinned: true, model: { ...model, kinds: [...model.kinds, { name: 'aws-dynamodb', pack: 'aws', short: 'dynamodb' }, { name: 'aws-own' }] } });
+    const clip = copy(s, ['a', 'b'])!;
+    clip.nodes[0].node = { ...clip.nodes[0].node, kind: 'aws-dynamodb', label: '' };
+    clip.nodes[1].node = { ...clip.nodes[1].node, kind: 'aws-own', label: '' };
+    expect((pasteOps(s, clip, { x: 0, y: 500 }) as { ops: Op[] }).ops.filter((o) => o.op === 'create_node').map((o) => o.id)).toEqual(['dynamodb', 'aws-own']);
+  });
+
   it('creates the copies with new IDs at the paste point, then the edges, as one batch', () => {
     const s = fixture();
     const op = pasteOps(s, copy(s, ['a', 'b'])!, { x: 0, y: 500 });

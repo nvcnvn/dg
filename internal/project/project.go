@@ -44,7 +44,10 @@ type Project struct {
 	Name     string
 	Files    []File
 	ReadOnly []string
-	// PackDirs holds the project's pack directories in load order.
+	// Installed holds the installed packs in the order of their blocks.
+	Installed []*Installed
+	// PackDirs holds the project's pack directories in load order: the installed packs that could
+	// be read, then the local ones.
 	PackDirs  []string
 	ViewsFile string
 	LayoutDir string
@@ -52,6 +55,10 @@ type Project struct {
 	FontRange hcl.Range
 	// ConfigInvalid is set when dg.hcl has errors, so ReadOnly may be incomplete.
 	ConfigInvalid bool
+	// ReadOnlyUnknown is set when dg.hcl does not decode (a syntax error, an unknown attribute or
+	// block) or read_only is invalid, so ReadOnly may be incomplete; dg pack repairs a project with
+	// any other error in dg.hcl.
+	ReadOnlyUnknown bool
 	// Unparsed names the HCL files with syntax errors, as diagnostics name them.
 	Unparsed []string
 	view.Sources
@@ -73,7 +80,15 @@ type projectBlock struct {
 	LayoutDir *hcl.Attribute `hcl:"layout_dir,optional"`
 	Grid      *hcl.Attribute `hcl:"grid,optional"`
 	Font      *hcl.Attribute `hcl:"font,optional"`
+	Installed []packBlock    `hcl:"pack,block"`
 	Range     hcl.Range      `hcl:",def_range"`
+}
+
+type packBlock struct {
+	Name    string    `hcl:"name,label"`
+	Source  *string   `hcl:"source"`
+	Version *string   `hcl:"version"`
+	Range   hcl.Range `hcl:",def_range"`
 }
 
 // Load reads the project in dir. Problems in file content are diagnostics, whose file names are
@@ -98,9 +113,9 @@ type loader struct {
 
 type decodeFunc func(hcl.Body, *hcl.EvalContext) hcl.Diagnostics
 
-// parse parses and decodes file rel of fsys, named name in diagnostics; it returns
-// fs.ErrNotExist if there is no such file.
-func (l *loader) parse(fsys fs.FS, rel, name string, decode decodeFunc) error {
+// parse parses and decodes file rel of fsys, named name in diagnostics, whose file() calls stay
+// inside fsys, which scope names; it returns fs.ErrNotExist if there is no such file.
+func (l *loader) parse(fsys fs.FS, scope, rel, name string, decode decodeFunc) error {
 	src, err := fs.ReadFile(fsys, rel)
 	if err != nil {
 		return err
@@ -115,7 +130,7 @@ func (l *loader) parse(fsys fs.FS, rel, name string, decode decodeFunc) error {
 	if d.HasErrors() {
 		l.p.Unparsed = append(l.p.Unparsed, name)
 	} else {
-		l.diags = append(l.diags, decode(diag.Expecting(f.Body), evalContext(fsys, path.Dir(rel)))...)
+		l.diags = append(l.diags, decode(diag.Expecting(f.Body), evalContext(fsys, path.Dir(rel), scope))...)
 	}
 	return nil
 }
@@ -128,7 +143,7 @@ func (l *loader) parseProject(rel, role string, decode decodeFunc) error {
 		l.diags = append(l.diags, spec.Errorf(rng, "Not a file", "%s is a directory.", rel))
 		return nil
 	}
-	err := l.parse(l.fsys, rel, rel, decode)
+	err := l.parse(l.fsys, "project", rel, rel, decode)
 	if err == nil {
 		l.p.Files = append(l.p.Files, File{Path: rel, Role: role})
 	}
@@ -163,26 +178,33 @@ func LoadFS(source fs.FS) (*Project, diag.Diagnostics, error) {
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return nil, nil, err
 	}
+	p.ReadOnlyUnknown = l.diags.HasErrors()
 
+	lock, lockValid, err := l.readLock()
+	if err != nil {
+		return nil, nil, err
+	}
 	var packs, models []string
 	if cfg != nil {
 		var err error
-		if packs, models, err = l.config(cfg, cfgCtx); err != nil {
+		if packs, models, err = l.config(cfg, cfgCtx, lock, lockValid); err != nil {
 			return nil, nil, err
 		}
 	}
-	p.PackDirs = packs
-	p.ConfigInvalid = slices.ContainsFunc(l.diags, func(d *hcl.Diagnostic) bool {
-		return d.Severity == hcl.DiagError && d.Subject != nil && d.Subject.Filename == ProjectFile
-	})
 
 	for _, step := range []struct {
-		file   string
-		role   string
-		decode decodeFunc
-	}{{"spec.hcl", RoleSpec, p.Spec.Decode}, {"style.hcl", RoleStyle, p.Styles.Decode}} {
-		if err := l.parse(generic.Files, step.file, genericDir+"/"+step.file, step.decode); err != nil {
+		file    string
+		role    string
+		decode  decodeFunc
+		install func(*Installed)
+	}{{"spec.hcl", RoleSpec, p.Spec.Decode, l.packSpec}, {"style.hcl", RoleStyle, p.Styles.Decode, l.packStyle}} {
+		if err := l.parse(generic.Files, "pack", step.file, genericDir+"/"+step.file, step.decode); err != nil {
 			return nil, nil, err
+		}
+		for _, in := range p.Installed {
+			if in.files != nil {
+				step.install(in)
+			}
 		}
 		for _, dir := range append(packs, ".") {
 			err := l.parseProject(path.Join(dir, step.file), step.role, step.decode)
@@ -219,6 +241,9 @@ func LoadFS(source fs.FS) (*Project, diag.Diagnostics, error) {
 		return nil, nil, err
 	}
 
+	p.ConfigInvalid = slices.ContainsFunc(l.diags, func(d *hcl.Diagnostic) bool {
+		return d.Severity == hcl.DiagError && d.Subject != nil && d.Subject.Filename == ProjectFile
+	})
 	l.diags = append(l.diags, p.Spec.Validate()...)
 	l.diags = append(l.diags, p.Styles.Validate(p.Spec)...)
 	// What references, selectors and layout entries name may be in a model file that did not
@@ -241,11 +266,12 @@ func LoadFS(source fs.FS) (*Project, diag.Diagnostics, error) {
 	return p, diags, nil
 }
 
-// config applies the project block, returning its pack directories and model files (nil if the
-// block sets no models).
-func (l *loader) config(cfg *projectBlock, ctx *hcl.EvalContext) (packs, models []string, err error) {
+// config applies the project block, returning its local pack directories and model files (nil if
+// the block sets no models).
+func (l *loader) config(cfg *projectBlock, ctx *hcl.EvalContext, lock *Lock, lockValid bool) (packs, models []string, err error) {
 	p := l.p
 	p.Name = cfg.Name
+	l.install(cfg.Installed, lock, lockValid)
 	list := func(attr *hcl.Attribute) []spec.Name {
 		if attr == nil {
 			return nil
@@ -281,8 +307,11 @@ func (l *loader) config(cfg *projectBlock, ctx *hcl.EvalContext) (packs, models 
 			continue
 		}
 		dir, ok := relPath(n)
+		in := p.installedOf(dir + "/")
 		switch {
 		case !ok || slices.Contains(packs, dir):
+		case in != nil:
+			l.diags = append(l.diags, spec.Errorf(n.Range, "Invalid pack", "%q is the directory of the installed pack %q, which its pack block loads.", n.Name, in.Name))
 		case dir == ".":
 			l.diags = append(l.diags, spec.Errorf(n.Range, "Invalid pack", "The project root is not a pack; its spec.hcl and style.hcl load after every pack."))
 		default:
@@ -293,6 +322,12 @@ func (l *loader) config(cfg *projectBlock, ctx *hcl.EvalContext) (packs, models 
 			packs = append(packs, dir)
 		}
 	}
+	for _, in := range p.Installed {
+		if in.files != nil {
+			p.PackDirs = append(p.PackDirs, in.Dir)
+		}
+	}
+	p.PackDirs = append(p.PackDirs, packs...)
 	str(cfg.Views, &p.ViewsFile)
 	str(cfg.LayoutDir, &p.LayoutDir)
 	if cfg.Font != nil {
@@ -314,6 +349,7 @@ func (l *loader) config(cfg *projectBlock, ctx *hcl.EvalContext) (packs, models 
 			p.Grid = grid
 		}
 	}
+	seen := len(l.diags)
 	for _, n := range list(cfg.ReadOnly) {
 		if _, err := path.Match(n.Name, ""); err != nil {
 			l.diags = append(l.diags, spec.Errorf(n.Range, "Invalid pattern", "%q: %v.", n.Name, err))
@@ -321,10 +357,11 @@ func (l *loader) config(cfg *projectBlock, ctx *hcl.EvalContext) (packs, models 
 		}
 		p.ReadOnly = append(p.ReadOnly, n.Name)
 	}
+	p.ReadOnlyUnknown = p.ReadOnlyUnknown || l.diags[seen:].HasErrors()
 	if cfg.Models == nil {
 		return packs, nil, nil
 	}
-	notModel := l.notModel(packs)
+	notModel := l.notModel(p.PackDirs)
 	models = []string{}
 	for _, n := range list(cfg.Models) {
 		matches, err := fs.Glob(l.fsys, n.Name)
@@ -415,8 +452,14 @@ func (l *loader) pictures(layout *view.Layout) {
 	}
 }
 
-// IsReadOnly reports whether the project file rel matches a read_only pattern.
+// IsReadOnly reports whether the project file rel matches a read_only pattern or belongs to an
+// installed pack.
 func (p *Project) IsReadOnly(rel string) bool {
+	return p.installedOf(rel) != nil || p.MatchesReadOnly(rel)
+}
+
+// MatchesReadOnly reports whether the project file rel matches a read_only pattern.
+func (p *Project) MatchesReadOnly(rel string) bool {
 	return slices.ContainsFunc(p.ReadOnly, func(pattern string) bool {
 		ok, _ := path.Match(pattern, rel)
 		return ok

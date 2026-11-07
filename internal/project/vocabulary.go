@@ -22,10 +22,14 @@ type Vocabulary struct {
 }
 
 // KindInfo is a kind with what it inherits; Pack names the pack that defines it, empty for the
-// project's own spec.hcl, and Layout is a container kind's layout policy (spec 7.3).
+// project's own spec.hcl, Short is its name without the prefix of an installed pack, empty for
+// any other kind, Category its palette group, which it does not inherit, and Layout a container
+// kind's layout policy (spec 7.3).
 type KindInfo struct {
 	Name            string     `json:"name"`
 	Pack            string     `json:"pack,omitempty"`
+	Short           string     `json:"short,omitempty"`
+	Category        string     `json:"category,omitempty"`
 	Extends         string     `json:"extends,omitempty"`
 	Container       bool       `json:"container,omitempty"`
 	Layout          string     `json:"layout,omitempty"`
@@ -57,7 +61,10 @@ func (p *Project) Vocabulary() Vocabulary {
 		v.Packs = append(v.Packs, packName(dir))
 	}
 	for _, name := range slices.Sorted(maps.Keys(sp.Kinds)) {
-		k := KindInfo{Name: name, Pack: packName(path.Dir(sp.Kinds[name].Range.Filename)), Extends: sp.Kinds[name].Extends, Container: sp.IsContainer(name), Rows: sp.HasRows(name), Ports: sp.Ports(name)}
+		k := KindInfo{Name: name, Pack: packName(path.Dir(sp.Kinds[name].Range.Filename)), Category: sp.Kinds[name].Category, Extends: sp.Kinds[name].Extends, Container: sp.IsContainer(name), Rows: sp.HasRows(name), Ports: sp.Ports(name)}
+		if short := p.ShortKind(name); short != name {
+			k.Short = short
+		}
 		if set, ok := p.Styles.ForNode(sp, name, nil)["layout"]; ok && k.Container {
 			k.Layout = set.Value.AsString()
 		}

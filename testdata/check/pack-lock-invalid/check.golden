@@ -1,0 +1,7 @@
+dg.lock:1:10: error: Invalid lock file: Version 2 is not supported; the version is 1. If a newer dg wrote this project, update dg: this one is (devel).
+dg.lock:2:1: error: Invalid lock file: Unknown field "extra"; expected one of version, packs. If the name is right, a newer dg may know it: this one is (devel).
+dg.lock:7:13: error: Invalid lock file: The commit "main" is not a full commit hash.
+dg.lock:8:11: error: Invalid lock file: The hash "md5:abc" is not sha256: and 64 hexadecimal digits.
+dg.lock:9:3: error: Invalid lock file: The pack name "../evil" is not a simple ID (letters, digits, _ and -, starting with a letter or _).
+dg.lock:11:3: error: Invalid lock file: The pack name "generic" is the built-in pack's.
+exit 1

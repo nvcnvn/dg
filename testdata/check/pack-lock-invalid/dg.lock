@@ -1,0 +1,15 @@
+version: 2
+extra: true
+packs:
+  aws:
+    source: example.com/packs/aws
+    version: v1.0.0
+    commit: main
+    hash: md5:abc
+  ../evil:
+    source: example.com/evil
+  generic:
+    source: example.com/packs/generic
+    version: v1.0.0
+    commit: 9fceb02d0ae598e95dc970b74767f19372d61af8
+    hash: sha256:0000000000000000000000000000000000000000000000000000000000000000

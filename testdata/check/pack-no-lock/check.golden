@@ -1,0 +1,2 @@
+dg.hcl:2:3: error: Pack not locked: dg.lock has no entry for the pack "aws", so dg pack install cannot restore it. Run dg pack add to install it.
+exit 1

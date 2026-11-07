@@ -98,18 +98,22 @@ type snapshotMessage struct {
 	Resolved *view.Resolved `json:"resolved"`
 }
 
-// modelMessage returns the model message of p, encoded once per load.
-func (s *Session) modelMessage(p *project.Project) []byte {
+// messages returns the model and pictures messages of p, encoded once per load.
+func (s *Session) messages(p *project.Project) (model, pictures []byte) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.modelOf != p {
-		data, err := json.Marshal(modelMessage{Type: "model", Model: modelOf(p)})
-		if err != nil {
+		info, pics := modelOf(p)
+		var err error
+		if s.modelData, err = json.Marshal(modelMessage{Type: "model", Model: info}); err != nil {
 			panic(fmt.Sprintf("encoding the model message: %v", err))
 		}
-		s.modelOf, s.modelData = p, data
+		if s.picturesData, err = json.Marshal(pics); err != nil {
+			panic(fmt.Sprintf("encoding the pictures message: %v", err))
+		}
+		s.modelOf = p
 	}
-	return s.modelData
+	return s.modelData, s.picturesData
 }
 
 // modelMessage tells a client the model it edits; it is sent before the snapshot that needs it,
@@ -120,22 +124,34 @@ type modelMessage struct {
 }
 
 // modelInfo is what the editor needs of the whole project to edit the model: the vocabulary
-// for its palette and inspector, the custom shapes kinds use by default, and every node and
-// edge, drawn in the view or not.
+// for its palette and inspector, and every node and edge, drawn in the view or not.
 type modelInfo struct {
-	Packs     []string                `json:"packs"`
-	Kinds     []kindInfo              `json:"kinds"`
-	EdgeKinds []string                `json:"edge_kinds"`
-	Tags      []string                `json:"tags"`
-	Shapes    map[string]*style.Shape `json:"shapes,omitempty"`
-	Nodes     []nodeInfo              `json:"nodes"`
-	Edges     []edgeInfo              `json:"edges"`
+	Packs     []string   `json:"packs"`
+	Kinds     []kindInfo `json:"kinds"`
+	EdgeKinds []string   `json:"edge_kinds"`
+	Tags      []string   `json:"tags"`
+	Nodes     []nodeInfo `json:"nodes"`
+	Edges     []edgeInfo `json:"edges"`
 }
 
-// kindInfo is a kind with the style a node of it has by default, which the palette draws.
+// kindInfo is a kind with the style a node of it has by default, without its pictures, which the
+// palette draws.
 type kindInfo struct {
 	project.KindInfo
 	Style style.Node `json:"style"`
+}
+
+// picturesMessage tells a client what the palette draws that model leaves out for its size (spec
+// 15): each kind's default icon and image, and the custom shapes kinds use by default.
+type picturesMessage struct {
+	Type   string                  `json:"type"`
+	Kinds  map[string]kindPictures `json:"kinds"`
+	Shapes map[string]*style.Shape `json:"shapes"`
+}
+
+type kindPictures struct {
+	Icon  string `json:"icon,omitempty"`
+	Image string `json:"image,omitempty"`
 }
 
 type nodeInfo struct {
@@ -160,20 +176,22 @@ type edgeInfo struct {
 	ReadOnly bool         `json:"read_only,omitempty"`
 }
 
-// modelOf returns the model info of p, nodes and edges in ID order. A node's ports are its
-// instance ports.
-func modelOf(p *project.Project) modelInfo {
+// modelOf returns the model info of p, nodes and edges in ID order, and the pictures it leaves
+// out. A node's ports are its instance ports.
+func modelOf(p *project.Project) (modelInfo, picturesMessage) {
 	v := p.Vocabulary()
 	out := modelInfo{Packs: v.Packs, Kinds: []kindInfo{}, EdgeKinds: v.EdgeKinds, Tags: v.Tags, Nodes: []nodeInfo{}, Edges: []edgeInfo{}}
+	pics := picturesMessage{Type: "pictures", Kinds: map[string]kindPictures{}, Shapes: map[string]*style.Shape{}}
 	for _, k := range v.Kinds {
-		info := kindInfo{KindInfo: k, Style: style.DrawnNode(p.Styles.ForNode(p.Spec, k.Name, nil))}
-		if sh := p.Styles.Shapes[info.Style.Shape]; sh != nil {
-			if out.Shapes == nil {
-				out.Shapes = map[string]*style.Shape{}
-			}
-			out.Shapes[sh.Name] = sh
+		st := style.DrawnNode(p.Styles.ForNode(p.Spec, k.Name, nil))
+		if st.Icon != "" || st.Image != "" {
+			pics.Kinds[k.Name] = kindPictures{Icon: st.Icon, Image: st.Image}
+			st.Icon, st.Image = "", ""
 		}
-		out.Kinds = append(out.Kinds, info)
+		if sh := p.Styles.Shapes[st.Shape]; sh != nil {
+			pics.Shapes[sh.Name] = sh
+		}
+		out.Kinds = append(out.Kinds, kindInfo{KindInfo: k, Style: st})
 	}
 	for _, id := range slices.Sorted(maps.Keys(p.Model.Nodes)) {
 		n := p.Model.Nodes[id]
@@ -209,7 +227,7 @@ func modelOf(p *project.Project) modelInfo {
 			To:   view.End{Node: e.To.Node, Port: e.To.Port, Row: e.To.Row},
 		})
 	}
-	return out
+	return out, pics
 }
 
 type diagnosticsMessage struct {

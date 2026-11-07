@@ -3,3 +3,5 @@
 * text=auto eol=lf
 # Keeps CRLF line endings, which the language server test of it covers.
 testdata/lsp/unicode/model.hcl -text
+# Keeps CRLF line endings, which the dg pack edit of dg.hcl is tested on.
+testdata/ops/pack/crlf/* -text

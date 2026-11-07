@@ -41,7 +41,8 @@ func newID(base string, taken func(string) bool) string {
 	return id
 }
 
-// nodeID is the ID of a new node (spec 6.2), and whether it is derived from its kind.
+// nodeID is the ID of a new node (spec 6.2), and whether it is derived from kind, its kind's name
+// without an installed pack's prefix.
 func nodeID(kind, label string, taken func(string) bool) (string, bool) {
 	if base := slug(label); base != "" {
 		return newID(base, taken), false

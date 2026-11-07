@@ -545,6 +545,30 @@ body.no-inspector #inspector {
 #kinds button:disabled {
   cursor: default;
 }
+#kinds summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--control);
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-s);
+  font-size: var(--type-s);
+  list-style: none;
+  cursor: pointer;
+}
+#kinds summary:hover {
+  background: var(--bg-hover);
+}
+#kinds summary .icon {
+  flex: none;
+}
+#kinds details[open] > summary .icon {
+  transform: rotate(90deg);
+}
+#kinds summary .count {
+  margin-left: auto;
+  color: var(--text-muted);
+}
 .picture {
   flex: none;
   display: block;
