@@ -1,0 +1,3 @@
+dg.hcl:2:3: error: Pack not installed: The directory packs/gone does not exist. Run dg pack install to restore it.
+dg.hcl:6:3: error: Pack not installed: The pack "empty" cannot be read: it holds neither spec.hcl nor style.hcl. Run dg pack install to repair it.
+exit 1

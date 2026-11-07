@@ -1,0 +1,13 @@
+[
+  {
+    "severity": "error",
+    "summary": "Outside the pack",
+    "detail": "The shape \"gcp-hex\" is none of the pack's, a built-in shape or the generic pack's.",
+    "file": "packs/aws/style.hcl",
+    "line": 2,
+    "column": 11,
+    "end_line": 2,
+    "end_column": 20
+  }
+]
+exit 1

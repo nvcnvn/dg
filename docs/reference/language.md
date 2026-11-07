@@ -7,6 +7,7 @@ their own pages.
 <!-- begin generated toc: go test ./cmd/dg -run TestDocs -update -->
 
 - [The project file](#the-project-file)
+  - [Installed packs](#installed-packs)
 - [Kinds](#kinds)
 - [Nodes](#nodes)
   - [Ports](#ports)
@@ -41,6 +42,7 @@ project "my-diagrams" {
   in them.
 - `packs` lists directories, each with an optional `spec.hcl` and `style.hcl`. Listing
   `"generic"` is allowed and changes nothing.
+- `pack` blocks declare [installed packs](#installed-packs), which `packs` cannot list.
 - `models` takes glob patterns without `**`. By default every `*.hcl` file in the root is a model
   file, except `dg.hcl`, the views file, and the `spec.hcl` and `style.hcl` of the project and
   its packs, which never are. A pattern that matches no file is a warning.
@@ -50,10 +52,49 @@ project "my-diagrams" {
 - `font` replaces the bundled Inter font for all text. Exported SVG names it by the file's base
   name (`Brand, sans-serif`).
 
-Kinds and styles load in order: the generic pack, the listed packs in order, then the project's
-own `spec.hcl` and `style.hcl`. A later `kind`, `edge_kind`, `shape` or `overlay_style` of the same
-name replaces the earlier one; a later `style` or `edge_style` with the same label overrides only
-the properties it sets. `dg check` reports each override as information.
+Kinds and styles load in order: the generic pack, the installed packs in the order of their
+blocks, the listed packs in order, then the project's own `spec.hcl` and `style.hcl`. A later
+`kind`, `edge_kind`, `shape` or `overlay_style` of the same name replaces the earlier one; a later
+`style` or `edge_style` with the same label overrides only the properties it sets. `dg check`
+reports each override as information.
+
+### Installed packs
+
+```hcl
+project "my-diagrams" {
+  pack "aws" {
+    source  = "github.com/dg-packs/aws"
+    version = "v1.2.0"
+  }
+}
+```
+
+The block's label is the pack's local name: a simple ID, not `generic`, and its directory
+`packs/aws`. `dg.lock` records what was installed, with the `source` and `version` of the block,
+the commit, and a hash of the pack's files. `dg check`, `dg serve` and `dg export` read these
+files and never use the network.
+
+Every name the pack defines is `aws-<name>` to the project: `kind = "aws-vpc"`, `kind.aws-vpc` and
+`style "aws-vpc"`, where the pack's own files say `vpc`. This goes for kinds, edge kinds, shapes,
+overlay styles, and style labels that name a kind or edge kind; tags stay as written. Local packs
+and the project load later, so they override `aws-vpc` by that name.
+
+A pack reaches nothing outside its names. Inside it, `extends` and the `shape` property mean the
+pack's own definition, or else the generic pack's or a built-in shape, so a pack does not depend on
+another; a style label names one of its kinds or edge kinds or a tag, so it cannot restyle `node`
+or another pack; and `file` reads only the pack's own files.
+
+A copy holds `spec.hcl`, `style.hcl`, `README*`, `LICENSE*` and `NOTICE*` from the pack's root and
+`*.svg` at any depth, and nothing else, all of it read-only. Nothing in the repository is run. A
+symbolic link among those files refuses the pack, and so does a path that is not printable ASCII,
+that holds `\` or `:`, or that differs from another only by case.
+
+`dg check` reports as errors a block with no directory, with no `dg.lock` entry or an entry of
+another `source` or `version`; a directory that `packs` lists too; two packs that yield one name,
+or one that yields a name of the generic pack; and a pack that reaches outside its names. It warns
+when a pack's files no longer match their hash, and when two packs style one tag.
+
+[Packs](../packs.md) is the guide to installing packs and writing one.
 
 ## Kinds
 
@@ -62,6 +103,7 @@ A spec file declares node kinds and edge kinds:
 ```hcl
 kind "gpu-node" {
   extends           = "node"            # the default
+  category          = "Compute"         # its group in the palette
   ports             = ["nic0", "nic1"]  # every node of the kind has them
   default_port_side = "auto"            # for ports declared without one
   property "gpu_count" {
@@ -84,7 +126,7 @@ edge_kind "rdma" {}                     # extends "default"
 Every kind extends `node`, directly or through `extends`, and every edge kind extends `default`.
 A kind inherits `container`, `rows`, `ports`, `default_port_side` and properties, and may add
 ports and properties, but not declare one it inherits again. `ports` may call
-[`port_range`](#functions).
+[`port_range`](#functions). `category` is not inherited.
 
 Styles select kinds including their sub-kinds, and so do the selectors of views: `kind.service`
 matches a kind that extends `service`. The [generic pack](styles.md#the-generic-pack) defines the
@@ -205,9 +247,10 @@ language server's rename, or [`dg op rename_id`](operations.md#rename_id) change
 and every reference to it in model files, `views.hcl` and layout files at once.
 
 When the editor or an operation creates a node without an ID, the ID is made from the label
-(lower case, `a-z`, `0-9` and `-`, such as `orders-db` from "Orders DB"), else from the kind, with
-`-2`, `-3`… added when it is taken; a node created without a label gets its ID from the first
-label it is given in the same session. An edge's ID is made from its ends, such as `api-db`.
+(lower case, `a-z`, `0-9` and `-`, such as `orders-db` from "Orders DB"), else from the kind
+without an installed pack's prefix (`dynamodb` from `aws-dynamodb`), with `-2`, `-3`… added when
+it is taken; a node created without a label gets its ID from the first label it is given in the
+same session. An edge's ID is made from its ends, such as `api-db`.
 
 ## Functions
 
@@ -216,7 +259,8 @@ Every HCL file can call:
 - `port_range(prefix, from, to)`: the list `prefix<from>` … `prefix<to>`, such as
   `port_range("p", 1, 48)` for `p1` to `p48`; at most 10,000 names.
 - `file(path)`: the contents of a UTF-8 text file, relative to the file that calls it and inside
-  the project. Styles use it for pictures: `icon = file("icons/lock.svg")`.
+  the project, or in an installed pack one of the pack's files. Styles use it for pictures:
+  `icon = file("icons/lock.svg")`.
 
 ## Validation
 

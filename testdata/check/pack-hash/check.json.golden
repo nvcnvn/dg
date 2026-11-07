@@ -1,0 +1,13 @@
+[
+  {
+    "severity": "warning",
+    "summary": "Pack changed",
+    "detail": "The files of the pack \"aws\" no longer match their hash in dg.lock, so this is not the pack that was installed. Run dg pack install to restore it.",
+    "file": "dg.hcl",
+    "line": 2,
+    "column": 3,
+    "end_line": 2,
+    "end_column": 13
+  }
+]
+exit 0

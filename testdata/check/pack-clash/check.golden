@@ -1,0 +1,10 @@
+dg.hcl:2:3: error: Name clash: The packs "a" and "a-b" both yield the edge kind "a-b-e". Give one another local name: dg pack add --as.
+dg.hcl:2:3: error: Name clash: The packs "a" and "a-b" both yield the kind "a-b-c". Give one another local name: dg pack add --as.
+dg.hcl:2:3: error: Name clash: The packs "a" and "a-b" both yield the overlay style "a-b-o". Give one another local name: dg pack add --as.
+dg.hcl:2:3: error: Name clash: The packs "a" and "a-b" both yield the shape "a-b-s". Give one another local name: dg pack add --as.
+dg.hcl:6:3: error: Name clash: The packs "a" and "a-b" both yield the edge kind "a-b-e". Give one another local name: dg pack add --as.
+dg.hcl:6:3: error: Name clash: The packs "a" and "a-b" both yield the kind "a-b-c". Give one another local name: dg pack add --as.
+dg.hcl:6:3: error: Name clash: The packs "a" and "a-b" both yield the overlay style "a-b-o". Give one another local name: dg pack add --as.
+dg.hcl:6:3: error: Name clash: The packs "a" and "a-b" both yield the shape "a-b-s". Give one another local name: dg pack add --as.
+dg.hcl:10:3: error: Name clash: The pack "lane" yields the kind "lane-set", which the generic pack defines. Give the pack another local name: dg pack add --as.
+exit 1

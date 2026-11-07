@@ -1,9 +1,10 @@
 import { viewLabelOp, type Scene } from '../edit/edit';
 import type { Point } from '../geometry/geometry';
-import { X } from 'lucide';
-import type { KindInfo, ModelInfo, ModelNode } from '../protocol/client';
+import { ChevronRight, X } from 'lucide';
+import { paletteGroups, type PaletteCategory } from '../edit/palette';
+import type { KindInfo, ModelInfo, ModelNode, Pictures } from '../protocol/client';
 import type { Op } from '../protocol/ops';
-import type { Compartment, CustomShape } from '../protocol/view';
+import type { Compartment } from '../protocol/view';
 import type { ActionHost, Actions, Selection } from './actions';
 import { h, icon, labeled } from './dialog';
 import { kindPicture } from './markup';
@@ -12,16 +13,18 @@ import { kindPicture } from './markup';
 const DRAG = 3;
 
 // palette lists the kinds of the loaded packs, each with a picture of its shape in its default
-// style, under its pack's name in load order (FR-20). A kind dragged onto the canvas, or into a
-// container, creates a node there (drop); one chosen by click or keyboard creates it in the
-// middle of what the canvas shows (pick).
+// style, by pack and category (FR-20); a closed category draws nothing until it opens. A kind
+// dragged onto the canvas, or into a container, creates a node there (drop); one chosen by click
+// or keyboard creates it in the middle of what the canvas shows (pick).
 export function palette(root: HTMLElement, pick: (kind: string) => void, drop: (kind: string, client: Point) => void) {
   const list = root.querySelector('#kinds') as HTMLElement;
   const filter = root.querySelector('#palette-filter') as HTMLInputElement;
   let shown: ModelInfo | undefined;
+  let pictures: Pictures = { kinds: {}, shapes: {} };
   let enabled = false;
-  const entry = (k: KindInfo, shapes: Record<string, CustomShape>) => {
-    const b = h('button', { type: 'button', 'data-kind': k.name, disabled: !enabled, 'data-tip': `Drag onto the canvas to create a ${k.name}, or click to add it in the middle` }, picture(k, shapes), h('span', {}, k.name));
+  const opened = new Map<string, boolean>();
+  const entry = (k: KindInfo) => {
+    const b = h('button', { type: 'button', 'data-kind': k.name, disabled: !enabled, 'data-tip': `Drag onto the canvas to create a ${k.name}, or click to add it in the middle` }, picture(k, pictures), h('span', {}, k.short ?? k.name));
     b.addEventListener('click', () => {
       if (!b.dataset.dragged) pick(k.name);
       delete b.dataset.dragged;
@@ -29,11 +32,21 @@ export function palette(root: HTMLElement, pick: (kind: string) => void, drop: (
     b.addEventListener('pointerdown', (ev) => dragKind(b, k.name, ev));
     return b;
   };
+  // category shows a category that opens and closes; what it opens or closes under a filter lasts
+  // only as long as the filter.
+  const category = (c: PaletteCategory, filtered: boolean) => {
+    const d = h('details', { open: c.open }, h('summary', {}, icon(ChevronRight), h('span', {}, c.title), h('span', { class: 'count' }, String(c.kinds.length))));
+    if (c.open) d.append(...c.kinds.map(entry));
+    d.addEventListener('toggle', () => {
+      if (d.open && d.childElementCount === 1) d.append(...c.kinds.map(entry));
+      if (!filtered) opened.set(c.key, d.open);
+    });
+    return d;
+  };
   const fill = () => {
-    const q = filter.value.toLowerCase();
-    const kinds = (shown?.kinds ?? []).filter((k) => k.name.toLowerCase().includes(q));
-    const groups = [...(shown?.packs ?? []), ''].map((pack) => ({ pack, kinds: kinds.filter((k) => (k.pack ?? '') === pack) }));
-    list.replaceChildren(...groups.filter((g) => g.kinds.length).flatMap((g) => [h('h3', {}, g.pack || 'Project'), ...g.kinds.map((k) => entry(k, shown?.shapes ?? {}))]));
+    const q = filter.value;
+    const packs = shown ? paletteGroups(shown, q, opened) : [];
+    list.replaceChildren(...packs.flatMap((p) => [h('h3', {}, p.title), ...p.categories.flatMap((c): Node[] => (c.title ? [category(c, !!q)] : c.kinds.map(entry)))]));
   };
   const dragKind = (b: HTMLButtonElement, kind: string, ev: PointerEvent) => {
     if (ev.button !== 0 || b.disabled) return;
@@ -61,11 +74,12 @@ export function palette(root: HTMLElement, pick: (kind: string) => void, drop: (
   };
   filter.addEventListener('input', fill);
   return {
-    update(next: ModelInfo | undefined, on: boolean) {
-      const changed = next !== shown;
+    update(next: ModelInfo | undefined, pics: Pictures, on: boolean) {
+      const changed = next !== shown || pics !== pictures;
       if (on === enabled && !changed) return;
       enabled = on;
       shown = next;
+      pictures = pics;
       if (changed) fill();
       else for (const b of list.querySelectorAll('button')) b.disabled = !on;
     },
@@ -73,9 +87,9 @@ export function palette(root: HTMLElement, pick: (kind: string) => void, drop: (
 }
 
 // picture is the palette's picture of kind k.
-function picture(k: KindInfo, shapes: Record<string, CustomShape>): Element | null {
+function picture(k: KindInfo, p: Pictures): Element | null {
   if (!k.style) return null;
-  return new DOMParser().parseFromString(kindPicture(k.style, shapes), 'image/svg+xml').documentElement;
+  return new DOMParser().parseFromString(kindPicture({ ...k.style, ...p.kinds[k.name] }, p.shapes), 'image/svg+xml').documentElement;
 }
 
 // inspector shows the selection (FR-11): a node's ID, label, kind, tags, properties typed by its

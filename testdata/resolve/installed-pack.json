@@ -1,0 +1,331 @@
+{
+  "view": "main",
+  "grid": 10,
+  "nodes": [
+    {
+      "id": "backups",
+      "kind": "homelab-nas",
+      "label": "Backups",
+      "frame": "cabinet",
+      "style": {
+        "shape": "rect",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "icon": "\u003csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1F3A5F\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"\u003e\n  \u003crect x=\"6\" y=\"3\" width=\"12\" height=\"18\" rx=\"1.5\"/\u003e\n  \u003cpath d=\"M9 7h6M9 11h6M9 15h6M12 18.5h.01\"/\u003e\n\u003c/svg\u003e\n",
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "cabinet",
+      "kind": "homelab-rack",
+      "label": "Cabinet",
+      "container": true,
+      "style": {
+        "shape": "homelab-rack",
+        "fill": "#F8F9FA",
+        "stroke": "#9AA0A6",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 20,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "core",
+      "kind": "homelab-switch",
+      "label": "Core switch",
+      "style": {
+        "shape": "rect",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "icon": "\u003csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1F3A5F\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"\u003e\n  \u003crect x=\"2\" y=\"7\" width=\"20\" height=\"10\" rx=\"1.5\"/\u003e\n  \u003cpath d=\"M6 11h2v2H6zM11 11h2v2h-2zM16 11h2v2h-2z\"/\u003e\n\u003c/svg\u003e\n",
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "gateway",
+      "kind": "homelab-router",
+      "label": "Gateway",
+      "style": {
+        "shape": "rect",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "icon": "\u003csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1F3A5F\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"\u003e\n  \u003crect x=\"3\" y=\"14\" width=\"18\" height=\"6\" rx=\"1.5\"/\u003e\n  \u003cpath d=\"M7 14V9M17 14V9M7 17h.01M11 17h.01\"/\u003e\n  \u003cpath d=\"M9 7a4.2 4.2 0 0 1 6 0M6.8 4.8a7.4 7.4 0 0 1 10.4 0\"/\u003e\n\u003c/svg\u003e\n",
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "hall",
+      "kind": "homelab-access-point",
+      "label": "Hall Wi-Fi",
+      "style": {
+        "shape": "rect",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "icon": "\u003csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1F3A5F\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"\u003e\n  \u003ccircle cx=\"12\" cy=\"17\" r=\"2\"/\u003e\n  \u003cpath d=\"M8 13.5a5.5 5.5 0 0 1 8 0M5 10.5a9.8 9.8 0 0 1 14 0\"/\u003e\n\u003c/svg\u003e\n",
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "hypervisor",
+      "kind": "homelab-server",
+      "label": "Hypervisor",
+      "frame": "cabinet",
+      "style": {
+        "shape": "rect",
+        "fill": "#E6F4EA",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "icon": "\u003csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1F3A5F\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"\u003e\n  \u003crect x=\"3\" y=\"4\" width=\"18\" height=\"7\" rx=\"1.5\"/\u003e\n  \u003crect x=\"3\" y=\"13\" width=\"18\" height=\"7\" rx=\"1.5\"/\u003e\n  \u003cpath d=\"M7 7.5h.01M7 16.5h.01M11 7.5h6M11 16.5h6\"/\u003e\n\u003c/svg\u003e\n",
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "internet",
+      "kind": "external",
+      "label": "Internet",
+      "style": {
+        "shape": "rounded",
+        "fill": "#F1F3F4",
+        "stroke": "#5F6368",
+        "stroke_width": 1,
+        "stroke_dash": [
+          6,
+          4
+        ],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    },
+    {
+      "id": "laptop",
+      "kind": "homelab-laptop",
+      "label": "Laptop",
+      "style": {
+        "shape": "rect",
+        "fill": "#FFFFFF",
+        "stroke": "#3C4043",
+        "stroke_width": 1,
+        "stroke_dash": [],
+        "corner_radius": 8,
+        "opacity": 1,
+        "text_color": "#202124",
+        "font_size": 14,
+        "font_weight": 400,
+        "icon": "\u003csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1F3A5F\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"\u003e\n  \u003crect x=\"5\" y=\"5\" width=\"14\" height=\"10\" rx=\"1.5\"/\u003e\n  \u003cpath d=\"M2.5 19h19l-2.5-4H5z\"/\u003e\n\u003c/svg\u003e\n",
+        "padding": 10,
+        "min_w": 100,
+        "min_h": 40,
+        "max_w": 240,
+        "z": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "core-hall",
+      "kind": "homelab-ethernet",
+      "from": {
+        "node": "core"
+      },
+      "to": {
+        "node": "hall"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#1F3A5F",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "core-hypervisor",
+      "kind": "homelab-ethernet",
+      "from": {
+        "node": "core"
+      },
+      "to": {
+        "node": "hypervisor"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#1F3A5F",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "gateway-core",
+      "kind": "homelab-ethernet",
+      "from": {
+        "node": "gateway"
+      },
+      "to": {
+        "node": "core"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#1F3A5F",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "hypervisor-backups",
+      "kind": "homelab-ethernet",
+      "from": {
+        "node": "hypervisor"
+      },
+      "to": {
+        "node": "backups"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#1F3A5F",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "laptop-hall",
+      "kind": "homelab-wifi",
+      "from": {
+        "node": "laptop"
+      },
+      "to": {
+        "node": "hall"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#1A73E8",
+        "stroke_width": 1.5,
+        "stroke_dash": [
+          4,
+          3
+        ],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    },
+    {
+      "id": "uplink",
+      "kind": "default",
+      "from": {
+        "node": "internet"
+      },
+      "to": {
+        "node": "gateway"
+      },
+      "labels": {},
+      "style": {
+        "stroke": "#3C4043",
+        "stroke_width": 1.5,
+        "stroke_dash": [],
+        "arrow_start": "none",
+        "arrow_end": "arrow",
+        "routing": "orthogonal",
+        "font_size": 12
+      }
+    }
+  ],
+  "shapes": {
+    "homelab-rack": {
+      "svg": "\u003csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 80 80\"\u003e\n  \u003crect x=\"1\" y=\"1\" width=\"78\" height=\"78\" rx=\"6\" fill=\"#F3F6FA\" stroke=\"#1F3A5F\" stroke-width=\"2\"/\u003e\n  \u003crect x=\"1\" y=\"1\" width=\"78\" height=\"10\" rx=\"4\" fill=\"#1F3A5F\"/\u003e\n  \u003cpath d=\"M5 16v60M75 16v60\" stroke=\"#8FA3BA\" stroke-width=\"2\" stroke-dasharray=\"2 3\"/\u003e\n\u003c/svg\u003e\n",
+      "text_box": [
+        0.05,
+        0.14,
+        0.9,
+        0.8
+      ],
+      "stretch": "nine-slice"
+    }
+  }
+}

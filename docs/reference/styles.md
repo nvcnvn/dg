@@ -177,8 +177,9 @@ it names.
 | `table` | a box with the label above the node's rows and compartments; a node without rows is a `rect` |
 
 Edges end on the outline of each shape. Pictures (`icon`, `image` and custom shapes) are SVG files
-read with `file()`: well-formed XML whose root is an `svg` element in the SVG namespace. Other
-picture formats are not supported.
+read with `file()`: one well-formed XML document whose root is an `svg` element in the SVG
+namespace. Other picture formats are not supported. dg draws a picture as an image, in the editor and in exports,
+so a script in it does not run and a file or address it names is not loaded.
 
 ### Custom shapes
 

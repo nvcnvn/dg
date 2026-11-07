@@ -1,0 +1,7 @@
+packs/aws/style.hcl:5:1: error: Outside the pack: The style label "service" names none of the pack's kinds; a pack styles its own kinds and tags.
+packs/aws/style.hcl:9:1: error: Outside the pack: The style label "gcp-vm" names none of the pack's kinds; a pack styles its own kinds and tags.
+packs/aws/style.hcl:13:1: error: Outside the pack: The style label "peering" names none of the pack's kinds; a pack styles its own kinds and tags.
+packs/aws/style.hcl:17:1: error: Outside the pack: The style label "node.a" names none of the pack's kinds; a pack styles its own kinds and tags.
+packs/aws/style.hcl:21:1: error: Outside the pack: The edge_style label "default" names none of the pack's edge kinds; a pack styles its own kinds and tags.
+packs/aws/style.hcl:25:1: error: Outside the pack: The edge_style label "vpc" names none of the pack's edge kinds; a pack styles its own kinds and tags.
+exit 1

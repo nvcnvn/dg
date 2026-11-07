@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 340 720" width="340" height="720" font-family="Inter, sans-serif">
+<defs>
+<image id="dg-shape-homelab-rack" width="80" height="80" preserveAspectRatio="none" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2080%2080%22%3E%0A%20%20%3Crect%20x%3D%221%22%20y%3D%221%22%20width%3D%2278%22%20height%3D%2278%22%20rx%3D%226%22%20fill%3D%22%23F3F6FA%22%20stroke%3D%22%231F3A5F%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Crect%20x%3D%221%22%20y%3D%221%22%20width%3D%2278%22%20height%3D%2210%22%20rx%3D%224%22%20fill%3D%22%231F3A5F%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M5%2016v60M75%2016v60%22%20stroke%3D%22%238FA3BA%22%20stroke-width%3D%222%22%20stroke-dasharray%3D%222%203%22%2F%3E%0A%3C%2Fsvg%3E%0A"/>
+</defs>
+<g data-node="cabinet">
+<svg x="10" y="400" width="20" height="20" viewBox="0 0 20 20" preserveAspectRatio="none"><use href="#dg-shape-homelab-rack"/></svg>
+<svg x="30" y="400" width="100" height="20" viewBox="20 0 40 20" preserveAspectRatio="none"><use href="#dg-shape-homelab-rack"/></svg>
+<svg x="130" y="400" width="20" height="20" viewBox="60 0 20 20" preserveAspectRatio="none"><use href="#dg-shape-homelab-rack"/></svg>
+<svg x="10" y="420" width="20" height="250" viewBox="0 20 20 40" preserveAspectRatio="none"><use href="#dg-shape-homelab-rack"/></svg>
+<svg x="30" y="420" width="100" height="250" viewBox="20 20 40 40" preserveAspectRatio="none"><use href="#dg-shape-homelab-rack"/></svg>
+<svg x="130" y="420" width="20" height="250" viewBox="60 20 20 40" preserveAspectRatio="none"><use href="#dg-shape-homelab-rack"/></svg>
+<svg x="10" y="670" width="20" height="20" viewBox="0 60 20 20" preserveAspectRatio="none"><use href="#dg-shape-homelab-rack"/></svg>
+<svg x="30" y="670" width="100" height="20" viewBox="20 60 40 20" preserveAspectRatio="none"><use href="#dg-shape-homelab-rack"/></svg>
+<svg x="130" y="670" width="20" height="20" viewBox="60 60 20 20" preserveAspectRatio="none"><use href="#dg-shape-homelab-rack"/></svg>
+<text x="30" y="425" fill="#202124" font-size="14">Cabinet</text>
+</g>
+<g data-node="core">
+<rect x="50" y="250" width="100" height="80" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<image x="86" y="264" width="28" height="28" preserveAspectRatio="xMidYMid meet" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%231F3A5F%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%0A%20%20%3Crect%20x%3D%222%22%20y%3D%227%22%20width%3D%2220%22%20height%3D%2210%22%20rx%3D%221.5%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M6%2011h2v2H6zM11%2011h2v2h-2zM16%2011h2v2h-2z%22%2F%3E%0A%3C%2Fsvg%3E%0A"/>
+<text x="100" y="311" text-anchor="middle" fill="#202124" font-size="14">Core switch</text>
+</g>
+<g data-node="gateway">
+<rect x="50" y="110" width="100" height="80" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<image x="86" y="124" width="28" height="28" preserveAspectRatio="xMidYMid meet" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%231F3A5F%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%0A%20%20%3Crect%20x%3D%223%22%20y%3D%2214%22%20width%3D%2218%22%20height%3D%226%22%20rx%3D%221.5%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M7%2014V9M17%2014V9M7%2017h.01M11%2017h.01%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M9%207a4.2%204.2%200%200%201%206%200M6.8%204.8a7.4%207.4%200%200%201%2010.4%200%22%2F%3E%0A%3C%2Fsvg%3E%0A"/>
+<text x="100" y="171" text-anchor="middle" fill="#202124" font-size="14">Gateway</text>
+</g>
+<g data-node="hall">
+<rect x="190" y="400" width="100" height="80" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<image x="226" y="414" width="28" height="28" preserveAspectRatio="xMidYMid meet" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%231F3A5F%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%0A%20%20%3Ccircle%20cx%3D%2212%22%20cy%3D%2217%22%20r%3D%222%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M8%2013.5a5.5%205.5%200%200%201%208%200M5%2010.5a9.8%209.8%200%200%201%2014%200%22%2F%3E%0A%3C%2Fsvg%3E%0A"/>
+<text x="240" y="461" text-anchor="middle" fill="#202124" font-size="14">Hall Wi-Fi</text>
+</g>
+<g data-node="internet">
+<rect x="50" y="10" width="100" height="40" rx="8" fill="#F1F3F4" stroke="#5F6368" stroke-width="1" stroke-dasharray="6 4"/>
+<text x="100" y="35" text-anchor="middle" fill="#202124" font-size="14">Internet</text>
+</g>
+<g data-node="laptop">
+<rect x="210" y="250" width="100" height="80" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<image x="246" y="264" width="28" height="28" preserveAspectRatio="xMidYMid meet" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%231F3A5F%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%0A%20%20%3Crect%20x%3D%225%22%20y%3D%225%22%20width%3D%2214%22%20height%3D%2210%22%20rx%3D%221.5%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M2.5%2019h19l-2.5-4H5z%22%2F%3E%0A%3C%2Fsvg%3E%0A"/>
+<text x="260" y="311" text-anchor="middle" fill="#202124" font-size="14">Laptop</text>
+</g>
+<g data-node="backups">
+<rect x="30" y="590" width="100" height="80" fill="#FFFFFF" stroke="#3C4043" stroke-width="1"/>
+<image x="66" y="604" width="28" height="28" preserveAspectRatio="xMidYMid meet" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%231F3A5F%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%0A%20%20%3Crect%20x%3D%226%22%20y%3D%223%22%20width%3D%2212%22%20height%3D%2218%22%20rx%3D%221.5%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M9%207h6M9%2011h6M9%2015h6M12%2018.5h.01%22%2F%3E%0A%3C%2Fsvg%3E%0A"/>
+<text x="80" y="651" text-anchor="middle" fill="#202124" font-size="14">Backups</text>
+</g>
+<g data-node="hypervisor">
+<rect x="30" y="450" width="100" height="80" fill="#E6F4EA" stroke="#3C4043" stroke-width="1"/>
+<image x="66" y="464" width="28" height="28" preserveAspectRatio="xMidYMid meet" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%231F3A5F%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%0A%20%20%3Crect%20x%3D%223%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%227%22%20rx%3D%221.5%22%2F%3E%0A%20%20%3Crect%20x%3D%223%22%20y%3D%2213%22%20width%3D%2218%22%20height%3D%227%22%20rx%3D%221.5%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M7%207.5h.01M7%2016.5h.01M11%207.5h6M11%2016.5h6%22%2F%3E%0A%3C%2Fsvg%3E%0A"/>
+<text x="80" y="511" text-anchor="middle" fill="#202124" font-size="14">Hypervisor</text>
+</g>
+<g data-edge="core-hall">
+<path d="M117 330 L117 342 L178 342 L178 440 L190 440" fill="none" stroke="#1F3A5F" stroke-width="1.5"/>
+<path d="M180 445 L190 440 L180 435" fill="none" stroke="#1F3A5F" stroke-width="1.5"/>
+</g>
+<g data-edge="core-hypervisor">
+<path d="M82 330 L82 342 L91 342 L91 438 L82 438 L82 450" fill="none" stroke="#1F3A5F" stroke-width="1.5"/>
+<path d="M77 440 L82 450 L87 440" fill="none" stroke="#1F3A5F" stroke-width="1.5"/>
+</g>
+<g data-edge="gateway-core">
+<path d="M100 190 L100 250" fill="none" stroke="#1F3A5F" stroke-width="1.5"/>
+<path d="M95 240 L100 250 L105 240" fill="none" stroke="#1F3A5F" stroke-width="1.5"/>
+</g>
+<g data-edge="hypervisor-backups">
+<path d="M80 530 L80 590" fill="none" stroke="#1F3A5F" stroke-width="1.5"/>
+<path d="M75 580 L80 590 L85 580" fill="none" stroke="#1F3A5F" stroke-width="1.5"/>
+</g>
+<g data-edge="laptop-hall">
+<path d="M250 330 L250 400" fill="none" stroke="#1A73E8" stroke-width="1.5" stroke-dasharray="4 3"/>
+<path d="M245 390 L250 400 L255 390" fill="none" stroke="#1A73E8" stroke-width="1.5"/>
+</g>
+<g data-edge="uplink">
+<path d="M100 50 L100 110" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+<path d="M95 100 L100 110 L105 100" fill="none" stroke="#3C4043" stroke-width="1.5"/>
+</g>
+</svg>

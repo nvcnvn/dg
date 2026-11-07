@@ -1,0 +1,12 @@
+version: 1
+packs:
+  aws:
+    source: example.com/packs/aws
+    version: v1.0.0
+    commit: 9fceb02d0ae598e95dc970b74767f19372d61af8
+    hash: sha256:b317bf2de201c2c716624f8ce79319ff4530dff372f37f6a1ced3b7e5e32d7b0
+  gcp:
+    source: example.com/packs/gcp
+    version: v1.0.0
+    commit: 9fceb02d0ae598e95dc970b74767f19372d61af8
+    hash: sha256:8490d014e9e4a0dfe4a56d105dd65f49f9567b8ff70195226bf7126575262f7b

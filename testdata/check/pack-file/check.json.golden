@@ -1,0 +1,23 @@
+[
+  {
+    "severity": "error",
+    "summary": "Error in function call",
+    "detail": "Call to function \"file\" failed: \"../../secret.svg\" is not a relative path inside the pack.",
+    "file": "packs/aws/style.hcl",
+    "line": 2,
+    "column": 10,
+    "end_line": 2,
+    "end_column": 15
+  },
+  {
+    "severity": "error",
+    "summary": "Error in function call",
+    "detail": "Call to function \"file\" failed: cannot read \"notes.txt\".",
+    "file": "packs/aws/style.hcl",
+    "line": 6,
+    "column": 10,
+    "end_line": 6,
+    "end_column": 15
+  }
+]
+exit 1

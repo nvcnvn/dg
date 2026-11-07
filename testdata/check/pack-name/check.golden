@@ -1,0 +1,5 @@
+dg.hcl:2:3: error: Invalid ID: The pack name "generic" is the built-in pack's.
+dg.hcl:6:3: error: Invalid ID: The pack name "bad.name" is not a simple ID (letters, digits, _ and -, starting with a letter or _).
+dg.hcl:14:3: error: Duplicate definition: The pack "aws" needs the directory packs/aws, which the pack at line 10 of this file has; names that differ only by case share a directory.
+dg.hcl:18:3: error: Duplicate definition: The pack "AWS" needs the directory packs/AWS, which the pack at line 10 of this file has; names that differ only by case share a directory.
+exit 1

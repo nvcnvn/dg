@@ -1,0 +1,23 @@
+[
+  {
+    "severity": "error",
+    "summary": "Outside the pack",
+    "detail": "Kind \"other\" extends \"gcp-vm\"; a pack extends its own kinds and the generic pack's.",
+    "file": "packs/aws/spec.hcl",
+    "line": 9,
+    "column": 1,
+    "end_line": 9,
+    "end_column": 13
+  },
+  {
+    "severity": "error",
+    "summary": "Outside the pack",
+    "detail": "Kind \"nowhere\" extends \"vm\"; a pack extends its own kinds and the generic pack's.",
+    "file": "packs/aws/spec.hcl",
+    "line": 13,
+    "column": 1,
+    "end_line": 13,
+    "end_column": 15
+  }
+]
+exit 1

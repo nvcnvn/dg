@@ -78,7 +78,7 @@ func replay(files fsys.FS, sess *Session, from, to *[]*Change, verb string, side
 	merges := false
 	for _, fc := range c.Files {
 		if p.IsReadOnly(fc.Path) {
-			return nil, fmt.Errorf("cannot %s: %s is read-only (read_only in dg.hcl)", verb, fc.Path)
+			return nil, fmt.Errorf("cannot %s: %s is read-only (read_only in dg.hcl, or in an installed pack)", verb, fc.Path)
 		}
 		got, err := fs.ReadFile(files, fc.Path)
 		if err != nil && !errors.Is(err, fs.ErrNotExist) {

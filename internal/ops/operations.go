@@ -132,7 +132,7 @@ func (s *state) createNode(op Op) error {
 		}
 	} else {
 		var fromKind bool
-		id, fromKind = nodeID(op.Kind, label, func(x string) bool { return p.Model.Nodes[x] != nil })
+		id, fromKind = nodeID(p.ShortKind(op.Kind), label, func(x string) bool { return p.Model.Nodes[x] != nil })
 		if fromKind {
 			s.sess.kindIDs[id] = true
 		}

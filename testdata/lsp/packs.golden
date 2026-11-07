@@ -1,0 +1,257 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "capabilities": {
+      "completionProvider": {
+        "triggerCharacters": [
+          ".",
+          "\""
+        ]
+      },
+      "definitionProvider": true,
+      "documentFormattingProvider": true,
+      "hoverProvider": true,
+      "referencesProvider": true,
+      "renameProvider": {
+        "prepareProvider": true
+      },
+      "textDocumentSync": {
+        "change": 2,
+        "openClose": true,
+        "save": true
+      }
+    },
+    "serverInfo": {
+      "name": "dg"
+    }
+  }
+}
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "uri": "$ROOT/packs/aws/spec.hcl",
+    "range": {
+      "start": {
+        "line": 0,
+        "character": 6
+      },
+      "end": {
+        "line": 0,
+        "character": 9
+      }
+    }
+  }
+}
+{
+  "jsonrpc": "2.0",
+  "method": "textDocument/publishDiagnostics",
+  "params": {
+    "uri": "$ROOT/spec.hcl",
+    "diagnostics": [
+      {
+        "range": {
+          "start": {
+            "line": 0,
+            "character": 0
+          },
+          "end": {
+            "line": 0,
+            "character": 22
+          }
+        },
+        "severity": 3,
+        "source": "dg",
+        "message": "Overridden definition: The kind \"aws-edge-lambda\" replaces the one defined at packs/aws/spec.hcl:11:1."
+      }
+    ]
+  }
+}
+{
+  "jsonrpc": "2.0",
+  "method": "textDocument/publishDiagnostics",
+  "params": {
+    "uri": "$ROOT/style.hcl",
+    "diagnostics": [
+      {
+        "range": {
+          "start": {
+            "line": 0,
+            "character": 0
+          },
+          "end": {
+            "line": 0,
+            "character": 18
+          }
+        },
+        "severity": 3,
+        "source": "dg",
+        "message": "Overridden definition: The style \"aws-lambda\" overrides the properties it sets of the one defined at packs/aws/style.hcl:5:1."
+      }
+    ]
+  }
+}
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "uri": "$ROOT/packs/aws/spec.hcl",
+    "range": {
+      "start": {
+        "line": 0,
+        "character": 6
+      },
+      "end": {
+        "line": 0,
+        "character": 9
+      }
+    }
+  }
+}
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "result": {
+    "uri": "$ROOT/packs/aws/spec.hcl",
+    "range": {
+      "start": {
+        "line": 14,
+        "character": 11
+      },
+      "end": {
+        "line": 14,
+        "character": 18
+      }
+    }
+  }
+}
+{
+  "jsonrpc": "2.0",
+  "id": 5,
+  "result": {
+    "uri": "$ROOT/packs/aws/spec.hcl",
+    "range": {
+      "start": {
+        "line": 5,
+        "character": 6
+      },
+      "end": {
+        "line": 5,
+        "character": 12
+      }
+    }
+  }
+}
+{
+  "jsonrpc": "2.0",
+  "id": 6,
+  "result": null
+}
+{
+  "jsonrpc": "2.0",
+  "id": 7,
+  "result": [
+    {
+      "uri": "$ROOT/model.hcl",
+      "range": {
+        "start": {
+          "line": 5,
+          "character": 12
+        },
+        "end": {
+          "line": 5,
+          "character": 22
+        }
+      }
+    },
+    {
+      "uri": "$ROOT/packs/aws/spec.hcl",
+      "range": {
+        "start": {
+          "line": 5,
+          "character": 6
+        },
+        "end": {
+          "line": 5,
+          "character": 12
+        }
+      }
+    },
+    {
+      "uri": "$ROOT/packs/aws/spec.hcl",
+      "range": {
+        "start": {
+          "line": 11,
+          "character": 13
+        },
+        "end": {
+          "line": 11,
+          "character": 19
+        }
+      }
+    },
+    {
+      "uri": "$ROOT/packs/aws/style.hcl",
+      "range": {
+        "start": {
+          "line": 4,
+          "character": 7
+        },
+        "end": {
+          "line": 4,
+          "character": 13
+        }
+      }
+    },
+    {
+      "uri": "$ROOT/spec.hcl",
+      "range": {
+        "start": {
+          "line": 1,
+          "character": 13
+        },
+        "end": {
+          "line": 1,
+          "character": 23
+        }
+      }
+    },
+    {
+      "uri": "$ROOT/style.hcl",
+      "range": {
+        "start": {
+          "line": 0,
+          "character": 7
+        },
+        "end": {
+          "line": 0,
+          "character": 17
+        }
+      }
+    },
+    {
+      "uri": "$ROOT/views.hcl",
+      "range": {
+        "start": {
+          "line": 1,
+          "character": 32
+        },
+        "end": {
+          "line": 1,
+          "character": 42
+        }
+      }
+    }
+  ]
+}
+{
+  "jsonrpc": "2.0",
+  "id": 8,
+  "result": []
+}
+{
+  "jsonrpc": "2.0",
+  "id": 9,
+  "result": null
+}

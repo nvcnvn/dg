@@ -2,7 +2,7 @@
   {
     "severity": "error",
     "summary": "Unsupported argument",
-    "detail": "An argument named \"theme\" is not expected here. Expected arguments: font, grid, layout_dir, models, packs, read_only, views. If the name is right, a newer dg may know it: this one is (devel).",
+    "detail": "An argument named \"theme\" is not expected here. Expected arguments: font, grid, layout_dir, models, packs, read_only, views. Expected blocks: pack. If the name is right, a newer dg may know it: this one is (devel).",
     "file": "dg.hcl",
     "line": 2,
     "column": 3,
@@ -102,7 +102,7 @@
   {
     "severity": "error",
     "summary": "Unsupported argument",
-    "detail": "An argument named \"colour\" is not expected here. Expected arguments: container, default_port_side, extends, ports, rows. Expected blocks: property. If the name is right, a newer dg may know it: this one is (devel).",
+    "detail": "An argument named \"colour\" is not expected here. Expected arguments: category, container, default_port_side, extends, ports, rows. Expected blocks: property. If the name is right, a newer dg may know it: this one is (devel).",
     "file": "spec.hcl",
     "line": 2,
     "column": 3,

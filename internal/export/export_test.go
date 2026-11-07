@@ -11,6 +11,7 @@ import (
 	"image/draw"
 	"image/gif"
 	"image/png"
+	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
@@ -20,6 +21,7 @@ import (
 	"github.com/chromedp/chromedp"
 
 	"github.com/nvcnvn/dg/internal/project"
+	"github.com/nvcnvn/dg/internal/style"
 	"github.com/nvcnvn/dg/internal/view"
 )
 
@@ -294,6 +296,89 @@ func TestBrokenPicture(t *testing.T) {
 	_, err = Render(context.Background(), v, "png")
 	if want := fmt.Sprintf("the picture of node %q did not load", v.Nodes[0].ID); err == nil || !strings.Contains(err.Error(), want) {
 		t.Errorf("export error %v, want one containing %q", err, want)
+	}
+}
+
+// TestPictureCheck checks dg check's picture rule against the browser that draws pictures: what
+// the rule accepts loads as an image, and what the browser refuses the rule refuses, including the
+// forms real SVG files take.
+func TestPictureCheck(t *testing.T) {
+	if testing.Short() {
+		t.Skip("starts Chromium")
+	}
+	ctx, stop, err := openApp(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer stop()
+	const ns = `xmlns="http://www.w3.org/2000/svg"`
+	for _, tc := range []struct {
+		name, svg string
+		draws     bool
+	}{
+		{"plain", `<svg ` + ns + `/>`, true},
+		{"prefixed root", `<s:svg xmlns:s="http://www.w3.org/2000/svg"/>`, true},
+		{"declaration", `<?xml version="1.0" encoding="UTF-8"?>` + "\n<svg " + ns + `/>`, true},
+		{"byte order mark", "\uFEFF<?xml version=\"1.0\"?><svg " + ns + `/>`, true},
+		{"standalone", `<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg ` + ns + `/>`, true},
+		{"doctype", `<?xml version="1.0"?>` + "\n" + `<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">` + "\n<svg " + ns + `/>`, true},
+		{"doctype with a subset", `<!DOCTYPE svg [<!ENTITY a "b"><!-- x -->]><svg ` + ns + `/>`, true},
+		{"comments and instructions around the root", "<!-- a --><?b c?>\n<svg " + ns + "/>\n<!-- d --><?e f?>\n", true},
+		{"xlink", `<svg ` + ns + ` xmlns:xlink="http://www.w3.org/1999/xlink"><defs><path id="a"/></defs><use xlink:href="#a"/></svg>`, true},
+		{"editor's namespaces", `<svg ` + ns + ` xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" inkscape:version="1.0"><sodipodi:namedview id="a" inkscape:zoom="1"/></svg>`, true},
+		{"xml prefix", `<svg ` + ns + ` xml:space="preserve"/>`, true},
+		{"a prefix bound in a child", `<svg ` + ns + `><a:b xmlns:a="urn:a" a:c="1"/></svg>`, true},
+		{"a prefix bound again in a child", `<svg ` + ns + ` xmlns:a="urn:a"><g xmlns:a="urn:b" a:c="1"/><a:d/></svg>`, true},
+		{"same local name in two namespaces", `<svg ` + ns + ` xmlns:a="urn:a" xmlns:b="urn:b" a:c="1" b:c="2" c="3"/>`, true},
+		{"an unused prefix's namespace undone", `<svg ` + ns + `><g xmlns=""/></svg>`, true},
+		{"cdata in the root", `<svg ` + ns + `><style><![CDATA[a > b {}]]></style></svg>`, true},
+		{"two roots", `<svg ` + ns + `/><svg ` + ns + `/>`, false},
+		{"text after the root", `<svg ` + ns + `/>junk`, false},
+		{"text before the root", `junk<svg ` + ns + `/>`, false},
+		{"unbound element prefix", `<svg ` + ns + `><x:y/></svg>`, false},
+		{"unbound root prefix", `<x:svg/>`, false},
+		{"unbound attribute prefix", `<svg ` + ns + ` x:y="1"/>`, false},
+		{"prefix bound only in a closed sibling", `<svg ` + ns + `><g xmlns:a="urn:a"/><a:b/></svg>`, false},
+		{"duplicate attribute", `<svg ` + ns + ` width="1" width="2"/>`, false},
+		{"duplicate attribute by namespace", `<svg ` + ns + ` xmlns:a="urn:a" xmlns:b="urn:a" a:c="1" b:c="2"/>`, false},
+		{"namespace bound to nothing", `<svg ` + ns + ` xmlns:a="" a:b="1"/>`, false},
+		{"declaration not first", " <?xml version=\"1.0\"?><svg " + ns + `/>`, false},
+		{"declaration inside", `<svg ` + ns + `><?xml version="1.0"?></svg>`, false},
+		{"doctype after the root", `<svg ` + ns + `/><!DOCTYPE svg>`, false},
+		{"doctype inside", `<svg ` + ns + `><!DOCTYPE svg></svg>`, false},
+		{"two doctypes", `<!DOCTYPE svg><!DOCTYPE svg><svg ` + ns + `/>`, false},
+		{"directive that is no doctype", `<!ELEMENT a ANY><svg ` + ns + `/>`, false},
+		{"cdata before the root", `<![CDATA[ ]]><svg ` + ns + `/>`, false},
+		{"character reference before the root", `&#32;<svg ` + ns + `/>`, false},
+		{"unclosed", `<svg ` + ns + `><g>`, false},
+		{"mismatched", `<svg ` + ns + `><g></a></svg>`, false},
+		{"name ending in a colon", `<svg ` + ns + `><a:/></svg>`, false},
+		{"name starting with a colon", `<svg ` + ns + `><:a/></svg>`, false},
+		{"two colons", `<svg ` + ns + `><a:b:c xmlns:a="urn:a"/></svg>`, false},
+		{"no namespace", `<svg/>`, false},
+		{"wrong root", `<g ` + ns + `/>`, false},
+		{"nothing", ``, false},
+	} {
+		uri, err := json.Marshal("data:image/svg+xml," + url.PathEscape(tc.svg))
+		if err != nil {
+			t.Fatal(err)
+		}
+		loaded, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`new Promise((done) => { const im = new Image(); im.onload = () => done(true); im.onerror = () => done(false); im.src = `+string(uri)+`; })`, chromedp.EvalAwaitPromise))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if loaded != tc.draws {
+			t.Errorf("%s: the browser drew it: %v, want %v", tc.name, loaded, tc.draws)
+		}
+		if problem := style.PictureProblem(tc.svg); (problem == "") != tc.draws {
+			t.Errorf("%s: dg check says %q, want it drawn: %v", tc.name, problem, tc.draws)
+		}
+	}
+	// The browser lets these through, but they are not XML (spec 4.3).
+	for _, svg := range []string{`<svg ` + ns + ` xmlns:a="urn:a" xmlns:a="urn:b"/>`, `<svg ` + ns + ` ` + ns + `/>`} {
+		if style.PictureProblem(svg) == "" {
+			t.Errorf("dg check accepts %s", svg)
+		}
 	}
 }
 

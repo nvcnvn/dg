@@ -1,0 +1,6 @@
+dg.hcl:2:3: error: Pack not locked: dg.lock has no entry for the pack "unlocked", so dg pack install cannot restore it. Run dg pack add to install it.
+dg.hcl:6:3: error: Pack not locked: dg.lock has the pack "moved" as example.com/packs/moved at v1.0.0, not example.com/elsewhere/moved at v1.0.0. Run dg pack update to install what this block asks for, or restore the block; dg pack install installs what dg.lock holds.
+dg.hcl:10:3: error: Pack not locked: dg.lock has the pack "bumped" as example.com/packs/bumped at v1.0.0, not example.com/packs/bumped at v2.0.0. Run dg pack update to install what this block asks for, or restore the block; dg pack install installs what dg.lock holds.
+dg.hcl:14:3: error: Missing required argument: The argument "version" is required.
+dg.hcl:17:3: error: Missing required argument: The argument "source" is required.
+exit 1

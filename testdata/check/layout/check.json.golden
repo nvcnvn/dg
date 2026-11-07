@@ -332,7 +332,7 @@
   {
     "severity": "error",
     "summary": "Invalid picture",
-    "detail": "Decoration \"n\": the picture \"model.hcl\" must be an SVG picture, whose root element is svg with xmlns=\"http://www.w3.org/2000/svg\".",
+    "detail": "Decoration \"n\": the picture \"model.hcl\" is not well-formed SVG: line 1: text outside the root element.",
     "file": "views/broken.layout.yaml",
     "line": 20,
     "column": 5,

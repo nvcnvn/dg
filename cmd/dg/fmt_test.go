@@ -8,6 +8,35 @@ import (
 	"testing"
 )
 
+// TestFmtSkipsInstalledPacks checks that dg fmt leaves the files of an installed pack as they are.
+func TestFmtSkipsInstalledPacks(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.CopyFS(dir, os.DirFS("../../testdata/check/pack-valid")); err != nil {
+		t.Fatal(err)
+	}
+	pack := filepath.Join(dir, "packs/aws/spec.hcl")
+	src := []byte("kind   \"vpc\"   {}\n")
+	for _, file := range []string{pack, filepath.Join(dir, "spec.hcl")} {
+		if err := os.WriteFile(file, append(src, "\nkind \"x\" {   }\n"...), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var stdout, stderr bytes.Buffer
+	if code := run([]string{"fmt", "-C", dir}, &stdout, &stderr); code != 0 {
+		t.Fatalf("exit code %d; stderr:\n%s", code, stderr.String())
+	}
+	if got := stdout.String(); got != "spec.hcl\n" {
+		t.Errorf("printed %q", got)
+	}
+	got, err := os.ReadFile(pack)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.HasPrefix(got, src) {
+		t.Errorf("the pack's file became:\n%s", got)
+	}
+}
+
 // TestFmtGolden formats a copy of testdata/fmt/in and compares every file with testdata/fmt/want;
 // the read-only generated file is left as it was. A second run changes nothing.
 func TestFmtGolden(t *testing.T) {

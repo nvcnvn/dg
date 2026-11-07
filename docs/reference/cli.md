@@ -12,6 +12,7 @@ commands:
   serve       show the views in the browser, redrawn when a file changes
   vocabulary  print the kinds, edge kinds, tags and views the project defines, as JSON
   op          apply an operation to the project's files (dg op --help lists them)
+  pack        install packs from git repositories (dg pack --help lists what it does)
   mcp         serve the Model Context Protocol over standard input and output
   lsp         serve the Language Server Protocol over standard input and output
   version     print dg's version
@@ -135,6 +136,39 @@ Applies one [operation](operations.md) to the project's files: the same changes 
 for scripts and agents. `dg op --help` lists the operations and `dg op <operation> --help` shows
 one's flags.
 
+## dg pack
+
+Copies [installed packs](language.md#installed-packs) from git repositories into `packs/<name>/`,
+with a `pack` block in `dg.hcl` and an entry in `dg.lock`. Only this command uses the network or
+needs `git` on the path, and the copy is part of the project: `dg check`, `dg serve` and
+`dg export` read it like any other file.
+
+```text
+dg pack add <source>[@<version>] [--as <name>]
+dg pack update <name> [<version>]
+dg pack remove <name>
+dg pack install
+dg pack search <text>
+```
+
+- `add` installs a pack, and prints the path of its license files or warns that it has none. A
+  source is `<host>/<path>`, fetched over HTTPS, or an `https://`, `ssh://` or `file://` URL, with
+  `//<dir>` at its end for a pack that is not at the repository's root; a source with no `/` is
+  looked up in the index. The version is a tag or a full commit hash, never a branch, and by
+  default the highest `vX.Y.Z` tag. The local name is the source's last segment, or what `--as`
+  gives; use `--as` when two packs yield one name.
+- `update` replaces a pack's files from the source in its block, with the same default version.
+- `remove` removes a pack's directory, block and `dg.lock` entry, and `dg.lock` with the last one.
+- `install` writes every pack in `dg.lock` at its commit, and refuses a pack whose files do not
+  match its hash. It restores packs a project chose not to commit, and repairs edited ones.
+- `search` lists the index's entries whose name or description holds the text.
+
+`add`, `update` and `remove` then print `dg check`'s diagnostics, leaving the files written, and
+exit 1 on errors. Nothing is written if a fetch fails, a pack is refused, or a file to write
+matches `read_only`. The fetch runs your `git` with your configuration, so credential helpers,
+`url.<base>.insteadOf` and `core.sshCommand` work for private repositories; git never prompts on
+the terminal, and nothing in the repository runs.
+
 ## dg vocabulary
 
 <!-- begin generated dg-vocabulary: go test ./cmd/dg -run TestDocs -update -->
@@ -146,8 +180,9 @@ one's flags.
 <!-- end dg-vocabulary -->
 
 Prints, as JSON, what a project can be built from: its packs in load order, its kinds (with the
-pack that defines each, their ports, properties and whether they are containers or hold rows,
-inherited ones included), edge kinds, tags and views.
+pack that defines each, the name in an installed pack without its prefix, the category, their
+ports, properties and whether they are containers or hold rows, inherited ones included), edge
+kinds, tags and views.
 Agents read it before writing a model.
 
 ## dg mcp

@@ -1,0 +1,13 @@
+project "p" {
+  grid = 20
+
+  pack "gcp" {
+    source  = "github.com/dg-packs/gcp"
+    version = "v1.0.0" # pinned
+  }
+
+  pack "aws" {
+    source  = "github.com/dg-packs/aws"
+    version = "v1.2.0"
+  }
+}

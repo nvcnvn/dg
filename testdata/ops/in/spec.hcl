@@ -3,3 +3,5 @@ kind "worker" {
     type = number
   }
 }
+
+kind "aws-own" {}

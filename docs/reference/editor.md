@@ -13,7 +13,12 @@ model edits write the model files and `views.hcl`.
   button, or move the focus to it, to read what it does and its shortcut, or what enables it.
   Groups that do not fit go into the menu at the end of the row.
 - The **palette** on the left lists the kinds of the loaded packs with a picture of each, under
-  their pack's name, with a filter.
+  their pack's name and category, the project's own last. An installed pack's kinds show without
+  their prefix. A category opens and closes with a click, or with Enter or Space on its heading;
+  a pack of more than 30 kinds starts with its categories closed. The filter finds kinds by name,
+  with the prefix or without, and by category, ignoring case and everything but letters and
+  digits: `cloud run` and `cloudrun` both find `cloud-run`, and `security identity` finds
+  `Security & Identity`.
 - The **inspector** on the right edits the selection.
 - **Breadcrumbs** in a view with `of` lead back to the views that show its container.
 
@@ -64,7 +69,8 @@ Each gesture is sent when it is dropped, as one undo step.
 
 - **Create:** drag a kind from the palette onto the canvas or into a container, or click it (or
   press Enter on it) to create the node in the middle of the view. Type its label at once: the label also gives the
-  node its ID.
+  node its ID. Until then the node shows an ID made from its kind, without an installed pack's
+  prefix: `dynamodb` for the kind `aws-dynamodb`.
 - **Labels:** double-click a node or an edge's label, or press F2 or Enter, to edit it in place. On
   a node with a [label in this view](views.md#labels-in-a-view), that edits the view's label.
   Enter commits, Shift+Enter breaks the line, Escape cancels.

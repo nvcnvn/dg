@@ -1,0 +1,63 @@
+[
+  {
+    "severity": "error",
+    "summary": "Invalid lock file",
+    "detail": "Version 2 is not supported; the version is 1. If a newer dg wrote this project, update dg: this one is (devel).",
+    "file": "dg.lock",
+    "line": 1,
+    "column": 10,
+    "end_line": 1,
+    "end_column": 10
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid lock file",
+    "detail": "Unknown field \"extra\"; expected one of version, packs. If the name is right, a newer dg may know it: this one is (devel).",
+    "file": "dg.lock",
+    "line": 2,
+    "column": 1,
+    "end_line": 2,
+    "end_column": 1
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid lock file",
+    "detail": "The commit \"main\" is not a full commit hash.",
+    "file": "dg.lock",
+    "line": 7,
+    "column": 13,
+    "end_line": 7,
+    "end_column": 13
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid lock file",
+    "detail": "The hash \"md5:abc\" is not sha256: and 64 hexadecimal digits.",
+    "file": "dg.lock",
+    "line": 8,
+    "column": 11,
+    "end_line": 8,
+    "end_column": 11
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid lock file",
+    "detail": "The pack name \"../evil\" is not a simple ID (letters, digits, _ and -, starting with a letter or _).",
+    "file": "dg.lock",
+    "line": 9,
+    "column": 3,
+    "end_line": 9,
+    "end_column": 3
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid lock file",
+    "detail": "The pack name \"generic\" is the built-in pack's.",
+    "file": "dg.lock",
+    "line": 11,
+    "column": 3,
+    "end_line": 11,
+    "end_column": 3
+  }
+]
+exit 1

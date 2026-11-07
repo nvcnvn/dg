@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"maps"
 	"os"
+	"path"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -93,6 +94,55 @@ func (d Disk) Write(files map[string][]byte) error {
 		}
 	}
 	return err
+}
+
+// WriteDirs writes files as Write does and replaces each directory of dirs with the files it maps
+// to, by paths relative to it; no files remove the directory and all it holds, and the parent
+// directory if that leaves it empty. New content is written beside each directory, together with
+// files, so a failure there changes nothing; then the directories are renamed into place, so that
+// whatever an old directory holds goes with it: a link, or a file where the new content has a
+// directory.
+func (d Disk) WriteDirs(files map[string][]byte, dirs map[string]map[string][]byte) error {
+	root, err := os.OpenRoot(string(d))
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+	beside := func(dir, label string) string { return path.Join(path.Dir(dir), ".dg-"+label+"-"+path.Base(dir)) }
+	all := map[string][]byte{}
+	maps.Copy(all, files)
+	for dir, content := range dirs {
+		// What a crash left, which must go before a write that could not be finished without it.
+		if err := errors.Join(root.RemoveAll(beside(dir, "new")), root.RemoveAll(beside(dir, "old"))); err != nil {
+			return err
+		}
+		for name, data := range content {
+			all[path.Join(beside(dir, "new"), name)] = data
+		}
+	}
+	if err := d.Write(all); err != nil {
+		for dir := range dirs {
+			err = errors.Join(err, root.RemoveAll(beside(dir, "new")))
+		}
+		return err
+	}
+	for _, dir := range slices.Sorted(maps.Keys(dirs)) {
+		if err := root.Rename(dir, beside(dir, "old")); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return err
+		}
+		if len(dirs[dir]) > 0 {
+			if err := root.Rename(beside(dir, "new"), dir); err != nil {
+				return err
+			}
+		}
+		if err := root.RemoveAll(beside(dir, "old")); err != nil {
+			return err
+		}
+		if len(dirs[dir]) == 0 {
+			root.Remove(path.Dir(dir)) // fails, as it should, while the parent holds anything else
+		}
+	}
+	return nil
 }
 
 // WriteFiles writes every file, named by its path on disk, through a temporary file beside it. No

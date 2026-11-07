@@ -186,7 +186,7 @@ func plan(base fs.FS, op Op, sess *Session) (*Change, *files, error) {
 			continue
 		}
 		if p.IsReadOnly(name) {
-			return nil, nil, fmt.Errorf("%s is read-only (read_only in dg.hcl); the operation would change it", name)
+			return nil, nil, fmt.Errorf("%s is read-only (read_only in dg.hcl, or in an installed pack); the operation would change it", name)
 		}
 		c.Files = append(c.Files, FileChange{Path: name, Before: f.read[name], After: after})
 	}

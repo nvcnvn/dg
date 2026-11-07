@@ -1,0 +1,43 @@
+[
+  {
+    "severity": "error",
+    "summary": "Invalid pack",
+    "detail": "\"packs/aws\" is the directory of the installed pack \"aws\", which its pack block loads.",
+    "file": "dg.hcl",
+    "line": 2,
+    "column": 12,
+    "end_line": 2,
+    "end_column": 23
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid pack",
+    "detail": "\"packs/aws/sub\" is the directory of the installed pack \"aws\", which its pack block loads.",
+    "file": "dg.hcl",
+    "line": 2,
+    "column": 25,
+    "end_line": 2,
+    "end_column": 40
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid pack",
+    "detail": "\"packs/AWS\" is the directory of the installed pack \"aws\", which its pack block loads.",
+    "file": "dg.hcl",
+    "line": 2,
+    "column": 42,
+    "end_line": 2,
+    "end_column": 53
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid pack",
+    "detail": "\"PACKS/aws/sub\" is the directory of the installed pack \"aws\", which its pack block loads.",
+    "file": "dg.hcl",
+    "line": 2,
+    "column": 55,
+    "end_line": 2,
+    "end_column": 70
+  }
+]
+exit 1

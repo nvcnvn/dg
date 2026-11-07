@@ -1,0 +1,53 @@
+[
+  {
+    "severity": "error",
+    "summary": "Pack not locked",
+    "detail": "dg.lock has no entry for the pack \"unlocked\", so dg pack install cannot restore it. Run dg pack add to install it.",
+    "file": "dg.hcl",
+    "line": 2,
+    "column": 3,
+    "end_line": 2,
+    "end_column": 18
+  },
+  {
+    "severity": "error",
+    "summary": "Pack not locked",
+    "detail": "dg.lock has the pack \"moved\" as example.com/packs/moved at v1.0.0, not example.com/elsewhere/moved at v1.0.0. Run dg pack update to install what this block asks for, or restore the block; dg pack install installs what dg.lock holds.",
+    "file": "dg.hcl",
+    "line": 6,
+    "column": 3,
+    "end_line": 6,
+    "end_column": 15
+  },
+  {
+    "severity": "error",
+    "summary": "Pack not locked",
+    "detail": "dg.lock has the pack \"bumped\" as example.com/packs/bumped at v1.0.0, not example.com/packs/bumped at v2.0.0. Run dg pack update to install what this block asks for, or restore the block; dg pack install installs what dg.lock holds.",
+    "file": "dg.hcl",
+    "line": 10,
+    "column": 3,
+    "end_line": 10,
+    "end_column": 16
+  },
+  {
+    "severity": "error",
+    "summary": "Missing required argument",
+    "detail": "The argument \"version\" is required.",
+    "file": "dg.hcl",
+    "line": 14,
+    "column": 3,
+    "end_line": 14,
+    "end_column": 17
+  },
+  {
+    "severity": "error",
+    "summary": "Missing required argument",
+    "detail": "The argument \"source\" is required.",
+    "file": "dg.hcl",
+    "line": 17,
+    "column": 3,
+    "end_line": 17,
+    "end_column": 13
+  }
+]
+exit 1

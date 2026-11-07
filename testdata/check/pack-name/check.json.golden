@@ -1,0 +1,43 @@
+[
+  {
+    "severity": "error",
+    "summary": "Invalid ID",
+    "detail": "The pack name \"generic\" is the built-in pack's.",
+    "file": "dg.hcl",
+    "line": 2,
+    "column": 3,
+    "end_line": 2,
+    "end_column": 17
+  },
+  {
+    "severity": "error",
+    "summary": "Invalid ID",
+    "detail": "The pack name \"bad.name\" is not a simple ID (letters, digits, _ and -, starting with a letter or _).",
+    "file": "dg.hcl",
+    "line": 6,
+    "column": 3,
+    "end_line": 6,
+    "end_column": 18
+  },
+  {
+    "severity": "error",
+    "summary": "Duplicate definition",
+    "detail": "The pack \"aws\" needs the directory packs/aws, which the pack at line 10 of this file has; names that differ only by case share a directory.",
+    "file": "dg.hcl",
+    "line": 14,
+    "column": 3,
+    "end_line": 14,
+    "end_column": 13
+  },
+  {
+    "severity": "error",
+    "summary": "Duplicate definition",
+    "detail": "The pack \"AWS\" needs the directory packs/AWS, which the pack at line 10 of this file has; names that differ only by case share a directory.",
+    "file": "dg.hcl",
+    "line": 18,
+    "column": 3,
+    "end_line": 18,
+    "end_column": 13
+  }
+]
+exit 1

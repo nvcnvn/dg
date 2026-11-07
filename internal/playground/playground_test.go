@@ -79,6 +79,30 @@ func TestLoad(t *testing.T) {
 	}
 }
 
+// TestPictures checks that the playground's transport gives the page the pictures before its
+// first model, and again only when they changed.
+func TestPictures(t *testing.T) {
+	pg := open(t)
+	pg.receive(load(map[string]string{ModelFile: testModel}))
+	pg.receive(map[string]any{"type": "select-view"})
+	types, _ := pg.got(t)
+	if i := slices.Index(types, "pictures"); i < 0 || i+1 >= len(types) || types[i+1] != "model" {
+		t.Errorf("first: got %v, want pictures before model", types)
+	}
+	pg.receive(map[string]any{"type": "write-file", "path": ModelFile, "text": testModel + "node \"b\" {}\n"})
+	if types, _ := pg.got(t); slices.Contains(types, "pictures") {
+		t.Errorf("a save of the model: got %v, without the pictures", types)
+	}
+	pg.receive(map[string]any{"type": "write-file", "path": StyleFile, "text": `style "service" {
+  icon = "<svg xmlns='http://www.w3.org/2000/svg'/>"
+}
+`})
+	types, _ = pg.got(t)
+	if len(types) == 0 || types[0] != "pictures" {
+		t.Errorf("a new icon: got %v, the pictures first", types)
+	}
+}
+
 // TestViewGestures checks that what hiding a node and making a view write can be loaded again.
 func TestViewGestures(t *testing.T) {
 	pg := open(t)

@@ -16,7 +16,9 @@ panel beside your editor in VS Code, and dg routes the arrows around the boxes e
 - [VS Code extension](docs/vscode.md): diagnostics, completion, rename and formatting in the
   editor, the diagram in a panel beside it, and how the extension works with the command line.
 - [Examples](docs/examples.md): architecture and C4 with drill-down, entity-relationship, class,
-  flowchart, swimlane, state machine, network, animated edges, shapes.
+  flowchart, swimlane, state machine, network, animated edges, shapes, installed packs.
+- [Packs](docs/packs.md): install ready-made kinds and icons from git repositories, and write
+  your own.
 - [Reference](docs/reference/README.md): the language, styles, views and layout files, the
   command line, operations, and the editor's gestures.
 - [Design and rationale](docs/spec.md): every design decision and why it was made.

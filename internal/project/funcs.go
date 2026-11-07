@@ -19,11 +19,12 @@ const (
 	maxPortNumber = 1_000_000_000
 )
 
-// evalContext returns the functions available to a file in directory dir of fsys.
-func evalContext(fsys fs.FS, dir string) *hcl.EvalContext {
+// evalContext returns the functions available to a file in directory dir of fsys, which scope
+// names.
+func evalContext(fsys fs.FS, dir, scope string) *hcl.EvalContext {
 	return &hcl.EvalContext{Functions: map[string]function.Function{
 		"port_range": portRange,
-		"file":       fileFunc(fsys, dir),
+		"file":       fileFunc(fsys, dir, scope),
 	}}
 }
 
@@ -53,7 +54,7 @@ var portRange = function.New(&function.Spec{
 	},
 })
 
-func fileFunc(fsys fs.FS, dir string) function.Function {
+func fileFunc(fsys fs.FS, dir, scope string) function.Function {
 	return function.New(&function.Spec{
 		Params: []function.Parameter{{Name: "path", Type: cty.String}},
 		Type:   function.StaticReturnType(cty.String),
@@ -61,7 +62,7 @@ func fileFunc(fsys fs.FS, dir string) function.Function {
 			rel := args[0].AsString()
 			full := path.Join(dir, rel)
 			if path.IsAbs(rel) || !fs.ValidPath(full) {
-				return cty.NilVal, fmt.Errorf("%q is not a relative path inside the project", rel)
+				return cty.NilVal, fmt.Errorf("%q is not a relative path inside the %s", rel, scope)
 			}
 			data, err := fs.ReadFile(fsys, full)
 			if err != nil {

@@ -1,0 +1,19 @@
+{"project": "testdata/check/pack-valid"}
+{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"processId": null, "rootUri": "$ROOT", "capabilities": {}}}
+{"jsonrpc": "2.0", "method": "initialized", "params": {}}
+// A prefixed kind in the model goes to its definition in the pack, where it has no prefix.
+{"jsonrpc": "2.0", "id": 2, "method": "textDocument/definition", "params": {"textDocument": {"uri": "$ROOT/model.hcl"}, "position": {"line": 1, "character": 12}}}
+// And so does one in a selector.
+{"jsonrpc": "2.0", "id": 3, "method": "textDocument/definition", "params": {"textDocument": {"uri": "$ROOT/views.hcl"}, "position": {"line": 1, "character": 18}}}
+// An edge kind.
+{"jsonrpc": "2.0", "id": 4, "method": "textDocument/definition", "params": {"textDocument": {"uri": "$ROOT/model.hcl"}, "position": {"line": 18, "character": 12}}}
+// Inside the pack, a short name is the pack's own.
+{"jsonrpc": "2.0", "id": 5, "method": "textDocument/definition", "params": {"textDocument": {"uri": "$ROOT/packs/aws/spec.hcl"}, "position": {"line": 11, "character": 15}}}
+// A name of the generic pack has no definition to go to.
+{"jsonrpc": "2.0", "id": 6, "method": "textDocument/definition", "params": {"textDocument": {"uri": "$ROOT/packs/aws/spec.hcl"}, "position": {"line": 1, "character": 15}}}
+// The references of a kind, in the project and in the pack, spelled either way.
+{"jsonrpc": "2.0", "id": 7, "method": "textDocument/references", "params": {"textDocument": {"uri": "$ROOT/model.hcl"}, "position": {"line": 5, "character": 15}, "context": {"includeDeclaration": true}}}
+// A file of the pack is not formatted.
+{"jsonrpc": "2.0", "id": 8, "method": "textDocument/formatting", "params": {"textDocument": {"uri": "$ROOT/packs/aws/spec.hcl"}, "options": {"tabSize": 2, "insertSpaces": true}}}
+{"jsonrpc": "2.0", "id": 9, "method": "shutdown"}
+{"jsonrpc": "2.0", "method": "exit"}

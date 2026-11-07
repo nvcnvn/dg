@@ -30,9 +30,11 @@ type Session struct {
 	good    *project.Project // the latest load without errors
 	loadErr error            // set when the latest load failed outright
 	clients map[*Client]bool
-	// modelData is the model message of the project modelOf, kept so it is encoded once.
-	modelOf   *project.Project
-	modelData []byte
+	// modelData and picturesData are the messages of the project modelOf, kept so they are
+	// encoded once.
+	modelOf      *project.Project
+	modelData    []byte
+	picturesData []byte
 
 	// edit serializes the operations, undos and redos of every client with the messages they
 	// send; it guards the history and the session they share (FR-10).
@@ -43,11 +45,12 @@ type Session struct {
 
 // Client is a connected client of a session.
 type Client struct {
-	write func(context.Context, []byte)
-	mu    sync.Mutex // serializes view and sending
-	view  string
-	last  []byte // the last snapshot sent
-	model []byte // the last model message sent
+	write    func(context.Context, []byte)
+	mu       sync.Mutex // serializes view and sending
+	view     string
+	last     []byte // the last snapshot sent
+	model    []byte // the last model message sent
+	pictures []byte // the last pictures message sent
 }
 
 // New loads the project in files.
@@ -199,9 +202,14 @@ func (s *Session) update(ctx context.Context, c *Client) {
 			all.Sort()
 		}
 		if !rdiags.HasErrors() {
-			if m := s.modelMessage(p); !bytes.Equal(m, c.model) {
-				c.model = m
-				c.write(ctx, m)
+			model, pictures := s.messages(p)
+			if !bytes.Equal(pictures, c.pictures) {
+				c.pictures = pictures
+				c.write(ctx, pictures)
+			}
+			if !bytes.Equal(model, c.model) {
+				c.model = model
+				c.write(ctx, model)
 			}
 			c.sendSnapshot(ctx, snapshotMessage{Type: "snapshot", Views: views(p), Resolved: r})
 		}

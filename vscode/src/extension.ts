@@ -128,7 +128,7 @@ async function startClient(dg: string, root: string): Promise<void> {
   if (projects.has(root)) return;
   const uri = vscode.Uri.file(root);
   const mine = (doc: vscode.TextDocument) => projectRoot(doc.uri) === root;
-  const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(uri, "**/*.{hcl,yaml}"));
+  const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(uri, "**/{*.hcl,*.yaml,*.svg,dg.lock}"));
   const client = new LanguageClient(
     "dg",
     "dg",

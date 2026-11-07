@@ -15,7 +15,9 @@ timelines, charts, Venn diagrams), say dg doesn't fit and use another tool.
 ## Workflow
 
 1. `dg vocabulary` lists the kinds, edge kinds, tags and views this project defines, as JSON. Read
-   it rather than guessing a kind: packs and the project's `spec.hcl` add their own.
+   it rather than guessing a kind: packs and the project's `spec.hcl` add their own. An installed
+   pack's names carry its prefix, such as `aws-vpc`, everywhere but in the pack's own files, which
+   are copies: override a style from the project's `style.hcl` instead of editing them.
 2. Make the change. For a new diagram, write `model.hcl` directly. For an existing one, prefer
    `dg op`: it updates every reference, keeps comments, and refuses a change that would add an
    error, writing nothing.
@@ -141,6 +143,7 @@ views by dragging in the VS Code panel or `dg serve`, which write the same layou
 Read these only when the task needs them, at <https://nvcnvn.github.io/dg/docs/>:
 
 - `reference/language`: packs, kinds, ports, properties, IDs and validation.
+- `packs`: `dg pack add`, `update`, `remove`, `install` and `search`, and writing a pack.
 - `reference/styles`: style properties, shapes, arrow markers, animation, the generic pack.
 - `reference/views`: selectors, overlays, layout files, container policies, decorations.
 - `reference/operations`: every operation's flags and JSON.

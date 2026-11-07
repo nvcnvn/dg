@@ -204,3 +204,172 @@ func TestDiskLinkOutside(t *testing.T) {
 		}
 	}
 }
+
+// TestWriteDirsStale checks that a stale directory that cannot go stops the write before anything
+// changes, so dg.hcl and a pack's files cannot end up of different versions.
+func TestWriteDirsStale(t *testing.T) {
+	if os.Getuid() == 0 {
+		t.Skip("root removes what permissions keep")
+	}
+	root := t.TempDir()
+	stale := filepath.Join(root, "packs", ".dg-old-a")
+	config := filepath.Join(root, "dg.hcl")
+	if err := errors.Join(os.MkdirAll(filepath.Join(root, "packs", "a"), 0o755), os.MkdirAll(stale, 0o755),
+		os.WriteFile(config, []byte("old"), 0o644), os.WriteFile(filepath.Join(stale, "x"), nil, 0o644), os.Chmod(stale, 0o500)); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.Chmod(stale, 0o755) })
+	err := Disk(root).WriteDirs(map[string][]byte{"dg.hcl": []byte("new")}, map[string]map[string][]byte{"packs/a": {"new.svg": []byte("n")}})
+	if err == nil {
+		t.Fatal("no error")
+	}
+	if data, err := os.ReadFile(config); err != nil || string(data) != "old" {
+		t.Errorf("dg.hcl: %q, %v", data, err)
+	}
+	if _, err := os.Stat(filepath.Join(root, "packs", "a", "new.svg")); err == nil {
+		t.Error("the new content was written")
+	}
+}
+
+// TestWriteDirs checks what replacing a directory leaves on disk, whatever the old one held.
+func TestWriteDirs(t *testing.T) {
+	const dir = "packs/a"
+	outside := t.TempDir()
+	secret := filepath.Join(outside, "secret")
+	if err := os.WriteFile(secret, []byte("secret"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	file := func(data string) map[string]map[string][]byte {
+		return map[string]map[string][]byte{dir: {"new.svg": []byte(data)}}
+	}
+	tests := []struct {
+		name    string
+		before  map[string]string
+		links   map[string]string
+		files   map[string][]byte
+		dirs    map[string]map[string][]byte
+		want    map[string]string
+		refused bool
+	}{
+		{name: "new, with its parent", dirs: file("n"), want: map[string]string{"packs/a/new.svg": "n"}},
+		{
+			name:   "replaced, leaving nothing of the old",
+			before: map[string]string{"packs/a/old.svg": "o", "packs/a/sub/old.svg": "o", "packs/b/keep": "k"},
+			dirs:   file("n"),
+			want:   map[string]string{"packs/a/new.svg": "n", "packs/b/keep": "k"},
+		},
+		{
+			name:   "removed, with files",
+			before: map[string]string{"packs/a/old.svg": "o", "dg.lock": "l", "dg.hcl": "h"},
+			files:  map[string][]byte{"dg.lock": nil, "dg.hcl": []byte("new")},
+			dirs:   map[string]map[string][]byte{dir: nil},
+			want:   map[string]string{"dg.hcl": "new"},
+		},
+		{
+			name:   "removed, keeping a parent in use",
+			before: map[string]string{"packs/a/old.svg": "o", "packs/b/keep": "k"},
+			dirs:   map[string]map[string][]byte{dir: nil},
+			want:   map[string]string{"packs/b/keep": "k"},
+		},
+		{
+			name:   "what a crash left",
+			before: map[string]string{"packs/.dg-new-a/stale.svg": "s", "packs/.dg-old-a/stale.svg": "s", "packs/a/old.svg": "o"},
+			dirs:   file("n"),
+			want:   map[string]string{"packs/a/new.svg": "n"},
+		},
+		{name: "removing what is not there", dirs: map[string]map[string][]byte{dir: nil}, want: map[string]string{}},
+		{
+			name:   "a file where a directory goes",
+			before: map[string]string{"packs/a/x.svg": "o"},
+			dirs:   map[string]map[string][]byte{dir: {"x.svg/y.svg": []byte("n")}},
+			want:   map[string]string{"packs/a/x.svg/y.svg": "n"},
+		},
+		{
+			name:   "a link in the old directory goes, not through",
+			before: map[string]string{"packs/a/old.svg": "o"},
+			links:  map[string]string{"packs/a/out": outside},
+			dirs:   map[string]map[string][]byte{dir: {"out/secret": []byte("n")}},
+			want:   map[string]string{"packs/a/out/secret": "n"},
+		},
+		{
+			name:   "a directory that is a link",
+			before: map[string]string{"packs/local/keep": "k"},
+			links:  map[string]string{"packs/a": "local"},
+			dirs:   file("n"),
+			want:   map[string]string{"packs/local/keep": "k", "packs/a/new.svg": "n"},
+		},
+		{
+			name:    "a refused file refuses the directory",
+			before:  map[string]string{"packs/a/old.svg": "o", "sub/x": "x"},
+			files:   map[string][]byte{"sub": []byte("over a directory")},
+			dirs:    file("n"),
+			want:    map[string]string{"packs/a/old.svg": "o", "sub/x": "x"},
+			refused: true,
+		},
+		{
+			name:    "a parent that is a file",
+			before:  map[string]string{"packs": "file"},
+			dirs:    file("n"),
+			want:    map[string]string{"packs": "file"},
+			refused: true,
+		},
+		{
+			name:    "out of the project through a link",
+			links:   map[string]string{"packs": outside},
+			dirs:    file("n"),
+			refused: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			root := t.TempDir()
+			for name, data := range tt.before {
+				p := filepath.Join(root, filepath.FromSlash(name))
+				if err := errors.Join(os.MkdirAll(filepath.Dir(p), 0o755), os.WriteFile(p, []byte(data), 0o644)); err != nil {
+					t.Fatal(err)
+				}
+			}
+			for name, target := range tt.links {
+				p := filepath.Join(root, filepath.FromSlash(name))
+				if err := errors.Join(os.MkdirAll(filepath.Dir(p), 0o755), os.Symlink(target, p)); err != nil {
+					t.Skip(err)
+				}
+			}
+			err := Disk(root).WriteDirs(tt.files, tt.dirs)
+			if (err != nil) != tt.refused {
+				t.Fatalf("WriteDirs: %v", err)
+			}
+			if data, err := os.ReadFile(secret); err != nil || string(data) != "secret" {
+				t.Errorf("what is outside changed: %q, %v", data, err)
+			}
+			if tt.want == nil {
+				return
+			}
+			got := map[string]string{}
+			err = filepath.WalkDir(root, func(name string, d fs.DirEntry, err error) error {
+				if err != nil || d.IsDir() {
+					return err
+				}
+				rel, _ := filepath.Rel(root, name)
+				if d.Type()&fs.ModeSymlink != 0 {
+					return nil
+				}
+				data, err := os.ReadFile(name)
+				got[filepath.ToSlash(rel)] = string(data)
+				return err
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !maps.Equal(got, tt.want) {
+				t.Errorf("got %v, want %v", got, tt.want)
+			}
+			entries, _ := os.ReadDir(filepath.Join(root, "packs"))
+			for _, e := range entries {
+				if strings.HasPrefix(e.Name(), ".") {
+					t.Errorf("left %s", e.Name())
+				}
+			}
+		})
+	}
+}

@@ -1,0 +1,9 @@
+project "p" {
+  views = "v.hcl"
+  grid  = 20 # fine
+
+  pack "aws" {
+    source  = "github.com/dg-packs/aws"
+    version = "v1.2.0"
+  }
+}

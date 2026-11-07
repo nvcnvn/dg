@@ -1,4 +1,4 @@
-dg.hcl:2:3: error: Unsupported argument: An argument named "theme" is not expected here. Expected arguments: font, grid, layout_dir, models, packs, read_only, views. If the name is right, a newer dg may know it: this one is (devel).
+dg.hcl:2:3: error: Unsupported argument: An argument named "theme" is not expected here. Expected arguments: font, grid, layout_dir, models, packs, read_only, views. Expected blocks: pack. If the name is right, a newer dg may know it: this one is (devel).
 model.hcl:3:3: error: Unsupported argument: An argument named "color" is not expected here. Expected arguments: kind, label, parent, ports, props, tags. Expected blocks: compartment, port, row. If the name is right, a newer dg may know it: this one is (devel).
 model.hcl:6:5: error: Unsupported argument: An argument named "position" is not expected here. Expected arguments: side. If the name is right, a newer dg may know it: this one is (devel).
 model.hcl:9:3: error: Rows not allowed: Node "a" declares rows, but its kind "service" does not set rows = true.
@@ -8,7 +8,7 @@ model.hcl:14:5: error: Unsupported argument: An argument named "title" is not ex
 model.hcl:17:3: error: Unsupported block type: Blocks of type "widget" are not expected here. Expected arguments: kind, label, parent, ports, props, tags. Expected blocks: compartment, port, row. If the name is right, a newer dg may know it: this one is (devel).
 model.hcl:24:3: error: Unsupported argument: An argument named "style" is not expected here. Expected arguments: from, kind, label, labels, tags, to. If the name is right, a newer dg may know it: this one is (devel).
 spec.hcl:1:1: info: Overridden definition: The kind "service" replaces the one defined at <generic>/spec.hcl:3:1.
-spec.hcl:2:3: error: Unsupported argument: An argument named "colour" is not expected here. Expected arguments: container, default_port_side, extends, ports, rows. Expected blocks: property. If the name is right, a newer dg may know it: this one is (devel).
+spec.hcl:2:3: error: Unsupported argument: An argument named "colour" is not expected here. Expected arguments: category, container, default_port_side, extends, ports, rows. Expected blocks: property. If the name is right, a newer dg may know it: this one is (devel).
 spec.hcl:4:3: error: Missing required argument: The argument "type" is required.
 spec.hcl:5:5: error: Unsupported argument: An argument named "required" is not expected here. Expected arguments: default, type. If the name is right, a newer dg may know it: this one is (devel).
 spec.hcl:10:3: error: Unsupported argument: An argument named "label" is not expected here. If the name is right, a newer dg may know it: this one is (devel).

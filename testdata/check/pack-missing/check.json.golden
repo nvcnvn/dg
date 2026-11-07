@@ -1,0 +1,23 @@
+[
+  {
+    "severity": "error",
+    "summary": "Pack not installed",
+    "detail": "The directory packs/gone does not exist. Run dg pack install to restore it.",
+    "file": "dg.hcl",
+    "line": 2,
+    "column": 3,
+    "end_line": 2,
+    "end_column": 14
+  },
+  {
+    "severity": "error",
+    "summary": "Pack not installed",
+    "detail": "The pack \"empty\" cannot be read: it holds neither spec.hcl nor style.hcl. Run dg pack install to repair it.",
+    "file": "dg.hcl",
+    "line": 6,
+    "column": 3,
+    "end_line": 6,
+    "end_column": 15
+  }
+]
+exit 1
