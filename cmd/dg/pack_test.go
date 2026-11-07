@@ -32,7 +32,7 @@ func packRepo(t *testing.T, files map[string]string) string {
 			t.Fatalf("git %v: %s", args, out)
 		}
 	}
-	return "file://" + filepath.ToSlash(dir)
+	return "file:///" + strings.TrimPrefix(filepath.ToSlash(dir), "/")
 }
 
 func TestPack(t *testing.T) {

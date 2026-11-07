@@ -78,7 +78,13 @@ func newRepo(t *testing.T, files map[string]string) (dir, url string) {
 		write(t, filepath.Join(dir, filepath.FromSlash(name)), content)
 	}
 	commitAll(t, dir)
-	return dir, "file://" + filepath.ToSlash(dir)
+	return dir, fileURL(dir)
+}
+
+// fileURL is dir as a file URL, whose path starts with a slash on Windows as well: file://C:/a
+// names a host.
+func fileURL(dir string) string {
+	return "file:///" + strings.TrimPrefix(filepath.ToSlash(dir), "/")
 }
 
 func newProject(t *testing.T, files map[string]string) string {
@@ -724,7 +730,7 @@ func TestObjectFormat(t *testing.T) {
 		write(t, filepath.Join(repo, "spec.hcl"), "")
 		hash := commitAll(t, repo)
 		run(t, repo, "tag", "v1.0.0")
-		url := "file://" + filepath.ToSlash(repo)
+		url := fileURL(repo)
 		for _, arg := range []string{url, url + "@v1.0.0", url + "@" + hash, url + "@" + strings.Repeat("a", 40)} {
 			_, err := Add(newProject(t, nil), arg, "aws")
 			mustFail(t, err, "not a SHA-1 repository")
@@ -745,8 +751,7 @@ func TestUntouched(t *testing.T) {
 	hermetic(t)
 	repo, url := newRepo(t, goodPack)
 	run(t, repo, "tag", "v1.0.0")
-	_, empty := newRepo(t, map[string]string{"README.md": "no pack"})
-	emptyDir := strings.TrimPrefix(empty, "file://")
+	emptyDir, empty := newRepo(t, map[string]string{"README.md": "no pack"})
 	run(t, emptyDir, "tag", "v1.0.0")
 
 	const local = "project \"p\" {\n  packs = [\"packs/local\"]\n}\n"

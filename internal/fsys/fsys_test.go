@@ -6,6 +6,7 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"syscall"
@@ -208,8 +209,8 @@ func TestDiskLinkOutside(t *testing.T) {
 // TestWriteDirsStale checks that a stale directory that cannot go stops the write before anything
 // changes, so dg.hcl and a pack's files cannot end up of different versions.
 func TestWriteDirsStale(t *testing.T) {
-	if os.Getuid() == 0 {
-		t.Skip("root removes what permissions keep")
+	if os.Getuid() == 0 || runtime.GOOS == "windows" {
+		t.Skip("root, and Windows, remove what a directory's mode keeps")
 	}
 	root := t.TempDir()
 	stale := filepath.Join(root, "packs", ".dg-old-a")
