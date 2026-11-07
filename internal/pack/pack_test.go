@@ -105,6 +105,7 @@ func snapshot(t *testing.T, dir string) map[string]string {
 			return err
 		}
 		rel, _ := filepath.Rel(dir, name)
+		rel = filepath.ToSlash(rel)
 		if d.IsDir() {
 			out[rel+"/"] = ""
 			return nil
