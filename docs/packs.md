@@ -33,8 +33,16 @@ dg pack add ssh://git@git.example.com/acme/diagrams.git//packs/network
 ```
 
 A source with no `/` names a pack listed in [the index](#listing-a-pack-in-the-index): for such a
-pack `dg pack add <name>` is enough, and `dg pack search <text>` looks through the list. The index
-is not published yet, so until it is, install a pack by its repository.
+pack `dg pack add <name>` is enough, and `dg pack search <text>` looks through the list.
+
+```sh
+dg pack add aws
+dg pack search google
+```
+
+The index lists `aws`, `gcp` and `azure`. Each holds the vendor's services and boundaries as kinds
+and no vendor icons, since no vendor's terms clearly allow passing them on: services draw as rounded
+boxes and boundaries as plain outlines.
 
 Every name a pack defines takes its local name as a prefix: the project writes
 `kind = "network-router"` on a node, `kind.network-router` in a selector and
@@ -140,8 +148,8 @@ commit the project, since `dg.hcl` holds that path.
 ## Listing a pack in the index
 
 The index only finds packs: `dg pack add <name>` and `dg pack search` read `index.json` in the
-repository `github.com/dg-packs/index`, and any git URL works without it. That repository is not
-published yet. Once it is, a pack joins by pull request, adding an entry to that file:
+repository `github.com/dg-packs/index`, and any git URL works without it. A pack joins by pull
+request, adding an entry to that file:
 
 ```json
 {"name": "network", "source": "git.example.com/acme/network", "description": "Routers, switches and firewalls", "license": "Apache-2.0"}

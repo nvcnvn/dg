@@ -64,7 +64,7 @@ reports each override as information.
 project "my-diagrams" {
   pack "aws" {
     source  = "github.com/dg-packs/aws"
-    version = "v1.2.0"
+    version = "v0.1.0"
   }
 }
 ```

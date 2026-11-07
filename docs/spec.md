@@ -176,7 +176,7 @@ project "inference-stack" {
 
   pack "aws" {                                  # an installed pack (section 4.7)
     source  = "github.com/dg-packs/aws"
-    version = "v1.2.0"
+    version = "v0.1.0"
   }
 }
 ```
@@ -456,7 +456,7 @@ decorations:
 An installed pack is a pack that `dg pack` (FR-21) copied into the project from a git repository. The copy is part of the project: `dg check`, `dg serve` and `dg export` read it as they read any other file and never use the network, the same files draw the same picture on any machine, and a clone of the project needs no install step.
 
 ```
-dg pack add github.com/dg-packs/aws@v1.2.0
+dg pack add github.com/dg-packs/aws@v0.1.0
 ```
 
 This writes the `pack "aws"` block in `dg.hcl` (section 4.1), the pack's files in `packs/aws/`, and the pack's entry in `dg.lock`.
@@ -496,7 +496,7 @@ version: 1
 packs:
   aws:
     source: github.com/dg-packs/aws
-    version: v1.2.0
+    version: v0.1.0
     commit: 9fceb02d0ae598e95dc970b74767f19372d61af8
     hash: sha256:3a7bd3e2360a3d29eea436fcfb7e44c735d117c42d1c1835420b6b9942dd4f1b
 ```
@@ -508,10 +508,10 @@ A copy's paths are printable ASCII with no `\` or `:`, none is inside `.git` in 
 **Index.** A source with no `/`, as in `dg pack add aws`, is looked up in `index.json` of the git repository `github.com/dg-packs/index`, fetched as a pack is, and `dg pack search` reads the same file. The index only finds packs: `dg.hcl` holds the source it resolved to, and any git URL works without it. A community pack joins by pull request.
 
 ```json
-{"version": 1, "packs": [{"name": "aws", "source": "github.com/dg-packs/aws", "description": "AWS services and resources", "license": "see NOTICE"}]}
+{"version": 1, "packs": [{"name": "aws", "source": "github.com/dg-packs/aws", "description": "Kinds for AWS architecture diagrams, without icons; not made or endorsed by AWS", "license": "see NOTICE"}]}
 ```
 
-**Cloud vendors' packs.** `aws`, `gcp` and `azure` live in repositories of their own, never in the binary or in this repository, whose only embedded pack is `generic`. A script in each repository generates the kinds and styles from the vendor's icon download, and `NOTICE` carries the vendor's terms. A vendor's pack is published with its icons only if those terms allow it; otherwise it ships the kinds and styles without them.
+**Cloud vendors' packs.** `aws`, `gcp` and `azure` live in repositories of their own, never in the binary or in this repository, whose only embedded pack is `generic`. A script in each repository generates the kinds and styles from the vendor's icon download, and `NOTICE` carries the vendor's terms. A vendor's pack is published with its icons only if those terms allow it; otherwise it ships the kinds and styles without them. None of the three vendors' terms clearly allows passing the icons on, so all three ship without them: a service is a rounded box and a boundary a plain outline, and each pack's script can add the icons from a user's own download for a project that keeps them to itself.
 
 ---
 
@@ -1214,6 +1214,7 @@ The order follows two rules. First, export comes before editing: once `dg export
 | Text editor of the playground | CodeMirror 6 with dg's own HCL tokenizer | Monaco: several megabytes, and HCL highlighting from the TextMate grammar needs Oniguruma in WebAssembly too. A plain `textarea`: no highlighting and no diagnostics at their positions. |
 | Go compiler for `dg.wasm` | the standard Go toolchain | TinyGo: smaller output, but it implements only part of `reflect` and of the standard library, which `encoding/json`, `go-cty` and `gohcl` lean on, so every upgrade would need checking against it; the standard toolchain's 2 MB compressed is within the budget. |
 | Where the cloud vendors' packs live | repositories of their own, installed with `dg pack`; the binary embeds `generic` alone | Embedded in the binary: the vendors' icons are not openly licensed (Azure's permit diagrams, training and documentation and reserve other rights), an embedded dependency needs a license that allows it, and icon sets would follow dg's releases. |
+| Vendor icons in the published packs | none: `aws`, `gcp` and `azure` hold kinds and styles only, with a history that never held the art, until a vendor permits it | The icons in the public repositories: AWS grants diagrams and bars distributing its content, Google's only permission is an old deck beside brand pages that say to ask, and Microsoft allows copies "only for the permitted use". A branch without icons beside one with them: the art stays in the history anyone clones. |
 | Where an installed pack's files live | a copy in `packs/<name>/`, committed with the project and pinned by `dg.lock` | A cache outside the project, as Terraform or Go modules keep: the same project files would draw by what the cache holds, every clone and CI job would need an install step and the network, and paths would leave the project root, which the loader, language server and file watcher rely on. A symbolic link to a clone: links stay inside the project. Git submodules: each clone needs `--recurse-submodules`, and they give no prefix, lock or file filter. |
 | Names of an installed pack | `<local name>-<name>`, applied at load, the local name chosen by the project | A prefix made of URL and version (`github-com-dg-packs-aws-v1-2-0-vpc`): each update rewrites every reference and cannot rewrite `read_only` files, a fork changes the model, and dropping punctuation is not unique (`github.com/a-b/c`, `github.com/a/b-c`). A prefix the author writes, with a warning on collisions: enforces nothing, and a fork cannot sit beside its original. `aws.vpc`: a dot is not in a simple ID and reads as a path in `kind.aws.vpc`. |
 | Fetching a pack | the user's `git` and configuration, one revision into a temporary bare repository, files read from its objects, nothing run | `go-git`: a dependency for what the command line does, with credentials for private repositories to implement again. Archives over HTTPS: a URL form per host. A checkout: runs the filters that a repository's `.gitattributes` names from the user's configuration, as `git lfs` installs them, and makes links. Neutralizing the user's configuration (`GIT_CONFIG_GLOBAL`, `GIT_CONFIG_NOSYSTEM`) and copying back what a private repository needs: credential helpers, `insteadOf`, proxies and CA files have no complete list, and macOS keeps its keychain helper in the system's file; a repository cannot write that configuration, so nothing in it is the repository's. |
