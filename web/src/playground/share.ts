@@ -4,7 +4,7 @@ import { asProject, type Project } from './examples';
 export const LONG = 8000;
 
 // MAX_BYTES bounds what a link can inflate to, since a short one can hold a great deal.
-const MAX_BYTES = 8_000_000;
+export const MAX_BYTES = 8_000_000;
 
 const FRAGMENT = '#p=';
 
@@ -25,7 +25,7 @@ async function through(data: Uint8Array<ArrayBuffer>, stream: CompressionStream 
   return new Uint8Array(await new Blob(chunks).arrayBuffer());
 }
 
-function base64url(data: Uint8Array): string {
+export function base64url(data: Uint8Array): string {
   let binary = '';
   for (const b of data) binary += String.fromCharCode(b);
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');

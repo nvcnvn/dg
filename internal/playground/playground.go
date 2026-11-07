@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"maps"
 	"path"
@@ -28,6 +29,9 @@ const (
 	LayoutFile = "views/main.layout.yaml"
 	ViewsFile  = "views.hcl"
 )
+
+// maxProject bounds what an archive can inflate to, as the page bounds a share link.
+const maxProject = 8_000_000
 
 // projectFile reports whether name is a file a playground project can hold.
 func projectFile(name string) bool {
@@ -55,7 +59,8 @@ func (p *Playground) Ready() {
 }
 
 // message is a message only the playground has, in either direction: from the page load, with
-// the files of a project, write-file, or zip; to the page ready, loaded, files, or zip with data.
+// the files of a project, write-file, zip, or unzip with data; to the page ready, loaded, files,
+// zip with data, or unzipped with files.
 type message struct {
 	Type    string            `json:"type"`
 	Seq     int64             `json:"seq,omitempty"`
@@ -79,6 +84,9 @@ func (p *Playground) Receive(ctx context.Context, data []byte) {
 			return
 		case "zip":
 			p.fail(m, p.zip(m))
+			return
+		case "unzip":
+			p.fail(m, p.unzip(m))
 			return
 		}
 	}
@@ -199,5 +207,45 @@ func (p *Playground) zip(m message) error {
 		return err
 	}
 	p.reply(message{Type: "zip", Seq: m.Seq, Data: base64.StdEncoding.EncodeToString(b.Bytes())})
+	return nil
+}
+
+// unzip sends the page the files of a .zip in base64url, for it to load if its visitor agrees.
+func (p *Playground) unzip(m message) error {
+	data, err := base64.RawURLEncoding.DecodeString(m.Data)
+	if err != nil {
+		return err
+	}
+	r, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		return err
+	}
+	files := map[string]string{}
+	size := 0
+	for _, f := range r.File {
+		if f.FileInfo().IsDir() {
+			continue
+		}
+		if !projectFile(f.Name) {
+			return fmt.Errorf("a playground project has no file %q", f.Name)
+		}
+		rc, err := f.Open()
+		if err != nil {
+			return err
+		}
+		text, err := io.ReadAll(io.LimitReader(rc, maxProject+1))
+		rc.Close()
+		if err != nil {
+			return err
+		}
+		if size += len(text); size > maxProject {
+			return errors.New("the project is too large")
+		}
+		files[f.Name] = string(text)
+	}
+	if len(files) == 0 {
+		return errors.New("a project needs a file")
+	}
+	p.reply(message{Type: "unzipped", Seq: m.Seq, Files: files})
 	return nil
 }

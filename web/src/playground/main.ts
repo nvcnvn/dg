@@ -5,11 +5,12 @@ import '../app.css';
 import './playground.css';
 import { ask, h } from '../canvas/dialog';
 import { startEditor } from '../canvas/editor';
+import { saveBlob } from '../canvas/export';
 import type { Diagnostic } from '../protocol/client';
 import { newElk, render } from '../renderer';
 import { showMenu } from '../canvas/menu';
 import { asProject, example, exampleNames, MODEL_FILE, sameProject, STYLE_FILE, type Project } from './examples';
-import { LONG, shareFragment, sharedFiles } from './share';
+import { base64url, LONG, MAX_BYTES, shareFragment, sharedFiles } from './share';
 import { textEditor, type TextEditor } from './text';
 import { transport, type PageMessage } from './transport';
 
@@ -212,13 +213,35 @@ document.getElementById('share')!.addEventListener('click', () => {
 const download = async () => {
   try {
     const data = Uint8Array.from(atob(await t.zip()), (c) => c.charCodeAt(0));
-    const a = h('a', { href: URL.createObjectURL(new Blob([data], { type: 'application/zip' })), download: 'diagram.zip' });
-    a.click();
-    URL.revokeObjectURL(a.href);
+    saveBlob(new Blob([data], { type: 'application/zip' }), 'diagram.zip');
   } catch (err) {
     say(`Download failed: ${err}`);
   }
 };
+
+const openZip = async (file: File) => {
+  try {
+    if (file.size > MAX_BYTES) throw new Error('the file is too large');
+    const files = await t.unzip(base64url(new Uint8Array(await file.arrayBuffer())));
+    if (sameProject(current(), files) || mayReplace(current(), file.name)) {
+      say('');
+      load(files);
+    }
+  } catch (err) {
+    say(`Opening ${file.name} failed: ${err}`);
+  }
+};
+
+document.getElementById('open')!.addEventListener('click', () => {
+  const input = h('input', {
+    type: 'file',
+    accept: '.zip',
+    onchange: () => {
+      if (input.files?.[0]) void openZip(input.files[0]);
+    },
+  });
+  input.click();
+});
 
 window.addEventListener('pagehide', store);
 

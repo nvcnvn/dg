@@ -245,6 +245,54 @@ func TestZip(t *testing.T) {
 	}
 }
 
+func TestUnzip(t *testing.T) {
+	archive := func(files ...string) string {
+		var b bytes.Buffer
+		w := zip.NewWriter(&b)
+		for i := 0; i < len(files); i += 2 {
+			f, err := w.Create(files[i])
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := f.Write([]byte(files[i+1])); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if err := w.Close(); err != nil {
+			t.Fatal(err)
+		}
+		return base64.RawURLEncoding.EncodeToString(b.Bytes())
+	}
+	big := strings.Repeat("#\n", maxProject/4+1)
+	for _, tt := range []struct {
+		name, data, err string
+		files           map[string]string
+	}{
+		{name: "project", data: archive(ModelFile, testModel, "views/", "", LayoutFile, "version: 1\n"), files: map[string]string{ModelFile: testModel, LayoutFile: "version: 1\n"}},
+		{name: "not base64", data: "!", err: "illegal base64"},
+		{name: "not a zip", data: "AAAA", err: "not a valid zip"},
+		{name: "empty", data: archive(), err: "needs a file"},
+		{name: "other file", data: archive(ModelFile, "", "dg.hcl", ""), err: `no file "dg.hcl"`},
+		{name: "outside", data: archive("../model.hcl", ""), err: "no file"},
+		{name: "too large", data: archive(ModelFile, big, StyleFile, big, LayoutFile, big), err: "too large"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			pg := open(t)
+			pg.receive(map[string]any{"type": "unzip", "seq": 7, "data": tt.data})
+			_, last := pg.got(t)
+			if tt.err != "" {
+				if got := last["error"]; got.Seq != 7 || !strings.Contains(got.Message, tt.err) {
+					t.Fatalf("got %+v, want an error with %q", got, tt.err)
+				}
+				return
+			}
+			if got := last["unzipped"]; got.Seq != 7 || !maps.Equal(got.Files, tt.files) {
+				t.Errorf("got %+v, want %v", got, tt.files)
+			}
+		})
+	}
+}
+
 // TestExamples keeps the page's menu equal to the examples a playground project can hold: a model,
 // perhaps a style and the layout of main, and a dg.hcl without fields.
 func TestExamples(t *testing.T) {
@@ -311,7 +359,7 @@ func fits(t *testing.T, dir string) bool {
 func FuzzReceive(f *testing.F) {
 	for _, s := range []string{
 		`{"type":"load","files":{"model.hcl":"node \"a\" {}\n"}}`, `{"type":"load"}`, `{"type":"load","files":{"../x":""}}`,
-		`{"type":"write-file","path":"model.hcl","text":"node {"}`, `{"type":"write-file"}`, `{"type":"zip"}`, `{"type":"select-view"}`, `[]`, `{"files":3}`, `{"type":"load","files":{}}`,
+		`{"type":"write-file","path":"model.hcl","text":"node {"}`, `{"type":"write-file"}`, `{"type":"zip"}`, `{"type":"unzip"}`, `{"type":"unzip","data":"UEsFBgAAAAAAAAAAAAAAAAAAAAAAAA"}`, `{"type":"select-view"}`, `[]`, `{"files":3}`, `{"type":"load","files":{}}`,
 	} {
 		f.Add([]byte(s))
 	}
