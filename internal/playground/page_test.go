@@ -390,6 +390,28 @@ func TestOpenProject(t *testing.T) {
 	}
 }
 
+// TestOverflowOnPhone keeps the toolbar's overflow menu on a short screen, where its last items
+// would otherwise be out of reach.
+func TestOverflowOnPhone(t *testing.T) {
+	ctx, _, _ := tab(t, same)
+	err := chromedp.Do(ctx,
+		chromedp.EmulateViewport(393, 659),
+		until(`!document.getElementById('more').hidden`),
+		chromedp.Evaluate[chromedp.Void](`document.getElementById('more').click()`),
+		until(`!document.getElementById('overflow-menu').hidden`),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bottom, err := chromedp.Run(ctx, chromedp.Evaluate[float64](`innerHeight - document.getElementById('overflow-menu').getBoundingClientRect().bottom`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bottom < 0 {
+		t.Errorf("the menu ends %.0f pixels below the screen", -bottom)
+	}
+}
+
 // TestNoNetwork checks that the page loads everything from the site, and that nothing it does,
 // from its first script to a PNG export, meets its content security policy.
 func TestNoNetwork(t *testing.T) {

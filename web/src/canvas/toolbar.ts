@@ -126,6 +126,7 @@ export function toolbar(root: HTMLElement, overflow: HTMLElement) {
     const r = more.getBoundingClientRect();
     overflow.hidden = false;
     overflow.style.top = `${r.bottom + 4}px`;
+    overflow.style.maxHeight = `${window.innerHeight - r.bottom - 8}px`;
     overflow.style.left = `${Math.max(4, r.right - overflow.offsetWidth)}px`;
     more.setAttribute('aria-expanded', 'true');
     overflow.querySelector<HTMLElement>('button')?.focus();
