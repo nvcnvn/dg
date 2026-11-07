@@ -2,7 +2,7 @@ import type { Connect, Diagnostic, Request, ServerMessage } from '../protocol/cl
 import type { Project } from './examples';
 
 // PageMessage is what the page itself wants from Go (internal/playground).
-export type PageMessage = { type: 'ready' } | { type: 'loaded' } | { type: 'files'; files?: Project } | { type: 'zip'; seq?: number; data: string } | { type: 'diagnostics'; diagnostics: Diagnostic[] };
+export type PageMessage = { type: 'ready' } | { type: 'loaded' } | { type: 'files'; files?: Project } | { type: 'zip'; seq?: number; data: string } | { type: 'unzipped'; seq?: number; files: Project } | { type: 'diagnostics'; diagnostics: Diagnostic[] };
 
 // Transport carries the session's messages to and from Go in this page (FR-19).
 export interface Transport {
@@ -15,6 +15,8 @@ export interface Transport {
   saveFile(path: string, text: string): void;
   // zip asks for the project as a .zip, in base64.
   zip(): Promise<string>;
+  // unzip asks for the files of a .zip in base64url.
+  unzip(data: string): Promise<Project>;
 }
 
 // transport talks through post. Before each request it calls flush, so that an operation comes
@@ -25,8 +27,13 @@ export function transport(post: (json: string) => void, flush: () => void, page:
   let view = '';
   let seq = 0;
   let loaded = false;
-  const zips = new Map<number, { resolve(data: string): void; reject(err: Error): void }>();
+  const waiting = new Map<number, { resolve(m: { data?: string; files?: Project }): void; reject(err: Error): void }>();
   const send = (m: object) => post(JSON.stringify(m));
+  const ask = (m: object) =>
+    new Promise<{ data?: string; files?: Project }>((resolve, reject) => {
+      waiting.set(++seq, { resolve, reject });
+      send({ ...m, seq });
+    });
   const select = () => send({ type: 'select-view', view });
   return {
     connect(onMessage, onOpen) {
@@ -65,13 +72,14 @@ export function transport(post: (json: string) => void, flush: () => void, page:
           toEditor(m);
           break;
         case 'zip':
-          zips.get(m.seq!)?.resolve(m.data);
-          zips.delete(m.seq!);
+        case 'unzipped':
+          waiting.get(m.seq!)?.resolve(m);
+          waiting.delete(m.seq!);
           break;
         case 'error':
-          if (m.seq !== undefined && zips.has(m.seq)) {
-            zips.get(m.seq)!.reject(new Error(m.message));
-            zips.delete(m.seq);
+          if (m.seq !== undefined && waiting.has(m.seq)) {
+            waiting.get(m.seq)!.reject(new Error(m.message));
+            waiting.delete(m.seq);
             break;
           }
           toEditor(m);
@@ -88,10 +96,10 @@ export function transport(post: (json: string) => void, flush: () => void, page:
     },
     zip() {
       flush();
-      return new Promise((resolve, reject) => {
-        zips.set(++seq, { resolve, reject });
-        send({ type: 'zip', seq });
-      });
+      return ask({ type: 'zip' }).then((m) => m.data!);
+    },
+    unzip(data) {
+      return ask({ type: 'unzip', data }).then((m) => m.files!);
     },
   };
 }

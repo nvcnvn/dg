@@ -8,7 +8,7 @@ import type { ResolvedView } from '../protocol/view';
 import { actions, type Selection } from './actions';
 import { diagnosticList, diagnosticsBar } from './diagnostics';
 import { h, sheet } from './dialog';
-import { checkStyle, layerMarkup, layers, toPNG, toSVG, picture, type Drawing } from './export';
+import { checkStyle, layerMarkup, layers, saveBlob, toPNG, toSVG, picture, type Drawing } from './export';
 import { inPanel, openDiagnostic } from './host';
 import { interact } from './interact';
 import { arrangeItems, bindMenu, closeMenu, openerOf, showMenu, type Entry } from './menu';
@@ -483,9 +483,7 @@ export function startEditor(render: (view: ResolvedView) => Promise<{ drawing: D
   openTool('zoom', () => [zoomTo(0.5), zoomTo(1), zoomTo(2), { label: '', on: true, run: () => {} }, { label: 'Fit', keys: 'Shift+1', on: true, run: () => ui.fit() }, { label: 'Zoom to selection', keys: 'Shift+2', on: !!ui.selectionBox(), why: 'Select something first', run: zoomToSelection }]);
   const save = async (name: string, data: () => Blob | Promise<Blob>) => {
     try {
-      const a = h('a', { href: URL.createObjectURL(await data()), download: name });
-      a.click();
-      URL.revokeObjectURL(a.href);
+      saveBlob(await data(), name);
     } catch (err) {
       setStatus(`Export failed: ${err}`);
     }

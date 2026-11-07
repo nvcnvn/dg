@@ -5,10 +5,12 @@ install: write a model and a style on the left, and arrange the diagram on the r
 same editor as `dg serve`, with every gesture, and what you do in one half shows in the other.
 
 - **Examples** opens `hello`, `class` or `er`.
+- **Open** opens a project `.zip` you downloaded, with your arrangement as you left it.
 - **Share** copies a link that holds your files in its fragment, the part of a URL that never
   reaches a server. A link over 8,000 characters may be cut by some chat apps.
-- **Export** downloads the diagram as SVG or PNG, or the project as a `.zip` that `dg check` and
-  `dg serve` open.
+- **Export** downloads the diagram as SVG or PNG. To keep a project, arrangement included, choose
+  **Download project (.zip)**: **Open** brings it back here, and `dg check` and `dg serve` open it
+  once unzipped.
 
 Your last project stays in this browser. Nothing leaves it: after the page loads it uses no
 network, and it writes only to memory and to the files you download.

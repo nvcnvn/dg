@@ -182,6 +182,24 @@ func center(ctx context.Context, t *chromedp.Target, node string) (x, y float64,
 	return at[0], at[1], nil
 }
 
+// userAt is where the node user is on the canvas.
+const userAt = `(() => { const r = document.querySelector('#paper [data-node="user"]').getBoundingClientRect(); const p = document.getElementById('paper').getBoundingClientRect(); return [r.x - p.x, r.y - p.y]; })()`
+
+// drag drops node 120 to the right of and 60 below where it was.
+func drag(node string) chromedp.Action[chromedp.Void] {
+	return chromedp.Func(func(ctx context.Context, tt *chromedp.Target) error {
+		x, y, err := center(ctx, tt, node)
+		if err != nil {
+			return err
+		}
+		moves := []chromedp.Action[chromedp.Void]{chromedp.MouseEvent(chromedp.MouseMoved, x, y), chromedp.MouseEvent(chromedp.MousePressed, x, y, chromedp.ButtonLeft, chromedp.ClickCount(1))}
+		for i := 1; i <= 10; i++ {
+			moves = append(moves, chromedp.MouseEvent(chromedp.MouseMoved, x+float64(i)*12, y+float64(i)*6, chromedp.ButtonLeft))
+		}
+		return chromedp.Do(ctx, append(moves, chromedp.MouseEvent(chromedp.MouseReleased, x+120, y+60, chromedp.ButtonLeft, chromedp.ClickCount(1)))...)
+	})
+}
+
 // TestBothWays types in the Model editor and sees the canvas change, then relabels a node on the
 // canvas, finds the label in the Model editor, and undoes it there.
 func TestBothWays(t *testing.T) {
@@ -242,7 +260,6 @@ func TestDiagnostics(t *testing.T) {
 func TestShare(t *testing.T) {
 	ctx, _, _ := tab(t, same)
 	const stored = `localStorage.getItem('dg-playground')`
-	const place = `(() => { const r = document.querySelector('#paper [data-node="user"]').getBoundingClientRect(); const p = document.getElementById('paper').getBoundingClientRect(); return [r.x - p.x, r.y - p.y]; })()`
 	var files, link string
 	var dropped []float64
 	err := chromedp.Do(ctx,
@@ -250,17 +267,7 @@ func TestShare(t *testing.T) {
 		chromedp.KeyEvent("# Ålpha ✓\n"),
 		until(`[...document.querySelectorAll('#model-text .cm-line')].some((l) => l.textContent.includes('Ålpha'))`),
 		until(modelText+`.includes('Ålpha')`),
-		chromedp.Func(func(ctx context.Context, tt *chromedp.Target) error {
-			x, y, err := center(ctx, tt, "user")
-			if err != nil {
-				return err
-			}
-			moves := []chromedp.Action[chromedp.Void]{chromedp.MouseEvent(chromedp.MouseMoved, x, y), chromedp.MouseEvent(chromedp.MousePressed, x, y, chromedp.ButtonLeft, chromedp.ClickCount(1))}
-			for i := 1; i <= 10; i++ {
-				moves = append(moves, chromedp.MouseEvent(chromedp.MouseMoved, x+float64(i)*12, y+float64(i)*6, chromedp.ButtonLeft))
-			}
-			return chromedp.Do(ctx, append(moves, chromedp.MouseEvent(chromedp.MouseReleased, x+120, y+60, chromedp.ButtonLeft, chromedp.ClickCount(1)))...)
-		}),
+		drag("user"),
 		until(`(JSON.parse(`+stored+`)['views/main.layout.yaml'] || '').includes('user')`),
 		until(`document.body.classList.contains('editable')`),
 		chromedp.Evaluate[chromedp.Void](`document.getElementById('share').click()`),
@@ -270,7 +277,7 @@ func TestShare(t *testing.T) {
 			if files, err = chromedp.Evaluate[string](stored)(ctx, tt); err != nil {
 				return err
 			}
-			if dropped, err = chromedp.Evaluate[[]float64](place)(ctx, tt); err != nil {
+			if dropped, err = chromedp.Evaluate[[]float64](userAt)(ctx, tt); err != nil {
 				return err
 			}
 			link, err = chromedp.Evaluate[string](`document.querySelector('#dialog textarea').value`)(ctx, tt)
@@ -297,7 +304,7 @@ func TestShare(t *testing.T) {
 			if got, err = chromedp.Evaluate[string](stored)(ctx, tt); err != nil {
 				return err
 			}
-			loaded, err = chromedp.Evaluate[[]float64](place)(ctx, tt)
+			loaded, err = chromedp.Evaluate[[]float64](userAt)(ctx, tt)
 			return err
 		}),
 	)
@@ -338,6 +345,71 @@ func TestDownloadProject(t *testing.T) {
 	}
 	if want := []string{ModelFile, StyleFile}; !slices.Equal(names, want) {
 		t.Errorf("the archive holds %v, want %v", names, want)
+	}
+}
+
+// TestOpenProject drags a node, downloads the project, opens an example, and gets the drag back
+// from the archive. The picker is the browser's own, so the test hands the input its file.
+func TestOpenProject(t *testing.T) {
+	ctx, downloads, _ := tab(t, same)
+	const layout = `(JSON.parse(localStorage.getItem('dg-playground'))['views/main.layout.yaml'] || '')`
+	before, err := chromedp.Run(ctx, chromedp.Evaluate[string](layout))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := chromedp.Do(ctx, drag("user"), until(layout+fmt.Sprintf(` !== %q`, before)), until(`document.body.classList.contains('editable')`), choose("Export", "Download project (.zip)")); err != nil {
+		t.Fatal(err)
+	}
+	archive := base64.StdEncoding.EncodeToString(download(t, downloads, "diagram.zip"))
+	dropped, err := chromedp.Run(ctx, chromedp.Evaluate[[]float64](userAt))
+	if err != nil {
+		t.Fatal(err)
+	}
+	pick := fmt.Sprintf(`HTMLInputElement.prototype.click = function () {
+		const files = new DataTransfer();
+		files.items.add(new File([Uint8Array.from(atob(%q), (c) => c.charCodeAt(0))], 'diagram.zip'));
+		this.files = files.files;
+		this.dispatchEvent(new Event('change'));
+	};
+	document.getElementById('open').click();`, archive)
+	err = chromedp.Do(ctx,
+		openExample("class"),
+		until(`document.querySelector('#paper [data-node="user"]') === null`),
+		chromedp.Evaluate[chromedp.Void](pick),
+		until(`document.querySelector('#paper [data-node="user"]') !== null`),
+		drawn(),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	loaded, err := chromedp.Run(ctx, chromedp.Evaluate[[]float64](userAt))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(loaded, dropped) {
+		t.Errorf("the node is at %v, dropped at %v", loaded, dropped)
+	}
+}
+
+// TestOverflowOnPhone keeps the toolbar's overflow menu on a short screen, where its last items
+// would otherwise be out of reach.
+func TestOverflowOnPhone(t *testing.T) {
+	ctx, _, _ := tab(t, same)
+	err := chromedp.Do(ctx,
+		chromedp.EmulateViewport(393, 659),
+		until(`!document.getElementById('more').hidden`),
+		chromedp.Evaluate[chromedp.Void](`document.getElementById('more').click()`),
+		until(`!document.getElementById('overflow-menu').hidden`),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bottom, err := chromedp.Run(ctx, chromedp.Evaluate[float64](`innerHeight - document.getElementById('overflow-menu').getBoundingClientRect().bottom`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bottom < 0 {
+		t.Errorf("the menu ends %.0f pixels below the screen", -bottom)
 	}
 }
 

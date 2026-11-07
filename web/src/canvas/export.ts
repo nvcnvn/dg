@@ -1,6 +1,8 @@
 import { cmp, type Box } from '../geometry/geometry';
 import { attrs, decorationMarkup, defsMarkup, edgeMarkup, flowCSS, flowPeriods, nodeMarkup, num, overlayMarkup, type DrawnDecoration, type DrawnEdge, type DrawnNode, type DrawnOverlay, type FontMetrics, type Shapes } from './markup';
 
+const REVOKE_MS = 60_000;
+
 // Drawing is a view with all geometry computed, nodes in draw order and decorations in layout
 // file order. family names the font an exported SVG asks for.
 export interface Drawing extends FontMetrics, Shapes {
@@ -132,6 +134,17 @@ export async function toPNG(d: Drawing, font?: { family: string; data: string })
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
   return new Promise((done, fail) => canvas.toBlob((b) => (b ? done(b) : fail(new Error('the canvas gave no PNG'))), 'image/png'));
+}
+
+// saveBlob downloads blob as a file called name.
+export function saveBlob(blob: Blob, name: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  a.click();
+  // Safari can still be reading the URL after click returns; revoking at once loses the download.
+  setTimeout(() => URL.revokeObjectURL(url), REVOKE_MS);
 }
 
 // mountSVG shows svg alone on white at the page's top left, text in family, paused at time 0, once its pictures load.
